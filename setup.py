@@ -13,7 +13,6 @@ REQUIREMENTS = [
     'simplejson',
 ]
 
-
 def description():
   with open(os.path.join(os.path.dirname(__file__), 'README.md')) as r_file:
     return r_file.read()

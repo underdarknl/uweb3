@@ -40,7 +40,7 @@ python3 serve.py
 
 # µWeb3 database setup
 
-Setting up a database connection with µWeb3 is easy, navigate to the settings.ini file and add your connection attributes as followed:
+Setting up a database connection with µWeb3 is easy, navigate to the settings.ini file in the scaffold folder and add the following fields to the file:
 ``` 
 [mysql] OR [sqlite]
 host = 'host'
@@ -48,7 +48,7 @@ user = 'username'
 password = 'pass'
 database = 'dbname'
 ```
-To get the connection object simply access the self.connection in the pagemaker of your choice
+To access your database connection simply use the connection attribute in any class that inherits from PageMaker.
 
 
 ## Ubuntu issues

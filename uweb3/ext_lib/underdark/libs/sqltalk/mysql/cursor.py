@@ -1,18 +1,40 @@
 #!/usr/bin/python2.5
-"""SQLTalk MySQL Cursor class.
-"""
+"""SQLTalk MySQL Cursor class."""
 __author__ = 'Elmer de Looff <elmer@underdark.nl>'
 __version__ = '0.13'
 
 # Standard modules
 import warnings
 import weakref
-import _mysql
+import pymysql
+
+class ReturnObject(tuple):
+  """An object that functions as a tuple but has more required attributes."""
+
+  def __new__(cls, connection, results):
+    """Creates the immutable tuple."""
+    return super(ReturnObject, cls).__new__(cls, tuple(results))
+
+  def __init__(self, connection, results):
+    """Adds the required attributes."""
+    if connection._result is not None:
+      self.insertid = connection._result.insert_id
+    else:
+      self.insertid = None
 
 
-class Cursor(object):
+class Cursor(pymysql.cursors.DictCursor):
   """Cursor to execute database interaction with, within a transaction."""
+
   def __init__(self, connection):
+    self.description = None
+    self.rownumber = 0
+    self.rowcount = -1
+    self.arraysize = 1
+    self._executed = None
+    self._result = None
+    self._rows = None
+    self._warnings_handled = False
     self._connection = weakref.ref(connection)
 
   def _Execute(self, query):
@@ -27,19 +49,19 @@ class Cursor(object):
     Returns:
       sqlresult.ResultSet instance holding all query result data.
     """
-    #TODO(Elmer): Fix this so that arguments can be given independent of the
+    # TODO(Elmer): Fix this so that arguments can be given independent of the
     # query they belong to. This enables proper SelectTables and enables a host
     # of other escaping things to start working properly.
     #   Refer to MySQLdb.cursor code (~line 151) to see how this works.
     self._LogQuery(query)
-    result = self.connection.Query(query.strip())
-    if self.connection.warning_count():
-      self._ProcessWarnings(result)
+    self.execute(query.strip())
+    result = ReturnObject(self.connection, self.fetchall())
+    self._ProcessWarnings(result)
     return result
 
   def _LogQuery(self, query):
     connection = self.connection
-    if not isinstance(query, unicode):
+    if not isinstance(query, str):
       query = unicode(query, connection.charset, errors='replace')
     connection.logger.debug(query)
     connection.queries.append(query)
@@ -48,7 +70,7 @@ class Cursor(object):
   def _StringConditions(conditions, _unused_field_escape):
     if not conditions:
       return '1'
-    elif not isinstance(conditions, basestring):
+    elif not isinstance(conditions, str):
       return ' AND '.join(conditions)
     return conditions
 
@@ -56,7 +78,7 @@ class Cursor(object):
   def _StringFields(fields, field_escape):
     if fields is None:
       return '*'
-    elif isinstance(fields, basestring):
+    elif isinstance(fields, str):
       return field_escape(fields)
     else:
       return ', '.join(field_escape(fields))
@@ -65,7 +87,7 @@ class Cursor(object):
   def _StringGroup(group, field_escape):
     if group is None:
       return ''
-    elif isinstance(group, basestring):
+    elif isinstance(group, str):
       return 'GROUP BY ' + field_escape(group)
     return 'GROUP BY ' + ', '.join(field_escape(group))
 
@@ -83,7 +105,7 @@ class Cursor(object):
       return ''
     orders = []
     for rule in order:
-      if isinstance(rule, basestring):
+      if isinstance(rule, str):
         orders.append(field_escape(rule))
       else:
         orders.append('%s %s' % (field_escape(rule[0]), ('', 'DESC')[rule[1]]))
@@ -91,7 +113,7 @@ class Cursor(object):
 
   @staticmethod
   def _StringTable(table, field_escape):
-    if isinstance(table, basestring):
+    if isinstance(table, str):
       return field_escape(table)
     else:
       return ', '.join(field_escape(table))
@@ -305,7 +327,7 @@ class Cursor(object):
 
   def _ProcessWarnings(self, resultset):
     """Updates messages attribute with warnings given by the MySQL server."""
-    db_info = self.connection.info()
+    db_info = self.connection.Info()
     db_warnings = self.connection.ShowWarnings()
     if db_warnings:
       # This is done in two loops in case Warnings are set to raise exceptions.
@@ -315,10 +337,6 @@ class Cursor(object):
         resultset.warnings.append(warning)
       for warning in db_warnings:
         warnings.warn(warning[-1], self.Warning, 3)
-    elif db_info:
-      self.connection.logger.warning('%d: %s' % db_info[1:])
-      resultset.warnings.append(db_info)
-      warnings.warn(db_info, self.Warning, 3)
 
   @property
   def connection(self):
@@ -328,14 +346,13 @@ class Cursor(object):
       raise self.ProgrammingError('Connection for this cursor closed.')
     return connection
 
-
-  DatabaseError = _mysql.DatabaseError
-  DataError = _mysql.DataError
-  Error = _mysql.Error
-  IntegrityError = _mysql.IntegrityError
-  InterfaceError = _mysql.InterfaceError
-  InternalError = _mysql.InternalError
-  NotSupportedError = _mysql.NotSupportedError
-  OperationalError = _mysql.OperationalError
-  ProgrammingError = _mysql.ProgrammingError
-  Warning = _mysql.Warning
+  DatabaseError = pymysql.DatabaseError
+  DataError = pymysql.DataError
+  Error = pymysql.Error
+  IntegrityError = pymysql.IntegrityError
+  InterfaceError = pymysql.InterfaceError
+  InternalError = pymysql.InternalError
+  NotSupportedError = pymysql.NotSupportedError
+  OperationalError = pymysql.OperationalError
+  ProgrammingError = pymysql.ProgrammingError
+  Warning = pymysql.Warning

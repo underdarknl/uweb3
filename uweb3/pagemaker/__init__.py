@@ -185,7 +185,13 @@ class BasePageMaker(object):
       for filename in filenames:
         name, ext = os.path.splitext(filename)
         if name not in excluded_files and ext not in excluded_files:
-          f = 'uweb3.{}/{}/{}'.format(os.path.basename(os.getcwd()), default_routes, filename[:-3]).replace('/', '.')
+          #TODO: fix the uweb3 prefix
+          f = 'uweb3.{}/{}/{}'.format(
+                                      os.path.basename(os.getcwd()), 
+                                      default_routes, 
+                                      filename[:-3]
+                                      ).replace('/', '.')
+          
           example_data = pyclbr.readmodule_ex(f)
           for name, data in example_data.items():
             if 'PageMaker' in data.super[0]:

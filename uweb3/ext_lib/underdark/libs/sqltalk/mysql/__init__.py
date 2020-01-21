@@ -20,9 +20,11 @@ __author__ = 'Elmer de Looff <elmer@underdark.nl>'
 __version__ = '0.9'
 
 # Application specific modules
-import constants
-import connection
+# import constants
+# import connection
 
+from . import connection
+from . import constants
 
 class SqlTypeSet(frozenset):
   """A special type of frozenset for which A == x is true if A is a
