@@ -30,6 +30,6 @@ nosetests.xml
 *.mo
 
 # Virtual environment
-env
+uweb3-venv
 
 .vscode
