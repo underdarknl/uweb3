@@ -3,12 +3,14 @@
 
 import uweb3
 from uweb3 import PageMaker
-# from uweb3.pagemaker.new_login import User
+from uweb3.pagemaker.new_login import User
 
-class User(PageMaker):
+class UserPageMaker(PageMaker):
   """Holds all the request handlers for the application"""
 
   def Login(self):
     """Returns the index template"""
     # print(self.connection)
+    user = User()
+    print(user.FromName(self.connection, 'stef'))
     return self.parser.Parse('login.html')
