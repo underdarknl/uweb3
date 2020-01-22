@@ -10,13 +10,20 @@ class UserPageMaker(PageMaker):
 
   def Login(self):
     """Returns the index template"""
-    # print(self.connection)
+    if self.cookies.get('login'):
+      if User.validateCookie(self.cookies.get('login')).user_id:
+        print("Validated user based on cookie")
+
     if self.req.method == 'POST':
-  
-      # try:
-      #   User(self.post.form['username'], self.post.form['password'])
-      # except Exception as e:
-      #   print(e)
-    # user = User()
-    # print(user.FromName(self.connection, 'stef'))
+      try:
+        user = User(self.post.form['username'], self.post.form['password'])
+        if user == user.FromName(self.connection):
+          print('login')
+          self.req.AddCookie('login', user.cookie)
+        else:
+          print('Invalid username/password combination')
+      except ValueError as e:
+        print(e)
+
+   
     return self.parser.Parse('login.html')
