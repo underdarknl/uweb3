@@ -11,6 +11,12 @@ class UserPageMaker(PageMaker):
   def Login(self):
     """Returns the index template"""
     # print(self.connection)
-    user = User()
-    print(user.FromName(self.connection, 'stef'))
+    if self.req.method == 'POST':
+  
+      # try:
+      #   User(self.post.form['username'], self.post.form['password'])
+      # except Exception as e:
+      #   print(e)
+    # user = User()
+    # print(user.FromName(self.connection, 'stef'))
     return self.parser.Parse('login.html')

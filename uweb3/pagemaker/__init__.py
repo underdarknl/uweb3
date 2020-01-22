@@ -170,8 +170,7 @@ class BasePageMaker(object):
     self.post = req.vars['post']
     self.options = config or {}
     self.persistent = self.PERSISTENT
-    
-  
+
   @classmethod
   def loadModules(self, default_routes='routes', excluded_files=('__init__', '.pyc')):
     """Loops over all .py(except __init__) files in target directory
