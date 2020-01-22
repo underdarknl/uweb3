@@ -194,9 +194,10 @@ class BasePageMaker(object):
           
           example_data = pyclbr.readmodule_ex(f)
           for name, data in example_data.items():
-            if 'PageMaker' in data.super[0]:
-              module = __import__(f, fromlist=[name])
-              bases.append(getattr(module, name))
+            if hasattr(data, 'super'):
+              if 'PageMaker' in data.super[0]:
+                module = __import__(f, fromlist=[name])
+                bases.append(getattr(module, name))
 
     if len(bases) > 0:
       self.__bases__ = tuple(bases) 
