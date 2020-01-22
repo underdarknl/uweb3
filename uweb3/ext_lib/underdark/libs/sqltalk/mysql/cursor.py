@@ -62,7 +62,7 @@ class Cursor(pymysql.cursors.DictCursor):
   def _LogQuery(self, query):
     connection = self.connection
     if not isinstance(query, str):
-      query = unicode(query, connection.charset, errors='replace')
+      query = str(query, connection.charset, errors='replace')
     connection.logger.debug(query)
     connection.queries.append(query)
 

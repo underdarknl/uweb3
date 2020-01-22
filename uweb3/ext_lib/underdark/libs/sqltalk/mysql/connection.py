@@ -81,8 +81,6 @@ class Connection(pymysql.connections.Connection):
     kwargs['passwd'] = passwd
     kwargs['host'] = kwargs.get('host', 'localhost')
     kwargs['db'] = kwargs.get('db', user)
-    
-    
     if 'compress' in kwargs:
       raise self.NotSupportedError("PyMySQL doesn't support compression.")
     if 'named_pipe' in kwargs:
@@ -150,7 +148,6 @@ class Connection(pymysql.connections.Connection):
     # Done redefining variables for initialization. Engage PyMySQL!
     super(Connection, self).__init__(*args, **kwargs)
     self.encoders = encoders
-    #Disabled unicode since its not relevant in python3
     # self.encoders[unicode] = self.unicode_literal = _GetUnicodeLiteral()
     self.converter = conversions
 
@@ -230,8 +227,8 @@ class Connection(pymysql.connections.Connection):
 
   def Query(self, query_string):
     self.counter_queries += 1
-    # if isinstance(query_string, unicode):
-    #   query_string = query_string.encode(self.charset)
+    if isinstance(query_string, str):
+      query_string = query_string.encode(self.charset)
     cur = cursor.Cursor(self)
     cur.execute(query_string)
     stored_result = cur.fetchall()
@@ -244,7 +241,7 @@ class Connection(pymysql.connections.Connection):
         charset=self.charset,
         fields=fields,
         insertid=self.insert_id(),
-        query=query_string,
+        query=query_string.decode(self.charset, 'ignore'),
         result=stored_result)
 
   def ServerInfo(self):

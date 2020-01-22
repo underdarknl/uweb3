@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python2.5
 """MySQLdb type conversion module
 
 This module handles all the type conversions for MySQL. If the default
@@ -42,7 +42,6 @@ import time
 from .. import sqlresult
 from . import constants
 from . import times
-from pyxform.utils import unichr
 
 
 def Array2Str(obj, conv_dict):
@@ -139,7 +138,7 @@ def escape_dict(val, charset, mapping=None):
     n = {}
     for k, v in val.items():
         quoted = escape_item(v, charset, mapping)
-        n[k] = quotedunichr
+        n[k] = quoted
     return n
 
 def escape_string(value, mapping=None):
@@ -167,7 +166,7 @@ def _escape_unicode(value, mapping=None):
     return value.translate(ESCAPE_TABLE)
 
 
-ESCAPE_TABLE = [unichr(x) for x in range(128)]
+ESCAPE_TABLE = [chr(x) for x in range(128)]
 ESCAPE_TABLE[0] = u'\\0'
 ESCAPE_TABLE[ord('\\')] = u'\\\\'
 ESCAPE_TABLE[ord('\n')] = u'\\n'
@@ -176,8 +175,6 @@ ESCAPE_TABLE[ord('\032')] = u'\\Z'
 ESCAPE_TABLE[ord('"')] = u'\\"'
 ESCAPE_TABLE[ord("'")] = u"\\'"
 
-long = int
-unicode = str
 CONVERSIONS = {
   sqlresult.ResultSet: escape_sequence,
   sqlresult.ResultRow: escape_dict,
@@ -187,11 +184,11 @@ CONVERSIONS = {
   set: Set2Str,
   bool: Bool2Str,
   int: Thing2Str,
-  long: Thing2Str,
+  # long: Thing2Str,
   float: Float2Str,
   type(None): None2NULL,
   str: Thing2Literal,
-  unicode: Thing2Literal,
+  # unicode: Thing2Literal,
   object: Instance2Str,
   type: Instance2Str,
   array.array: Array2Str,
@@ -201,12 +198,12 @@ CONVERSIONS = {
   time.struct_time: times.TimeStructToLiteral,
   constants.FIELD_TYPE.TINY: int,
   constants.FIELD_TYPE.SHORT: int,
-  constants.FIELD_TYPE.LONG: long,
+  # constants.FIELD_TYPE.LONG: long,
   constants.FIELD_TYPE.FLOAT: float,
   constants.FIELD_TYPE.DOUBLE: float,
   constants.FIELD_TYPE.DECIMAL: decimal.Decimal,
   constants.FIELD_TYPE.NEWDECIMAL: decimal.Decimal,
-  constants.FIELD_TYPE.LONGLONG: long,
+  # constants.FIELD_TYPE.LONGLONG: long,
   constants.FIELD_TYPE.INT24: int,
   constants.FIELD_TYPE.YEAR: int,
   constants.FIELD_TYPE.SET: Str2Set,
