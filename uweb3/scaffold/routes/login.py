@@ -3,7 +3,7 @@
 
 import uweb3
 from uweb3 import PageMaker
-from uweb3.pagemaker.new_login import User
+from uweb3.pagemaker.new_login import Users
 
 class UserPageMaker(PageMaker):
   """Holds all the request handlers for the application"""
@@ -11,12 +11,12 @@ class UserPageMaker(PageMaker):
   def Login(self):
     """Returns the index template"""
     if self.cookies.get('login'):
-      if User.validateCookie(self.cookies.get('login')).user_id:
+      if Users.validateCookie(self.cookies.get('login')).user_id:
         print("Validated user based on cookie")
-
+    
     if self.req.method == 'POST':
       try:
-        user = User(self.post.form['username'], self.post.form['password'])
+        user = Users(self.post.form['username'], self.post.form['password'])
         if user == user.FromName(self.connection):
           print('login')
           self.req.AddCookie('login', user.cookie)

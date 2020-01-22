@@ -7,7 +7,7 @@ from .. import model
 class UserCookieInvalidError(Exception):
   """Superclass for errors returned by the user class."""  
 
-class User(model.BaseRecord):
+class Users(model.Record):
   """ """
   salt = "SomeSaltyBoi"
   UserCookieInvalidError = UserCookieInvalidError
@@ -17,15 +17,13 @@ class User(model.BaseRecord):
                ):
     """Instantiate a User class. Username/password or user_id is required"""
     self.user_id = user_id
-    
+    self.username = username
+    self.password = password
     #Check if username/password are set if no userid is supplied
     if not username and not user_id or not password and not user_id:
       raise ValueError("Username and password required")
-    
+
     if username and password:
-      self.username = username
-      self.password = password
-      
       if generateHash:
         self.hashed_password = self.HashPassword()
 
@@ -51,13 +49,13 @@ class User(model.BaseRecord):
     try:
       self.FromName(connection)
       return self.AlreadyExistError("User with name '{}' already exists".format(self.username))
-    except self.NotExistError as e:
+    except self.NotExistError:
       with connection as cursor:
         cursor.Insert('users', {
                                 'username': self.username, 
                                 'password': self.hashed_password.decode('utf-8')
                                 })
-        
+  
   def FromName(self, connection):
     """Select a user from the database based on name"""
     with connection as cursor:
@@ -67,7 +65,7 @@ class User(model.BaseRecord):
           conditions='username={}'.format(safe_name))
     if not user:
       raise self.NotExistError('No user with name %r' % self.username)
-    return User(user[0]['username'], user[0]['password'], user[0]['id'], generateHash=False)
+    return Users(user[0]['username'], user[0]['password'], user[0]['id'], generateHash=False)
 
   def HashPassword(self):
     """Hash password with bcrypt"""
@@ -93,15 +91,19 @@ class User(model.BaseRecord):
  
   @classmethod
   def validateCookie(cls, cookie):
-    import ast
-    hashed, data = cookie.split('+')
-    data = ast.literal_eval(data)
-    user_id = data.get('id', None)
+    from ast import literal_eval
     
+    try:
+      hashed, data = cookie.rsplit('+', 1)
+      data = literal_eval(data)
+      user_id = data.get('id', None)
+    except Exception:
+      raise cls.UserCookieInvalidError("Invalid cookie")
+
     if not user_id:
-      raise self.UserCookieInvalidError("Could not get id from cookie")
+      raise cls.UserCookieInvalidError("Could not get id from cookie")
     if cookie != cls._generateCookie(cls, str(user_id)):
       raise cls.UserCookieInvalidError("Invalid cookie")
     
-    return User(user_id=user_id)
+    return Users(user_id=user_id)
   
