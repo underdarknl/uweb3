@@ -130,7 +130,7 @@ class BaseRecord(dict):
   def __str__(self):
     return '%s({%s})' % (
         self.__class__.__name__,
-        ', '.join('%r: %r' % item for item in self.iteritems()))
+        ', '.join('%r: %r' % item for item in self.items()))
 
   def copy(self):
     """Returns a shallow copy of the Record that is a new functional Record."""

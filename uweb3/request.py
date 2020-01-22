@@ -16,7 +16,7 @@ import re
 # uWeb modules
 from . import response
 
-
+  
 class Cookie(cookie.SimpleCookie):
   """Cookie class that uses the most specific value for a cookie name.
 
@@ -185,4 +185,4 @@ def ParseForm(file_handle, environ):
   """
   #TODO see if we need to encode in utf8 or is ascii is fine based on the headers
   data = stringIO.StringIO(file_handle.read(int(environ['CONTENT_LENGTH'])).decode('ascii'))
-  return IndexedFieldStorage(fp=data, environ=environ)
+  return IndexedFieldStorage(fp=data, environ=environ, keep_blank_values=1)

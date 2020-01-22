@@ -170,6 +170,7 @@ class BasePageMaker(object):
     self.post = req.vars['post']
     self.options = config or {}
     self.persistent = self.PERSISTENT
+    self.post.form = { item.name: item.value for item in req.vars['post'].value } if bool(req.vars['post'].value) else None
 
   @classmethod
   def loadModules(self, default_routes='routes', excluded_files=('__init__', '.pyc')):

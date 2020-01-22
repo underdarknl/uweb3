@@ -196,7 +196,7 @@ class Cursor(pymysql.cursors.DictCursor):
     table = self.connection.EscapeField(table) if escape else table
     try:
       # Single insert
-      values = ', '.join('`%s`=%s' % value for value in values.iteritems())
+      values = ', '.join('`%s`=%s' % value for value in values.items())
       query = 'INSERT INTO %s SET %s' % (table, values)
     except AttributeError:
       # Multi-row insert

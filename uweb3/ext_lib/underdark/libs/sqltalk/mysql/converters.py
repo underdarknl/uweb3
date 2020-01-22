@@ -124,7 +124,7 @@ def escape_item(val, charset, mapping=None):
     # Fallback to default when no encoder found
     if not encoder:
         try:
-            encoder = mapping[unicode]
+            encoder = mapping[str]
         except KeyError:
             raise TypeError("no default type converter defined")
 
@@ -146,7 +146,7 @@ def escape_string(value, mapping=None):
 
     Value should be bytes or unicode.
     """
-    if isinstance(value, unicode):
+    if isinstance(value, str):
         return _escape_unicode(value)
     assert isinstance(value, (bytes, bytearray))
     value = value.replace('\\', '\\\\')
