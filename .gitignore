@@ -29,7 +29,6 @@ nosetests.xml
 # Translations
 *.mo
 
-# Virtual environment
 uweb3-venv
-
+features
 .vscode

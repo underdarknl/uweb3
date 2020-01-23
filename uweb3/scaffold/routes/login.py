@@ -4,27 +4,36 @@
 import uweb3
 from uweb3 import PageMaker
 from uweb3.pagemaker.new_login import Users
+from uweb3 import templateparser
+import os
+
+
 
 class UserPageMaker(PageMaker):
   """Holds all the request handlers for the application"""
-
-  def Login(self):
-    """Returns the index template"""
-    # if self.cookies.get('login'):
-    #   if Users.validateCookie(self.cookies.get('login')).user_id:
-    #     print("Validated user based on cookie")
-    # print(Users.Create(self.connection, 'test', 'password'))
+  def crsf(self, input):
+    token = Users.CreateCRSFToken('10')
+    self.req.AddCookie('crsf', token)
+    return '<input type="hidden" value="{}" name="crsf">'.format(token)
   
+  def Login(self):
+    self.parser.RegisterFunction('crsf', self.crsf)
+    """Returns the index template"""
+    if self.cookies.get('login'):
+      if Users.ValidateUserCookie(self.cookies.get('login')):
+        print("Validated user based on cookie")
+
     if self.req.method == 'POST':
       try:
         user = Users.FromName(self.connection, self.post.form.get('username'))._record
         if Users.ComparePassword(self.post.form.get('password'), user['password']):
-          print('login')
+          print('Login')
           cookie = Users.CreateValidationCookieHash(user['id'])
-          print(Users.ValidateUserCookie(cookie))
+          self.req.AddCookie('login', cookie)
+          # print(Users.ValidateUserCookie(cookie))
         else:
           print('Wrong username/password combination')      
       except uweb3.model.NotExistError as e:
         print(e)
 
-    return self.parser.Parse('login.html', year='test')
+    return self.parser.Parse('login.html', test=11)

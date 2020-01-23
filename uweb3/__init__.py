@@ -227,7 +227,7 @@ class HotReload(object):
 
       for r, d, f in os.walk(path):
         for file in f:
-          name, ext = os.path.splitext(file)
+          ext = os.path.splitext(file)[1]
           if ext not in (".pyc", '.ini', '.md', ):
             WATCHED_FILES.append(os.path.join(r, file))
             
@@ -236,7 +236,7 @@ class HotReload(object):
       while True:
           for f, mtime in WATCHED_FILES_MTIMES:
               if os.path.getmtime(f) != mtime:
-                print("Restarting µWeb3...")
+                print('{color}Detected changes in {file}\x1b[0m \nRestarting µWeb3'.format(color='\x1b[7;30;41m', file=f))
                 self.running.clear()
                 os.execl(sys.executable, sys.executable, * sys.argv)
           time.sleep(self.interval)
