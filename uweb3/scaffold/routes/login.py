@@ -10,20 +10,21 @@ class UserPageMaker(PageMaker):
 
   def Login(self):
     """Returns the index template"""
-    if self.cookies.get('login'):
-      if Users.validateCookie(self.cookies.get('login')).user_id:
-        print("Validated user based on cookie")
-    
+    # if self.cookies.get('login'):
+    #   if Users.validateCookie(self.cookies.get('login')).user_id:
+    #     print("Validated user based on cookie")
+    # print(Users.Create(self.connection, 'test', 'password'))
+  
     if self.req.method == 'POST':
       try:
-        user = Users(self.post.form['username'], self.post.form['password'])
-        if user == user.FromName(self.connection):
+        user = Users.FromName(self.connection, self.post.form.get('username'))._record
+        if Users.ComparePassword(self.post.form.get('password'), user['password']):
           print('login')
-          self.req.AddCookie('login', user.cookie)
+          cookie = Users.CreateValidationCookieHash(user['id'])
+          print(Users.ValidateUserCookie(cookie))
         else:
-          print('Invalid username/password combination')
-      except ValueError as e:
+          print('Wrong username/password combination')      
+      except uweb3.model.NotExistError as e:
         print(e)
 
-   
-    return self.parser.Parse('login.html')
+    return self.parser.Parse('login.html', year='test')
