@@ -6,7 +6,7 @@ This module provides some Date and Time classes for dealing with MySQL data.
 Use Python datetime module to handle date and time columns.
 """
 # Standard modules
-import _mysql
+import pymysql
 import datetime
 import math
 import pytz
@@ -58,7 +58,12 @@ def DateTimeToLiteral(date, converter):
     date = date.astimezone(pytz.utc)
   except ValueError:
     pass  # naive datetime object
-  return _mysql.string_literal(date.isoformat(), converter)
+  return "'%s'" % pymysql.escape_string(date.isoformat())
+
+
+def DateToLiteral(date, converter):
+  """Format a Date object as an ISO timestamp."""
+  return "'%s'" % pymysql.escape_string(date.isoformat())
 
 
 def TimeDeltaToLiteral(timedelta, converter):
@@ -66,12 +71,12 @@ def TimeDeltaToLiteral(timedelta, converter):
   hours, seconds = divmod(timedelta.seconds, 3600)
   minutes, seconds = divmod(seconds, 60)
   literal = '%d %d:%d:%d' % (timedelta.days, hours, minutes, seconds)
-  return _mysql.string_literal(literal, converter)
+  return "'%s'" % pymysql.escape_string(literal)
 
 
 def TimeStructToLiteral(date, converter):
   """Formats a time_struct as an ISO timestamp."""
-  return _mysql.string_literal(time.strftime('%FT%T', date), converter)
+  return "'%s'" % pymysql.escape_string(time.strftime('%FT%T', date))
 
 
 def MysqlTimestampConverter(stamp):

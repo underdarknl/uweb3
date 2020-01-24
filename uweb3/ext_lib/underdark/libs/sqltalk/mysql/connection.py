@@ -7,19 +7,19 @@ __author__ = 'Elmer de Looff <elmer@underdark.nl>'
 __version__ = '0.16'
 
 # Standard modules
-import _mysql
+import pymysql
 import logging
 import threading
 import weakref
 
 # Application specific modules
-import constants
-import converters
-import cursor
+from . import constants
+from . import converters
+from . import cursor
 from .. import sqlresult
 
 
-class Connection(_mysql.connection):
+class Connection(pymysql.connections.Connection):
   """MySQL Database Connection Object"""
 
   def __init__(self, user, passwd, *args, **kwargs):
@@ -37,8 +37,9 @@ class Connection(_mysql.connection):
       conv:               conversion dictionary, see converters module.
       connect_timeout:    number of seconds to wait before the connection
                           attempt fails.
-      compress:           bool, enable compression. Default False
-      named_pipe:         if set, a named pipe is used to connect (Windows only)
+      compress:           bool, enable compression. Not supported by PyMySQL.
+      named_pipe:         if set, a named pipe is used to connect Not supported
+                          by PyMySQL.
       init_command:       command which is run once the connection is created
       read_default_file:  file from which default client values are read
       read_default_group: configuration group to use from the default file
@@ -73,12 +74,17 @@ class Connection(_mysql.connection):
     self.queries = []
     self.transaction_timer = None
     self.lock = threading.Lock()
+    self._charset = None
 
-    # _mysql connect args mapping
+    # PyMySQL connect args mapping
     kwargs['user'] = user
     kwargs['passwd'] = passwd
     kwargs['host'] = kwargs.get('host', 'localhost')
     kwargs['db'] = kwargs.get('db', user)
+    if 'compress' in kwargs:
+      raise self.NotSupportedError("PyMySQL doesn't support compression.")
+    if 'named_pipe' in kwargs:
+      raise self.NotSupportedError("PyMySQL doesn't support named pipes.")
     self.logger = logging.getLogger('mysql_%s' % kwargs['db'])
     if kwargs.pop('debug', False):
       self.debug = True
@@ -89,51 +95,20 @@ class Connection(_mysql.connection):
     if kwargs.pop('disable_log', False):
       self.logger.disable_logger = True
 
-    self.encoders = {}
-    converts = {}
-    for key, value in converters.CONVERSIONS.iteritems():
-      if not isinstance(key, int):
-        self.encoders[key] = value
-      else:
-        if isinstance(value, list):
-          converts[key] = value[:]
-        else:
-          converts[key] = value
-    kwargs.setdefault('conv', {}).update(converts)
-
     autocommit = kwargs.pop('autocommit', None)
     charset = kwargs.pop('charset', 'utf8')
     sql_mode = kwargs.pop('sql_mode', None)
-    use_unicode = kwargs.pop('use_unicode', False) or bool(charset)
+    # use_unicode = kwargs.pop('use_unicode', False) or bool(charset)
 
-    client_version = tuple(map(int, _mysql.get_client_info().split('.')[:2]))
-    kwargs.setdefault('client_flag', 0)
-    if client_version >= (4, 1):
-      kwargs['client_flag'] |= constants.CLIENT.MULTI_STATEMENTS
-    if client_version >= (5, 0):
-      kwargs['client_flag'] |= constants.CLIENT.MULTI_RESULTS
-
-    # Done redefining variables for initialization. Engage _mysql!
-    super(Connection, self).__init__(*args, **kwargs)
-
-    self.server_version = tuple(map(int, self.get_server_info().split('.')[:2]))
-    if sql_mode:
-      self.SetSqlMode(sql_mode)
-
-    # The following voodoo is necssary to avoid double references that would
+    # The following voodoo is necessary to avoid double references that would
     # prevent a connection object from being finalized and collected properly.
     db = weakref.proxy(self)
-    def _GetStringLiteral():
-      def StringLiteral(string, _dummy=None):
-        """Returns the SQL literal (safe) for the given string."""
-        return db.string_literal(string)
-      return StringLiteral
 
-    def _GetUnicodeLiteral():
-      def UnicodeLiteral(u_string, _dummy=None):
-        """Returns the SQL (safe) literal for the given unicode object."""
-        return db.EscapeValues(u_string.encode(db.charset))
-      return UnicodeLiteral
+    # def _GetUnicodeLiteral():
+    #   def UnicodeLiteral(u_string, _dummy=None):
+    #     """Returns the SQL (safe) literal for the given unicode object."""
+    #     return db.EscapeValues(u_string.encode(db.charset))
+    #   return UnicodeLiteral
 
     def _GetStringDecoder():
       def StringDecoder(string):
@@ -141,17 +116,45 @@ class Connection(_mysql.connection):
         return string.decode(db.charset)
       return StringDecoder
 
+    encoders = {}
+    converts = {}
+    conversions = converters.CONVERSIONS
     self.string_decoder = _GetStringDecoder()
-    self.encoders[str] = _GetStringLiteral()
-    self.encoders[unicode] = self.unicode_literal = _GetUnicodeLiteral()
 
-    if use_unicode:
-      decoder = None, self.string_decoder
-      self.converter[constants.FIELD_TYPE.STRING].append(decoder)
-      self.converter[constants.FIELD_TYPE.VAR_STRING].append(decoder)
-      self.converter[constants.FIELD_TYPE.VARCHAR].append(decoder)
-      self.converter[constants.FIELD_TYPE.BLOB].append(decoder)
-    self._charset = None
+    # if use_unicode:
+    #   decoder = self.string_decoder
+    #   conversions[constants.FIELD_TYPE.STRING] = decoder
+    #   conversions[constants.FIELD_TYPE.VAR_STRING] = decoder
+    #   conversions[constants.FIELD_TYPE.VARCHAR] = decoder
+    #   conversions[constants.FIELD_TYPE.BLOB] = decoder
+
+    for key, value in conversions.items():
+      if not isinstance(key, int):
+        encoders[key] = value
+      else:
+        if isinstance(value, list):
+          converts[key] = value[:]
+        else:
+          converts[key] = value
+    kwargs.setdefault('conv', {}).update(converts)
+
+    client_version = tuple(map(int, pymysql.get_client_info().split('.')[:2]))
+    kwargs.setdefault('client_flag', 0)
+    if client_version >= (4, 1):
+      kwargs['client_flag'] |= constants.CLIENT.MULTI_STATEMENTS
+    if client_version >= (5, 0):
+      kwargs['client_flag'] |= constants.CLIENT.MULTI_RESULTS
+
+    # Done redefining variables for initialization. Engage PyMySQL!
+    super(Connection, self).__init__(*args, **kwargs)
+    self.encoders = encoders
+    # self.encoders[unicode] = self.unicode_literal = _GetUnicodeLiteral()
+    self.converter = conversions
+
+    self.server_version = tuple(map(int, self.get_server_info().split('.')[:2]))
+    if sql_mode:
+      self.SetSqlMode(sql_mode)
+
     self.charset = charset or self.character_set_name()
 
     self.transactional = bool(self.server_capabilities &
@@ -164,11 +167,10 @@ class Connection(_mysql.connection):
 
   def __enter__(self):
     """Refreshes the connection and returns a cursor, starting a transaction."""
-    if self.lock.acquire(False):  # Don't block. fail when it's in use.
+    if self.lock.acquire():  # This will block when the lock is in use. In normal situations this should never happen.
       self.counter_transactions += 1
       del self.queries[:]
-      self.ping(True)
-      self.ping(self.autocommit)
+      self._SetAutocommitState(self.autocommit)
       self.StartTransactionTimer()
       return cursor.Cursor(self)
     raise self.OperationalError(
@@ -192,13 +194,13 @@ class Connection(_mysql.connection):
 
   def CurrentDatabase(self):
     """Return the name of the currently used database"""
-    return self.Query('SELECT DATABASE()')[0][0]
+    return self.Query('SELECT DATABASE()')[0]
 
   def EscapeField(self, field):
     """Returns a SQL escaped field or table name."""
     if not field:
       return ''
-    elif isinstance(field, basestring):
+    elif isinstance(field, str):
       fields = '.'.join('`%s`' % f.replace('`', '``') for f in field.split('.'))
       return fields.replace('`*`', '*')
     else:
@@ -218,31 +220,29 @@ class Connection(_mysql.connection):
     Returns
       dictionary: keys: 'db', 'charset', 'server'
     """
-    #TODO(Elmer): Make this return more useful information and statistics
+    # TODO(Elmer): Make this return more useful information and statistics
     return {'db': self.CurrentDatabase(),
             'charset': self.charset,
             'server': self.ServerInfo()}
 
   def Query(self, query_string):
     self.counter_queries += 1
-    if isinstance(query_string, unicode):
+    if isinstance(query_string, str):
       query_string = query_string.encode(self.charset)
-    self.query(query_string)
-    stored_result = self.store_result()
+    cur = cursor.Cursor(self)
+    cur.execute(query_string)
+    stored_result = cur.fetchall()
     if stored_result:
-      fields = stored_result.describe()
-      # fetch_row call has a limit and type (0: tuples, 1: dicts)
-      result = stored_result.fetch_row(0, 0)
+      fields = stored_result[0].keys()
     else:
       fields = []
-      result = []
     return sqlresult.ResultSet(
         affected=self.affected_rows(),
         charset=self.charset,
         fields=fields,
         insertid=self.insert_id(),
         query=query_string.decode(self.charset, 'ignore'),
-        result=result)
+        result=stored_result)
 
   def ServerInfo(self):
     """Returns a mysql specific set of server information"""
@@ -303,20 +303,17 @@ class Connection(_mysql.connection):
   def _SetCharacterSet(self, charset):
     """This sets the character set, refer to _GetCharacterSet for doc."""
     if charset != self._charset:
-      super(Connection, self).set_character_set(charset)
+      super(Connection, self).set_charset(charset)
       self._charset = charset
 
-  autocommit = property(_GetAutocommitState, _SetAutocommitState)
-  charset = property(_GetCharacterSet, _SetCharacterSet)
-
-  # Error classes taken from _mysql
-  Error = _mysql.Error
-  InterfaceError = _mysql.InterfaceError
-  DatabaseError = _mysql.DatabaseError
-  DataError = _mysql.DataError
-  OperationalError = _mysql.OperationalError
-  IntegrityError = _mysql.IntegrityError
-  InternalError = _mysql.InternalError
-  ProgrammingError = _mysql.ProgrammingError
-  NotSupportedError = _mysql.NotSupportedError
-  Warning = _mysql.Warning
+  # Error classes taken from PyMySQL
+  Error = pymysql.Error
+  InterfaceError = pymysql.InterfaceError
+  DatabaseError = pymysql.DatabaseError
+  DataError = pymysql.DataError
+  OperationalError = pymysql.OperationalError
+  IntegrityError = pymysql.IntegrityError
+  InternalError = pymysql.InternalError
+  ProgrammingError = pymysql.ProgrammingError
+  NotSupportedError = pymysql.NotSupportedError
+  Warning = pymysql.Warning

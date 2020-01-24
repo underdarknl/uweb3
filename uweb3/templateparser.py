@@ -244,7 +244,7 @@ class Template(list):
         )+)?                        # end of function block
       \])                         # end of tag""",
       re.VERBOSE)
-
+  
   def __init__(self, raw_template, parser=None):
     """Initializes a Template from a string.
 
@@ -321,6 +321,7 @@ class Template(list):
 
     The template is parsed by parsing each of its members and combining that.
     """
+    
     return HTMLsafestring(''.join(tag.Parse(**kwds) for tag in self))
 
   @classmethod
@@ -358,6 +359,7 @@ class Template(list):
   # ############################################################################
   # Template syntax constructs
   #
+    
   def _TemplateConstructInline(self, name):
     """Processing for {{ inline }} template syntax."""
     self.AddFile(name)
@@ -456,6 +458,7 @@ class FileTemplate(Template):
     if self.parser and self.parser.noparse:
       return {'template': self._template_path,
               'replacements': kwds}
+
     return super(FileTemplate, self).Parse(**kwds)
 
   def ReloadIfModified(self):
@@ -692,6 +695,7 @@ class TemplateTag(object):
     self.name = name
     self.indices = indices
     self.functions = functions
+  
 
   def __repr__(self):
     return '%s(%r)' % (type(self).__name__, str(self))

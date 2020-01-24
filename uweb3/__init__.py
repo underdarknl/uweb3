@@ -120,7 +120,7 @@ class uWeb(object):
     print('Running µWeb3 server on http://{}:{}'.format(server.server_address[0],server.server_address[1]))
     try:
       if hot_reloading:
-        HotReload()
+        HotReload(self.config['development'].get('dev', 'False'))
       server.serve_forever()
     except:
       server.shutdown()
@@ -206,9 +206,13 @@ def router(routes):
 
 
 class HotReload(object):
-    def __init__(self, interval=1):
+    def __init__(self, dev, interval=1):
       self.running = threading.Event()
       self.interval = interval
+      self.path = os.getcwd()
+      if dev:
+        from pathlib import Path
+        self.path = str(Path(self.path).parents[1])
       self.thread = threading.Thread(target=self.run, args=())
       self.thread.daemon = True
       self.thread.start()
@@ -222,12 +226,11 @@ class HotReload(object):
       @ .ini
       @ .md
       """
-      path = os.getcwd()
       WATCHED_FILES = [__file__]
 
-      for r, d, f in os.walk(path):
+      for r, d, f in os.walk(self.path):
         for file in f:
-          name, ext = os.path.splitext(file)
+          ext = os.path.splitext(file)[1]
           if ext not in (".pyc", '.ini', '.md', ):
             WATCHED_FILES.append(os.path.join(r, file))
             
@@ -236,7 +239,7 @@ class HotReload(object):
       while True:
           for f, mtime in WATCHED_FILES_MTIMES:
               if os.path.getmtime(f) != mtime:
-                print("Restarting µWeb3...")
+                print('{color}Detected changes in {file}\x1b[0m \nRestarting µWeb3'.format(color='\x1b[7;30;41m', file=f))
                 self.running.clear()
                 os.execl(sys.executable, sys.executable, * sys.argv)
           time.sleep(self.interval)

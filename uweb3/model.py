@@ -112,7 +112,7 @@ class BaseRecord(dict):
     this function will raise an error in the situations where it is not.
     """
     key_val = self._ValueOrPrimary(self.key)
-    if not isinstance(key_val, (int, long)):
+    if not isinstance(key_val, (int)):
       # We should not truncate floating point numbers.
       # Nor turn strings of numbers into an integer.
       raise ValueError('The primary key is not an integral number.')
@@ -130,7 +130,7 @@ class BaseRecord(dict):
   def __str__(self):
     return '%s({%s})' % (
         self.__class__.__name__,
-        ', '.join('%r: %r' % item for item in self.iteritems()))
+        ', '.join('%r: %r' % item for item in self.items()))
 
   def copy(self):
     """Returns a shallow copy of the Record that is a new functional Record."""
@@ -331,7 +331,7 @@ class BaseRecord(dict):
     For any Record object present, its primary key value (`Record.key`) is used.
     """
     sql_record = {}
-    for key, value in super(BaseRecord, self).iteritems():
+    for key, value in super(BaseRecord, self).items():
       sql_record[key] = self._ValueOrPrimary(value)
     return sql_record
 
@@ -486,7 +486,7 @@ class Record(BaseRecord):
     """
     def GetRecordClass(cls):
       """Returns the record class or loads it from its string name"""
-      if isinstance(cls, basestring):
+      if isinstance(cls, str):
         try:
           cls = getattr(sys.modules[self.__module__], cls)
         except AttributeError:
@@ -582,7 +582,7 @@ class Record(BaseRecord):
     relation_value = parent.connection.EscapeValues(cls._ValueOrPrimary(parent))
     qry_conditions = ['`%s` = %s' % (relation_field, relation_value)]
     if conditions:
-      if isinstance(conditions, basestring):
+      if isinstance(conditions, str):
         qry_conditions.append(conditions)
       else:
         qry_conditions.extend(conditions)
@@ -693,7 +693,7 @@ class Record(BaseRecord):
 
   def _SaveForeign(self, cursor):
     """Recursively saves all nested Record instances."""
-    for value in super(Record, self).itervalues():
+    for value in super(Record, self).items():
       if isinstance(value, Record):
         # Accessing protected members of a foreign class. Also, the only means
         # of recursively saving the record tree without opening multiple
@@ -995,9 +995,10 @@ class MongoRecord(BaseRecord):
 
   @classmethod
   def FromPrimary(cls, connection, pkey_value):
-    from pymongo import objectid
-    if not isinstance(pkey_value, objectid.ObjectId):
-      pkey_value = objectid.ObjectId(pkey_value)
+    from bson.objectid import ObjectId
+    
+    if not isinstance(pkey_value, ObjectId):
+      pkey_value = ObjectId(pkey_value)
     collection = cls.Collection(connection)
     record = collection.find({cls._PRIMARY_KEY: pkey_value})
     if not record:
@@ -1146,7 +1147,7 @@ def RecordToDict(record, complete=False, recursive=False):
     """
   record_dict = {}
   record = record if complete else dict(record)
-  for key, value in record.iteritems():
+  for key, value in record.items():
     if isinstance(value, Record):
       if complete and recursive:
         record_dict[key] = RecordToDict(value, complete=True, recursive=True)

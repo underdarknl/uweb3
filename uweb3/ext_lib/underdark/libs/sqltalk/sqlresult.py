@@ -76,7 +76,7 @@ class ResultRow(object):
         return self._values[key]
       else:
         return self._values[self._fields.index(key)]
-    except (LookupError, ValueError), message:
+    except (LookupError, ValueError) as message:
       raise FieldError(message)
 
   def __repr__(self):
