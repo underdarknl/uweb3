@@ -207,9 +207,12 @@ def router(routes):
 
 class HotReload(object):
     def __init__(self, dev, interval=1):
-      self.dev = dev
       self.running = threading.Event()
       self.interval = interval
+      self.path = os.getcwd()
+      if dev:
+        from pathlib import Path
+        self.path = str(Path(self.path).parents[1])
       self.thread = threading.Thread(target=self.run, args=())
       self.thread.daemon = True
       self.thread.start()
@@ -223,13 +226,9 @@ class HotReload(object):
       @ .ini
       @ .md
       """
-      path = os.getcwd()
-      if self.dev:
-        from pathlib import Path
-        path = str(Path(path).parents[1])
       WATCHED_FILES = [__file__]
 
-      for r, d, f in os.walk(path):
+      for r, d, f in os.walk(self.path):
         for file in f:
           ext = os.path.splitext(file)[1]
           if ext not in (".pyc", '.ini', '.md', ):
