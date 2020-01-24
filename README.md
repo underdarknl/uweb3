@@ -38,19 +38,6 @@ cd uweb3/scaffold
 python3 serve.py
 ```
 
-# µWeb3 database setup
-
-Setting up a database connection with µWeb3 is easy, navigate to the settings.ini file in the scaffold folder and add the following fields to the file:
-``` 
-[mysql] OR [sqlite]
-host = 'host'
-user = 'username'
-password = 'pass'
-database = 'dbname'
-```
-To access your database connection simply use the connection attribute in any class that inherits from PageMaker.
-
-
 ## Ubuntu issues
 On some ubuntu setups venv is broken and therefore does not install the activation scripts.
 
@@ -64,3 +51,34 @@ source env/bin/activate
 
 # then proceed to install µWeb3 like before.
 ```
+
+# µWeb3 database setup
+
+Setting up a database connection with µWeb3 is easy, navigate to the settings.ini file in the scaffold folder and add the following fields to the file:
+``` 
+[mysql] OR [sqlite]
+host = 'host'
+user = 'username'
+password = 'pass'
+database = 'dbname'
+```
+To access your database connection simply use the connection attribute in any class that inherits from PageMaker.
+
+# Config settings
+If you are working on µWeb3 core make sure to enable the following setting in the config:
+``` 
+[development]
+dev = True
+```
+This makes sure that µWeb3 restarts every time you modify something in the core of the framework aswell.
+
+µWeb3 also has an inbuild protection for XSRF. To make use of it enable the following setting in the config: 
+```
+[security]
+xsrf_enabled = True
+```
+Now on every request it checks if there is a XSRF cookie in place. If there is no cookie it will create one.
+Every post request it will validate the first input field with the tag 'xsrf'. 
+If the cookie and the post request match the 'incorrect_xsrf_token' flag will stay on the default(False). 
+If however they do not match this flag will be set to True. 
+To secure your routes make sure to decorate them with the 'checkxsrf' decorator.
