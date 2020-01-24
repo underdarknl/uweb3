@@ -5,24 +5,15 @@ import uweb3
 from uweb3 import PageMaker
 from uweb3.pagemaker.new_login import Users
 from uweb3 import templateparser
-import os
-
-
 
 class UserPageMaker(PageMaker):
   """Holds all the request handlers for the application"""
-  def crsf(self, input):
-    token = Users.CreateCRSFToken('10')
-    self.req.AddCookie('crsf', token)
-    return '<input type="hidden" value="{}" name="crsf">'.format(token)
-  
   def Login(self):
-    self.parser.RegisterFunction('crsf', self.crsf)
     """Returns the index template"""
     if self.cookies.get('login'):
       if Users.ValidateUserCookie(self.cookies.get('login')):
         print("Validated user based on cookie")
-
+            
     if self.req.method == 'POST':
       try:
         user = Users.FromName(self.connection, self.post.form.get('username'))._record
