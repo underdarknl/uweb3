@@ -13,6 +13,7 @@ from base64 import b64encode
 # Package modules
 from .. import response
 from .. import templateparser
+from .new_login import Users
 
 RFC_1123_DATE = '%a, %d %b %Y %T GMT'
 
@@ -211,8 +212,17 @@ class BasePageMaker(object):
       self.incorrect_xsrf_token = Xsrf(self.cookies, self.req, self.post)
     else:
       self.incorrect_xsrf_token = False
+    self.user = self._GetUserLoggedIn()
+    print(self.user)
 
 
+  def _GetUserLoggedIn(self):
+    """Checks if user is logged in based on cookie"""
+    user = Users.ValidateUserCookie(self.cookies.get('login'))
+    if not user:
+      return None
+    return Users(None, {'id': user})
+    
   @classmethod
   def loadModules(self, default_routes='routes', excluded_files=('__init__', '.pyc')):
     """Loops over all .py(except __init__) files in target directory

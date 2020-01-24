@@ -76,6 +76,9 @@ class Users(model.Record):
   def ValidateUserCookie(cls, cookie):
     from ast import literal_eval
     
+    if not cookie:
+      return None
+    
     try:
       data = cookie.rsplit('+', 1)[1]
       data = literal_eval(data)
