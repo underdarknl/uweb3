@@ -230,7 +230,11 @@ class BasePageMaker(object):
   
   def _GetUserLoggedIn(self):
     """Checks if user is logged in based on cookie"""
-    user = Users.ValidateUserCookie(self.cookies.get('login'))
+    try:
+      user = Users.ValidateUserCookie(self.cookies.get('login'))
+    except Exception:
+      self.req.DeleteCookie('login')
+      return None
     if not user:
       return None
     return Users(None, {'id': user})

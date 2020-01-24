@@ -134,6 +134,14 @@ class Request(object):
 
   def AddHeader(self, name, value):
     self.response.headers[name] = value
+    
+  def DeleteCookie(self, name):
+    """Deletes cookie by name
+    
+    Arguments
+    @ name: str
+    """
+    self.AddHeader('Set-Cookie', '{}=deleted; expires=Thu, 01 Jan 1970 00:00:00 GMT;'.format(name))
 
 
 class IndexedFieldStorage(cgi.FieldStorage):

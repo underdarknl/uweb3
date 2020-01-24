@@ -99,8 +99,9 @@ After creating your pagemaker be sure to add the route endpoint to routes list i
     - Validates the xsrf token in a post request if the enable_xsrf flag is set in the config.ini
 - In requests:
   - Self.method attribute
-  - Method called Redirect #Moved from the response class to the request class so cookies that are set before a redirect are actually set.
   - self.post.form attribute. This is the post request as a dict, includes blank values.
+  - Method called Redirect #Moved from the response class to the request class so cookies that are set before a redirect are actually set.
+  - Method called DeleteCookie
 - In pagemaker/new_login Users class:
   - Create user
   - Find user by name

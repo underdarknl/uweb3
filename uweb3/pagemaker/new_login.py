@@ -10,6 +10,8 @@ class UserCookieInvalidError(Exception):
 class Users(model.Record):
   """ """
   salt = "SomeSaltyBoi"
+  cookie_salt = "SomeSaltyCookie"
+  
   UserCookieInvalidError = UserCookieInvalidError
 
   @classmethod
@@ -58,7 +60,7 @@ class Users(model.Record):
     if not isinstance(user_id, str):
       raise ValueError('UserID must be a string')
     
-    hashed = (user_id + cls.salt).encode('utf-8')
+    hashed = (user_id + cls.cookie_salt).encode('utf-8')
     h = hashlib.new('ripemd160')
     h.update(hashed)
     return '{}+{}'.format(h.hexdigest(), { 
@@ -68,7 +70,6 @@ class Users(model.Record):
   @classmethod
   def ValidateUserCookie(cls, cookie):
     from ast import literal_eval
-    
     if not cookie:
       return None
     
@@ -81,7 +82,9 @@ class Users(model.Record):
 
     if not user_id:
       raise cls.UserCookieInvalidError("Could not get id from cookie")
+
     if cookie != cls.CreateValidationCookieHash(str(user_id)):
+      print("invalid cookie")
       raise cls.UserCookieInvalidError("Invalid cookie")
     
     return user_id
