@@ -5,7 +5,6 @@ import uweb3
 from uweb3 import PageMaker
 from uweb3.pagemaker.new_login import Users
 from uweb3 import templateparser
-from uweb3.response import Response
 
 class UserPageMaker(PageMaker):
   """Holds all the request handlers for the application"""
@@ -26,5 +25,4 @@ class UserPageMaker(PageMaker):
           print('Wrong username/password combination')      
       except uweb3.model.NotExistError as e:
         print(e)
-    print('redirect')
-    return self.parser.Parse('login.html', xsrf=11)
+    return self.parser.Parse('login.html', xsrf=self.xsrf_token)

@@ -145,7 +145,7 @@ class MimeTypeDict(dict):
       self.update(kwargs)
 
 
-class Xsrf(object):
+class XSRF(object):
   
   def __new__(cls, cookies, req, post):
     """Checks if cookie with xsrf key is present. 
@@ -157,13 +157,14 @@ class Xsrf(object):
     xsrf = cookies.get('xsrf')
     
     if not xsrf:
-      token = Xsrf.Generate_random_xsrf()
-      req.AddCookie('xsrf', token)
+      print("no xsrf existing. Generating one")
+      xsrf = XSRF.Generate_random_xsrf()
+      req.AddCookie('xsrf', xsrf)
     
     if req.method == 'POST':
-      return Xsrf.Validate_xsrf(xsrf, post)
-      
-    return False
+      return (XSRF.Validate_xsrf(xsrf, post), xsrf)
+    
+    return (False, xsrf)
   
   @staticmethod
   def Generate_random_xsrf():
@@ -199,6 +200,7 @@ class BasePageMaker(object):
         Configuration for the pagemaker, with database connection information
         and other settings. This will be available through `self.options`.
     """
+    
     self.__SetupPaths()
     self.req = req
     self.cookies = req.vars['cookie']
@@ -210,8 +212,11 @@ class BasePageMaker(object):
     #Check if the xrsf flag is enabled in the config
     #If so we enable xsrf validation
     #If not we set the token to be always valid
+    self.xsrf_token = None
     if config.get('security').get('xsrf_enabled'):
-      self.incorrect_xsrf_token = Xsrf(self.cookies, self.req, self.post)
+      response, token = XSRF(self.cookies, self.req, self.post)
+      self.xsrf_token = token
+      self.incorrect_xsrf_token = response
     else:
       self.incorrect_xsrf_token = False
     self.user = self._GetUserLoggedIn()
@@ -362,12 +367,8 @@ class BasePageMaker(object):
     if 'xsrf' in self.cookies:
       return self.cookies['xsrf']
     
-  def CommonBlocks(self, title, page_id=None, scripts=None, adminscripts=None):
+  def CommonBlocks(self, title, page_id=None, scripts=None):
     """Returns a dictionary with the header and footer in it."""
-    admin = False
-    if self.user and not self.user['clientNumber']:
-      admin = True
-
     if not page_id:
       page_id = title.replace(' ', '_').lower()
       
@@ -376,8 +377,7 @@ class BasePageMaker(object):
                 ),
             'footer': self.parser.Parse(
                 'footer.html', year=time.strftime('%Y'), user=self.user,
-                admin=admin, page_id=page_id, scripts=scripts,
-                adminscripts=adminscripts
+                page_id=page_id, scripts=scripts
                 ),
             'page_id': page_id,
             'xsrftoken': self._GetXSRF(),

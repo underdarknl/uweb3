@@ -9,7 +9,7 @@ class Test(PageMaker):
   """Holds all the request handlers for the application"""
   
   @loggedin
-  # @checkxsrf
+  @checkxsrf
   def Test(self):
     """Returns the index template"""
     return self.parser.Parse('test.html')
