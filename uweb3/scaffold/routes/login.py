@@ -26,5 +26,5 @@ class UserPageMaker(PageMaker):
           print('Wrong username/password combination')      
       except uweb3.model.NotExistError as e:
         print(e)
-
+    
     return self.parser.Parse('login.html', xsrf=11)
