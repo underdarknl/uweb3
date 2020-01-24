@@ -2,11 +2,13 @@
 """uWeb3 PageMaker class and its various Mixins."""
 
 # Standard modules
+import time
 import datetime
 import mimetypes
 import os
 import sys
 import threading
+import uweb3
 from base64 import b64encode
 
 
@@ -213,9 +215,14 @@ class BasePageMaker(object):
     else:
       self.incorrect_xsrf_token = False
     self.user = self._GetUserLoggedIn()
-    print(self.user)
 
-
+  def XSRFInvalidToken(self, command):
+    """Returns an error message regarding an incorrect XSRF token."""
+    page_data = self.parser.Parse('403.html', error=command,
+                                  **self.CommonBlocks('Invalid XSRF token'))
+  
+    return uweb3.Response(content=page_data, httpcode=403)
+  
   def _GetUserLoggedIn(self):
     """Checks if user is logged in based on cookie"""
     user = Users.ValidateUserCookie(self.cookies.get('login'))
@@ -350,6 +357,31 @@ class BasePageMaker(object):
     message = 'This is not the path you\'re looking for. No such file %r' % (
       self.req.path)
     return response.Response(message, content_type='text/plain', httpcode=404)
+  
+  def _GetXSRF(self):
+    if 'xsrf' in self.cookies:
+      return self.cookies['xsrf']
+    
+  def CommonBlocks(self, title, page_id=None, scripts=None, adminscripts=None):
+    """Returns a dictionary with the header and footer in it."""
+    admin = False
+    if self.user and not self.user['clientNumber']:
+      admin = True
+
+    if not page_id:
+      page_id = title.replace(' ', '_').lower()
+      
+    return {'header': self.parser.Parse(
+                'header.html', title=title, page_id=page_id, user=self.user
+                ),
+            'footer': self.parser.Parse(
+                'footer.html', year=time.strftime('%Y'), user=self.user,
+                admin=admin, page_id=page_id, scripts=scripts,
+                adminscripts=adminscripts
+                ),
+            'page_id': page_id,
+            'xsrftoken': self._GetXSRF(),
+            }
 
 
 class DebuggerMixin(object):
