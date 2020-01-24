@@ -360,6 +360,9 @@ class Template(list):
   # Template syntax constructs
   #
     
+  def _TemplateConstructXsrf(self, value):
+    self.AddString('<input type="hidden" value="{}" name="xsrf" />'.format(value))
+    
   def _TemplateConstructInline(self, name):
     """Processing for {{ inline }} template syntax."""
     self.AddFile(name)

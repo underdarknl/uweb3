@@ -82,3 +82,5 @@ Every post request it will validate the first input field with the tag 'xsrf'.
 If the cookie and the post request match the 'incorrect_xsrf_token' flag will stay on the default(False). 
 If however they do not match this flag will be set to True. 
 To secure your routes make sure to decorate them with the 'checkxsrf' decorator.
+
+To automaticly generate a hidden input with a xsrf token make use of the {{ xsrf [variable_with_xsrf_token]}} function.
