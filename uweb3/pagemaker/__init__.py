@@ -7,6 +7,8 @@ import mimetypes
 import os
 import sys
 import threading
+from base64 import b64encode
+
 
 # Package modules
 from .. import response
@@ -140,6 +142,37 @@ class MimeTypeDict(dict):
       self.update(kwargs)
 
 
+class Xsrf(object):
+  
+  def __new__(cls, cookies, req, post):
+    """Checks if cookie with xsrf key is present. 
+    
+    If not generates xsrf token and places it in a cookie.
+    Checks if xsrf token in post is equal to the one in the cookie and returns
+    True when they do not match and False when they do match for the 'incorrect_xsrf_token' flag.
+    """
+    xsrf = cookies.get('xsrf')
+    
+    if not xsrf:
+      token = Xsrf.Generate_random_xsrf()
+      req.AddCookie('xsrf', token)
+    
+    if req.method == 'POST':
+      return Xsrf.Validate_xsrf(xsrf, post)
+      
+    return False
+  
+  @staticmethod
+  def Generate_random_xsrf():
+    random_bytes = os.urandom(64)
+    return b64encode(random_bytes).decode('utf-8')
+  
+  @staticmethod
+  def Validate_xsrf(xsrf, post):
+    if str(xsrf) != post.getfirst('xsrf'):
+      return True
+    return False
+    
 class BasePageMaker(object):
   """Provides the base pagemaker methods for all the html generators."""
   # Constant for persistent storage accross requests. This will be accessible
@@ -171,6 +204,14 @@ class BasePageMaker(object):
     self.options = config or {}
     self.persistent = self.PERSISTENT
     self.post.form = { item.name: item.value for item in req.vars['post'].value } if bool(req.vars['post'].value) else None
+    #Check if the xrsf flag is enabled in the config
+    #If so we enable xsrf validation
+    #If not we set the token to be always valid
+    if config.get('security').get('xsrf_enabled'):
+      self.incorrect_xsrf_token = Xsrf(self.cookies, self.req, self.post)
+    else:
+      self.incorrect_xsrf_token = False
+
 
   @classmethod
   def loadModules(self, default_routes='routes', excluded_files=('__init__', '.pyc')):

@@ -120,7 +120,7 @@ class uWeb(object):
     print('Running µWeb3 server on http://{}:{}'.format(server.server_address[0],server.server_address[1]))
     try:
       if hot_reloading:
-        HotReload()
+        HotReload(self.config['development'].get('dev', 'False'))
       server.serve_forever()
     except:
       server.shutdown()
@@ -206,7 +206,8 @@ def router(routes):
 
 
 class HotReload(object):
-    def __init__(self, interval=1):
+    def __init__(self, dev, interval=1):
+      self.dev = dev
       self.running = threading.Event()
       self.interval = interval
       self.thread = threading.Thread(target=self.run, args=())
@@ -223,6 +224,9 @@ class HotReload(object):
       @ .md
       """
       path = os.getcwd()
+      if self.dev:
+        from pathlib import Path
+        path = str(Path(path).parents[1])
       WATCHED_FILES = [__file__]
 
       for r, d, f in os.walk(path):
