@@ -8,7 +8,7 @@ from uweb3.pagemaker.new_decorators import loggedin, checkxsrf
 class Test(PageMaker):
   """Holds all the request handlers for the application"""
   
-  # @loggedin
+  @loggedin
   # @checkxsrf
   def Test(self):
     """Returns the index template"""
