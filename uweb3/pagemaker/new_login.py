@@ -64,13 +64,6 @@ class Users(model.Record):
     return '{}+{}'.format(h.hexdigest(), { 
                                           'id': user_id,
                                           })
-
-  @classmethod
-  def CreateCRSFToken(cls, userInput):
-    hashed = (userInput + cls.salt).encode('utf-8')
-    h = hashlib.new('ripemd160')
-    h.update(hashed)
-    return h.hexdigest()
   
   @classmethod
   def ValidateUserCookie(cls, cookie):

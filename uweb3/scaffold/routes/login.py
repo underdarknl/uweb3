@@ -4,7 +4,6 @@
 import uweb3
 from uweb3 import PageMaker
 from uweb3.pagemaker.new_login import Users
-from uweb3 import templateparser
 
 class UserPageMaker(PageMaker):
   """Holds all the request handlers for the application"""

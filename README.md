@@ -84,3 +84,32 @@ If however they do not match this flag will be set to True.
 To secure your routes make sure to decorate them with the 'checkxsrf' decorator.
 
 To automaticly generate a hidden input with a xsrf token make use of the {{ xsrf [variable_with_xsrf_token]}} function.
+
+# Routing
+The default way to create new routes in µWeb3 is to create a folder called routes. 
+In the routes folder create your pagemaker class of choice, the name doesn't matter as long as it inherits from PageMaker.
+After creating your pagemaker be sure to add the route endpoint to routes list in base/__init__.py. 
+
+# Added by me so you know who to blame when shit breaks:
+- In uweb3 __init__ a class called HotReload
+- In pagemaker __init__:
+  - A classmethod called loadModules that loads all pagemaker modules inheriting from PageMaker class
+  - A XSRF class
+    - Generates a xsrf token and creates a cookie if not in place
+    - Validates the xsrf token in a post request if the enable_xsrf flag is set in the config.ini
+- In requests:
+  - Self.method attribute
+  - Method called Redirect #Moved from the response class to the request class so cookies that are set before a redirect are actually set.
+- In pagemaker/new_login Users class:
+  - Create user
+  - Find user by name
+  - Create a cookie with userID + secret
+  - Validate if user messed with given cookie and render it useless if so
+- In pagemaker/new_decorators:
+  - Loggedin decorator that validates if user is loggedin based on cookie with userid
+  - Checkxsrf decorator that checks if the incorrect_xsrf_token flag is set
+- In templatepaser:
+  - A function called _TemplateConstructXsrf that generates a hidden input field with the supplied value: {{ xsrf [xsrf_variable]}}
+- In libs/sqltalk
+  - Tried to make sqltalk python3 compatible by removing references to: long, unicode and basestring
+  - So far so good but it might crash on functions that I didn't use yet
