@@ -15,7 +15,6 @@ import re
 
 # uWeb modules
 from . import response
-
   
 class Cookie(cookie.SimpleCookie):
   """Cookie class that uses the most specific value for a cookie name.
@@ -74,6 +73,23 @@ class Request(object):
     if self._response is None:
       self._response = response.Response()
     return self._response
+  
+  def Redirect(self, location, http_code=307):
+    REDIRECT_PAGE = ('<!DOCTYPE html><html><head><title>Page moved</title></head>'
+                   '<body>Page moved, please follow <a href="{}">this link</a>'
+                   '</body></html>').format(location)
+    
+    headers = {'Location': location}
+    if self.response.headers.get('Set-Cookie'):
+      headers['Set-Cookie'] = self.response.headers.get('Set-Cookie')
+      
+    return response.Response(
+      content=REDIRECT_PAGE, 
+      content_type=self.response.headers.get('Content-Type', 'text/html'), 
+      httpcode=http_code, 
+      headers=headers
+      )
+    
 
   def headers_from_env(self, env):
     for key, value in env.items():

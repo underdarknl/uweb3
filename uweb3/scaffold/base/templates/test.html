@@ -16,22 +16,18 @@
   <header>
     <div>
       <div class="logo">
-        <a href="/">Uweb3</a>
+        <a href="/">Test page</a>
         <p>Lorem ipsum dolor sit amet</p>
       </div>
-      <form class="login" method='post'>
-        {{xsrf [xsrf]}}
-        <div>
-          <label for="username">Username</label>
-          <input type="text" id="username" name="username">
-        </div>
-        <div>
-          <label for="password">Password</label>
-          <input type="password" id="password" name="password">
-        </div>
-        <input type="submit" value="Log in">
-      </form>
-      <button class="toggle">Menu</button>
+      <nav>
+        <ul class="external">
+          <li><a href="//underdark.nl">Underdark.nl</a></li>
+        </ul>
+        <ul>
+          <li><a href="/logout">Logout</a></li>
+        </ul>
+      </nav>
+      <button class="toggle">Toggle</button>
     </div>
   </header>
 </body>

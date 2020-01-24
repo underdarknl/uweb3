@@ -112,7 +112,7 @@ class uWeb(object):
     except (NoRouteError, Exception):
       return page_maker.InternalServerError(*sys.exc_info())
 
-  def serve(self, hot_reloading=False):
+  def serve(self, hot_reloading=True):
     """Sets up and starts WSGI development server for the current app."""
     host = self.config['development'].get('host', 'localhost')
     port = self.config['development'].get('port', 8001)

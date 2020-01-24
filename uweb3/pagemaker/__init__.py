@@ -2,17 +2,20 @@
 """uWeb3 PageMaker class and its various Mixins."""
 
 # Standard modules
+import time
 import datetime
 import mimetypes
 import os
 import sys
 import threading
+import uweb3
 from base64 import b64encode
 
 
 # Package modules
 from .. import response
 from .. import templateparser
+from .new_login import Users
 
 RFC_1123_DATE = '%a, %d %b %Y %T GMT'
 
@@ -142,7 +145,7 @@ class MimeTypeDict(dict):
       self.update(kwargs)
 
 
-class Xsrf(object):
+class XSRF(object):
   
   def __new__(cls, cookies, req, post):
     """Checks if cookie with xsrf key is present. 
@@ -154,13 +157,14 @@ class Xsrf(object):
     xsrf = cookies.get('xsrf')
     
     if not xsrf:
-      token = Xsrf.Generate_random_xsrf()
-      req.AddCookie('xsrf', token)
+      print("no xsrf existing. Generating one")
+      xsrf = XSRF.Generate_random_xsrf()
+      req.AddCookie('xsrf', xsrf)
     
     if req.method == 'POST':
-      return Xsrf.Validate_xsrf(xsrf, post)
-      
-    return False
+      return (XSRF.Validate_xsrf(xsrf, post), xsrf)
+    
+    return (False, xsrf)
   
   @staticmethod
   def Generate_random_xsrf():
@@ -196,6 +200,7 @@ class BasePageMaker(object):
         Configuration for the pagemaker, with database connection information
         and other settings. This will be available through `self.options`.
     """
+    
     self.__SetupPaths()
     self.req = req
     self.cookies = req.vars['cookie']
@@ -207,12 +212,29 @@ class BasePageMaker(object):
     #Check if the xrsf flag is enabled in the config
     #If so we enable xsrf validation
     #If not we set the token to be always valid
+    self.xsrf_token = None
     if config.get('security').get('xsrf_enabled'):
-      self.incorrect_xsrf_token = Xsrf(self.cookies, self.req, self.post)
+      response, token = XSRF(self.cookies, self.req, self.post)
+      self.xsrf_token = token
+      self.incorrect_xsrf_token = response
     else:
       self.incorrect_xsrf_token = False
+    self.user = self._GetUserLoggedIn()
 
-
+  def XSRFInvalidToken(self, command):
+    """Returns an error message regarding an incorrect XSRF token."""
+    page_data = self.parser.Parse('403.html', error=command,
+                                  **self.CommonBlocks('Invalid XSRF token'))
+  
+    return uweb3.Response(content=page_data, httpcode=403)
+  
+  def _GetUserLoggedIn(self):
+    """Checks if user is logged in based on cookie"""
+    user = Users.ValidateUserCookie(self.cookies.get('login'))
+    if not user:
+      return None
+    return Users(None, {'id': user})
+    
   @classmethod
   def loadModules(self, default_routes='routes', excluded_files=('__init__', '.pyc')):
     """Loops over all .py(except __init__) files in target directory
@@ -340,6 +362,26 @@ class BasePageMaker(object):
     message = 'This is not the path you\'re looking for. No such file %r' % (
       self.req.path)
     return response.Response(message, content_type='text/plain', httpcode=404)
+  
+  def _GetXSRF(self):
+    if 'xsrf' in self.cookies:
+      return self.cookies['xsrf']
+    
+  def CommonBlocks(self, title, page_id=None, scripts=None):
+    """Returns a dictionary with the header and footer in it."""
+    if not page_id:
+      page_id = title.replace(' ', '_').lower()
+      
+    return {'header': self.parser.Parse(
+                'header.html', title=title, page_id=page_id, user=self.user
+                ),
+            'footer': self.parser.Parse(
+                'footer.html', year=time.strftime('%Y'), user=self.user,
+                page_id=page_id, scripts=scripts
+                ),
+            'page_id': page_id,
+            'xsrftoken': self._GetXSRF(),
+            }
 
 
 class DebuggerMixin(object):

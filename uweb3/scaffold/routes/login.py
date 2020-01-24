@@ -4,7 +4,6 @@
 import uweb3
 from uweb3 import PageMaker
 from uweb3.pagemaker.new_login import Users
-from uweb3 import templateparser
 
 class UserPageMaker(PageMaker):
   """Holds all the request handlers for the application"""
@@ -13,18 +12,16 @@ class UserPageMaker(PageMaker):
     if self.cookies.get('login'):
       if Users.ValidateUserCookie(self.cookies.get('login')):
         print("Validated user based on cookie")
-            
+        
     if self.req.method == 'POST':
       try:
         user = Users.FromName(self.connection, self.post.form.get('username'))._record
         if Users.ComparePassword(self.post.form.get('password'), user['password']):
-          print('Login')
           cookie = Users.CreateValidationCookieHash(user['id'])
           self.req.AddCookie('login', cookie)
-          # print(Users.ValidateUserCookie(cookie))
+          return self.req.Redirect('/test')
         else:
           print('Wrong username/password combination')      
       except uweb3.model.NotExistError as e:
         print(e)
-
-    return self.parser.Parse('login.html', test=11)
+    return self.parser.Parse('login.html', xsrf=self.xsrf_token)

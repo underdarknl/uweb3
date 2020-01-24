@@ -5,7 +5,7 @@ import base
 
 def main():
   app = base.main()
-  app.serve(hot_reloading=True)
+  app.serve()
 
 
 if __name__ == '__main__':
