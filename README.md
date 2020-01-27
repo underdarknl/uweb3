@@ -115,3 +115,11 @@ After creating your pagemaker be sure to add the route endpoint to routes list i
 - In libs/sqltalk
   - Tried to make sqltalk python3 compatible by removing references to: long, unicode and basestring
   - So far so good but it might crash on functions that I didn't use yet
+
+
+# Login validation
+Instead of using sessions to keep track of logged in users µWeb3 uses secure cookies. So how does this work?
+When a user logs in for the first time there is no cookie in place, to set one we go through the normal process of logging in.
+To create the cookie import the Users class, the users class has a method called `CreateValidationCookieHash` which is used to generate
+a hash which can be stored in a cookie. 
+This method takes a dictionary as input and the only key required is id. After calling this method be sure to store the hash in a cookie called which for now is called `login`. To validate if a user is logged in make use of the loggedin decorator, this decorator is found in the new_login file.   
