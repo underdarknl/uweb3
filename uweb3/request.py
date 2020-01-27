@@ -15,6 +15,9 @@ import re
 
 # uWeb modules
 from . import response
+
+class CookieToBigError(Exception):
+  """Error class for cookie when size is bigger than 4096 bytes"""
   
 class Cookie(cookie.SimpleCookie):
   """Cookie class that uses the most specific value for a cookie name.
@@ -126,6 +129,10 @@ class Request(object):
         When True, the cookie is only used for http(s) requests, and is not
         accessible through Javascript (DOM).
     """
+    if isinstance(value, (str)):
+      if len(value.encode('utf-8')) >= 4096:
+        raise CookieToBigError("Cookie is larger than 4096 bytes and wont be set")
+      
     new_cookie = Cookie({key: value})
     if 'max_age' in attrs:
       attrs['max-age'] = attrs.pop('max_age')
