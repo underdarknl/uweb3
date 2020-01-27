@@ -120,7 +120,10 @@ After creating your pagemaker be sure to add the route endpoint to routes list i
 
 # Login validation
 Instead of using sessions to keep track of logged in users µWeb3 uses secure cookies. So how does this work?
-When a user logs in for the first time there is no cookie in place, to set one we go through the normal process of logging in.
-To create the cookie import the Users class, the users class has a method called `CreateValidationCookieHash` which is used to generate
-a hash which can be stored in a cookie. 
-This method takes a dictionary as input and the only key required is id. After calling this method be sure to store the hash in a cookie called which for now is called `login`. To validate if a user is logged in make use of the loggedin decorator, this decorator is found in the new_login file.   
+When a user logs in for the first time there is no cookie in place, to set one we go through the normal process of validating a user and loggin in.
+
+Once the user is validated and allowed to login it is time to generate a secure cookie. The Users class has a method called `CreateValidationCookieHash`, this method will generate a cookie based on given input. The only requirement is passing an id and the rest is all optinal. After generating the hash for the cookie add it the clients cookies using the AddCookie method in the Request class, for now the cookie name has to be `login`. This method is accessible in any pagemaker using `self.req.AddCookie`. 
+
+If the login cookie is set you can validate a user with the loggedin decorator, this can be imported from pagemaker/new_login.py.
+
+If the cookie is edited/changed in any way it will be rendered useless because the hashes wont match. In this case an error will be raised and the user will be redirected to the 403 page. 
