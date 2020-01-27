@@ -8,7 +8,7 @@ from uweb3.pagemaker.new_login import Users
 class UserPageMaker(PageMaker):
   """Holds all the request handlers for the application"""
   def Login(self):
-    """Returns the index template"""        
+    """Returns the index template"""   
     if self.req.method == 'POST':
       try:
         user = Users.FromName(self.connection, self.post.form.get('username'))._record

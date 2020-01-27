@@ -15,20 +15,38 @@ class Users(model.Record):
   UserCookieInvalidError = UserCookieInvalidError
 
   @classmethod
-  def CreateNew(cls, connection, username, password):
+  def CreateNew(cls, connection, user):
+    """Creates new user if not existing
+    
+    Arguments:
+      @ connection: sqltalk database connection object
+      @ user: dict. username and password keys are required.   
+    Returns:
+      ValueError: if username/password are not set
+      AlreadyExistsError: if username already in database
+      Users: Users object when user is created
+    """
+    if not user.get('username'):
+      raise ValueError('Username required')
+    if not user.get('password'):
+      raise ValueError('Password required')
+
     try:
-      cls.FromName(connection, username)
-      return cls.AlreadyExistError("User with name '{}' already exists".format(username))
+      cls.FromName(connection, user.get('username'))
+      return cls.AlreadyExistError("User with name '{}' already exists".format(user.get('username')))
     except cls.NotExistError:
-      password = cls.__HashPassword(password).decode('utf-8')
-      return cls.Create(connection, {
-                              'username': username, 
-                              'password': password,
-                              })
+      user['password'] = cls.__HashPassword(user.get('password')).decode('utf-8')
+      return cls.Create(connection, user)
         
   @classmethod
   def FromName(cls, connection, username):
-    """Select a user from the database based on name"""
+    """Select a user from the database based on name
+    Arguments:
+      @ username: str
+    Returns:
+      NotExistError: raised when no user with given username found
+      Users: Users object with the connection and all relevant user data
+    """
     with connection as cursor:
       safe_name = connection.EscapeValues(username)
       user = cursor.Select(
@@ -83,7 +101,10 @@ class Users(model.Record):
   
   @classmethod
   def ValidateUserCookie(cls, cookie):
-    """Takes a cookie and validates it"""
+    """Takes a cookie and validates it
+    Arguments
+      @ str: A hashed cookie from the `CreateValidationCookieHash` method 
+    """
     from ast import literal_eval
     if not cookie:
       return None
