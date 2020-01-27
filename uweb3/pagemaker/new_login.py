@@ -10,23 +10,43 @@ class UserCookieInvalidError(Exception):
 class Users(model.Record):
   """ """
   salt = "SomeSaltyBoi"
+  cookie_salt = "SomeSaltyCookie"
+  
   UserCookieInvalidError = UserCookieInvalidError
 
   @classmethod
-  def CreateNew(cls, connection, username, password):
+  def CreateNew(cls, connection, user):
+    """Creates new user if not existing
+    
+    Arguments:
+      @ connection: sqltalk database connection object
+      @ user: dict. username and password keys are required.   
+    Returns:
+      ValueError: if username/password are not set
+      AlreadyExistsError: if username already in database
+      Users: Users object when user is created
+    """
+    if not user.get('username'):
+      raise ValueError('Username required')
+    if not user.get('password'):
+      raise ValueError('Password required')
+
     try:
-      cls.FromName(connection, username)
-      return cls.AlreadyExistError("User with name '{}' already exists".format(username))
+      cls.FromName(connection, user.get('username'))
+      return cls.AlreadyExistError("User with name '{}' already exists".format(user.get('username')))
     except cls.NotExistError:
-      password = cls.__HashPassword(password).decode('utf-8')
-      return cls.Create(connection, {
-                              'username': username, 
-                              'password': password,
-                              })
+      user['password'] = cls.__HashPassword(user.get('password')).decode('utf-8')
+      return cls.Create(connection, user)
         
   @classmethod
   def FromName(cls, connection, username):
-    """Select a user from the database based on name"""
+    """Select a user from the database based on name
+    Arguments:
+      @ username: str
+    Returns:
+      NotExistError: raised when no user with given username found
+      Users: Users object with the connection and all relevant user data
+    """
     with connection as cursor:
       safe_name = connection.EscapeValues(username)
       user = cursor.Select(
@@ -54,34 +74,52 @@ class Users(model.Record):
     return bcrypt.checkpw(password.encode('utf-8'), hashed)
   
   @classmethod
-  def CreateValidationCookieHash(cls, user_id):
-    if not isinstance(user_id, str):
-      raise ValueError('UserID must be a string')
+  def CreateValidationCookieHash(cls, data):
+    """Takes a non nested dictionary and turns it into a secure cookie.
+  
+    Required:
+      @ id: str/int 
+    Returns:
+      A string that is ready to be placed in a cookie. Hash and data are seperated by a + 
+    """
+    if not data.get('id'):
+      raise ValueError("id is required")
     
-    hashed = (user_id + cls.salt).encode('utf-8')
+    cookie_dict = {}
+    string_to_hash = ""
+    for key in data.keys():
+      if not isinstance(data[key], (str, int)):
+        raise ValueError('{} must be of type str or int'.format(data[key]))
+      value = str(data[key])
+      string_to_hash += value
+      cookie_dict[key] = value
+      
+    hashed = (string_to_hash + cls.cookie_salt).encode('utf-8')
     h = hashlib.new('ripemd160')
     h.update(hashed)
-    return '{}+{}'.format(h.hexdigest(), { 
-                                          'id': user_id,
-                                          })
+    return '{}+{}'.format(h.hexdigest(), cookie_dict)
   
   @classmethod
   def ValidateUserCookie(cls, cookie):
+    """Takes a cookie and validates it
+    Arguments
+      @ str: A hashed cookie from the `CreateValidationCookieHash` method 
+    """
     from ast import literal_eval
-    
     if not cookie:
       return None
     
     try:
       data = cookie.rsplit('+', 1)[1]
       data = literal_eval(data)
-      user_id = data.get('id', None)
     except Exception:
       raise cls.UserCookieInvalidError("Invalid cookie")
-
+    
+    user_id = data.get('id', None)
     if not user_id:
       raise cls.UserCookieInvalidError("Could not get id from cookie")
-    if cookie != cls.CreateValidationCookieHash(str(user_id)):
+    
+    if cookie != cls.CreateValidationCookieHash(data):
       raise cls.UserCookieInvalidError("Invalid cookie")
     
     return user_id

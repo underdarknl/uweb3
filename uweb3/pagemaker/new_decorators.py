@@ -1,5 +1,5 @@
 def loggedin(f):
-    """Decorator that checks if the user requesting the page is logged in."""
+    """Decorator that checks if the user requesting the page is logged in based on set cookie."""
     def wrapper(*args, **kwargs):
       if not args[0].user:
         return args[0].req.Redirect('/login')

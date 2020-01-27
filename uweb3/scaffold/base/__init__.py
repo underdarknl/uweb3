@@ -26,6 +26,7 @@ def main():
       ('/', 'Index'),
       ('/login', 'Login'),
       ('/test', 'Test'),
+      ('/logout', 'Logout'),
       ('/(.*)', 'FourOhFour'),
       ]
   

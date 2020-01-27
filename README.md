@@ -99,8 +99,10 @@ After creating your pagemaker be sure to add the route endpoint to routes list i
     - Validates the xsrf token in a post request if the enable_xsrf flag is set in the config.ini
 - In requests:
   - Self.method attribute
-  - Method called Redirect #Moved from the response class to the request class so cookies that are set before a redirect are actually set.
   - self.post.form attribute. This is the post request as a dict, includes blank values.
+  - Method called Redirect #Moved from the response class to the request class so cookies that are set before a redirect are actually set.
+  - Method called DeleteCookie
+  - A if statement that checks string like cookies and raises an error if the size is equal or bigger than 4096 bytes.
 - In pagemaker/new_login Users class:
   - Create user
   - Find user by name
@@ -114,3 +116,14 @@ After creating your pagemaker be sure to add the route endpoint to routes list i
 - In libs/sqltalk
   - Tried to make sqltalk python3 compatible by removing references to: long, unicode and basestring
   - So far so good but it might crash on functions that I didn't use yet
+
+
+# Login validation
+Instead of using sessions to keep track of logged in users µWeb3 uses secure cookies. So how does this work?
+When a user logs in for the first time there is no cookie in place, to set one we go through the normal process of validating a user and loggin in.
+
+Once the user is validated and allowed to login it is time to generate a secure cookie. The Users class has a method called `CreateValidationCookieHash`, this method will generate a cookie based on given input. The only requirement is passing an id and the rest is all optinal. After generating the hash for the cookie add it the clients cookies using the AddCookie method in the Request class, for now the cookie name has to be `login`. This method is accessible in any pagemaker using `self.req.AddCookie`. 
+
+If the login cookie is set you can validate a user with the loggedin decorator, this can be imported from pagemaker/new_login.py.
+
+If the cookie is edited/changed in any way it will be rendered useless because the hashes wont match. In this case an error will be raised and the user will be redirected to the 403 page. 
