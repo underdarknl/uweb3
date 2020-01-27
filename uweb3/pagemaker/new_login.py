@@ -66,7 +66,14 @@ class Users(model.Record):
   
   @classmethod
   def ComparePassword(cls, password, hashed):
-    """Check if passwords match"""
+    """Check if passwords match
+    
+    Arguments:
+      @ password: str
+      @ hashed: str password hash from users database table
+    Returns:
+      Boolean: True if match False if not
+    """
     if not isinstance(hashed, bytes):
       hashed = hashed.encode('utf-8')
       

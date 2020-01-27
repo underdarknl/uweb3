@@ -216,8 +216,7 @@ class HotReload(object):
       self.thread = threading.Thread(target=self.run, args=())
       self.thread.daemon = True
       self.thread.start()
-      
-                            
+                  
     def run(self):
       """ Method runs forever and watches all files in the project folder.
       
@@ -226,21 +225,28 @@ class HotReload(object):
       @ .ini
       @ .md
       """
-      WATCHED_FILES = [__file__]
-
+      self.WATCHED_FILES = self.getListOfFiles()[1]
+      WATCHED_FILES_MTIMES = [(f, os.path.getmtime(f)) for f in self.WATCHED_FILES]
+      
+      while True:
+        if len(self.WATCHED_FILES) != self.getListOfFiles()[0]:
+          print('{color}New file added or deleted\x1b[0m \nRestarting µWeb3'.format(color='\x1b[7;30;41m'))
+          self.restart()
+        for f, mtime in WATCHED_FILES_MTIMES:
+          if os.path.getmtime(f) != mtime:
+            print('{color}Detected changes in {file}\x1b[0m \nRestarting µWeb3'.format(color='\x1b[7;30;41m', file=f))
+            self.restart()
+        time.sleep(self.interval)
+          
+    def getListOfFiles(self):
+      watched_files = [__file__]
       for r, d, f in os.walk(self.path):
         for file in f:
           ext = os.path.splitext(file)[1]
           if ext not in (".pyc", '.ini', '.md', ):
-            WATCHED_FILES.append(os.path.join(r, file))
-            
-      WATCHED_FILES_MTIMES = [(f, os.path.getmtime(f)) for f in WATCHED_FILES]
+            watched_files.append(os.path.join(r, file))
+      return (len(watched_files), watched_files)   
       
-      while True:
-          for f, mtime in WATCHED_FILES_MTIMES:
-              if os.path.getmtime(f) != mtime:
-                print('{color}Detected changes in {file}\x1b[0m \nRestarting µWeb3'.format(color='\x1b[7;30;41m', file=f))
-                self.running.clear()
-                os.execl(sys.executable, sys.executable, * sys.argv)
-          time.sleep(self.interval)
-          
+    def restart(self):
+      self.running.clear()
+      os.execl(sys.executable, sys.executable, * sys.argv)   
