@@ -13,7 +13,7 @@ class UserPageMaker(PageMaker):
       try:
         user = Users.FromName(self.connection, self.post.form.get('username'))._record
         if Users.ComparePassword(self.post.form.get('password'), user['password']):
-          cookie = Users.CreateValidationCookieHash(**{'id': user['id'],
+          cookie = Users.CreateValidationCookieHash({'id': user['id'],
                                                        'premissions': 1,
                                                        'someothervalue': 'value',
                                                        'more_values': 'test',

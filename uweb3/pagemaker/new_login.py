@@ -56,7 +56,7 @@ class Users(model.Record):
     return bcrypt.checkpw(password.encode('utf-8'), hashed)
   
   @classmethod
-  def CreateValidationCookieHash(cls, **kwargs):
+  def CreateValidationCookieHash(cls, data):
     """Takes a non nested dictionary and turns it into a secure cookie.
   
     Required:
@@ -64,15 +64,15 @@ class Users(model.Record):
     Returns:
       A string that is ready to be placed in a cookie. Hash and data are seperated by a + 
     """
-    if not kwargs.get('id'):
+    if not data.get('id'):
       raise ValueError("id is required")
     
     cookie_dict = {}
     string_to_hash = ""
-    for key in kwargs.keys():
-      if not isinstance(kwargs[key], (str, int)):
-        raise ValueError('{} must be of type str or int'.format(kwargs[key]))
-      value = str(kwargs[key])
+    for key in data.keys():
+      if not isinstance(data[key], (str, int)):
+        raise ValueError('{} must be of type str or int'.format(data[key]))
+      value = str(data[key])
       string_to_hash += value
       cookie_dict[key] = value
       
@@ -98,7 +98,7 @@ class Users(model.Record):
     if not user_id:
       raise cls.UserCookieInvalidError("Could not get id from cookie")
     
-    if cookie != cls.CreateValidationCookieHash(**data):
+    if cookie != cls.CreateValidationCookieHash(data):
       raise cls.UserCookieInvalidError("Invalid cookie")
     
     return user_id
