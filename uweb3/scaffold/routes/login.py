@@ -13,7 +13,11 @@ class UserPageMaker(PageMaker):
       try:
         user = Users.FromName(self.connection, self.post.form.get('username'))._record
         if Users.ComparePassword(self.post.form.get('password'), user['password']):
-          cookie = Users.CreateValidationCookieHash(user['id'])
+          cookie = Users.CreateValidationCookieHash(**{'id': user['id'],
+                                                       'premissions': 1,
+                                                       'someothervalue': 'value',
+                                                       'more_values': 'test',
+                                                       })
           self.req.AddCookie('login', cookie)
           return self.req.Redirect('/test')
         else:
@@ -22,3 +26,7 @@ class UserPageMaker(PageMaker):
         print(e)
         
     return self.parser.Parse('login.html', xsrf=self.xsrf_token)
+
+  def Logout(self):
+    self.req.DeleteCookie('login')
+    return self.req.Redirect('/login')

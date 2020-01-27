@@ -56,19 +56,34 @@ class Users(model.Record):
     return bcrypt.checkpw(password.encode('utf-8'), hashed)
   
   @classmethod
-  def CreateValidationCookieHash(cls, user_id):
-    if not isinstance(user_id, str):
-      raise ValueError('UserID must be a string')
+  def CreateValidationCookieHash(cls, **kwargs):
+    """Takes a non nested dictionary and turns it into a secure cookie.
+  
+    Required:
+      @ id: str/int 
+    Returns:
+      A string that is ready to be placed in a cookie. Hash and data are seperated by a + 
+    """
+    if not kwargs.get('id'):
+      raise ValueError("id is required")
     
-    hashed = (user_id + cls.cookie_salt).encode('utf-8')
+    cookie_dict = {}
+    string_to_hash = ""
+    for key in kwargs.keys():
+      if not isinstance(kwargs[key], (str, int)):
+        raise ValueError('{} must be of type str or int'.format(kwargs[key]))
+      value = str(kwargs[key])
+      string_to_hash += value
+      cookie_dict[key] = value
+      
+    hashed = (string_to_hash + cls.cookie_salt).encode('utf-8')
     h = hashlib.new('ripemd160')
     h.update(hashed)
-    return '{}+{}'.format(h.hexdigest(), { 
-                                          'id': user_id,
-                                          })
+    return '{}+{}'.format(h.hexdigest(), cookie_dict)
   
   @classmethod
   def ValidateUserCookie(cls, cookie):
+    """Takes a cookie and validates it"""
     from ast import literal_eval
     if not cookie:
       return None
@@ -76,15 +91,14 @@ class Users(model.Record):
     try:
       data = cookie.rsplit('+', 1)[1]
       data = literal_eval(data)
-      user_id = data.get('id', None)
     except Exception:
       raise cls.UserCookieInvalidError("Invalid cookie")
-
+    
+    user_id = data.get('id', None)
     if not user_id:
       raise cls.UserCookieInvalidError("Could not get id from cookie")
-
-    if cookie != cls.CreateValidationCookieHash(str(user_id)):
-      print("invalid cookie")
+    
+    if cookie != cls.CreateValidationCookieHash(**data):
       raise cls.UserCookieInvalidError("Invalid cookie")
     
     return user_id

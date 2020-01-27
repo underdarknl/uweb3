@@ -157,7 +157,6 @@ class XSRF(object):
     xsrf = cookies.get('xsrf')
     
     if not xsrf:
-      print("no xsrf existing. Generating one")
       xsrf = XSRF.Generate_random_xsrf()
       req.AddCookie('xsrf', xsrf)
     
@@ -230,8 +229,11 @@ class BasePageMaker(object):
   
   def _GetUserLoggedIn(self):
     """Checks if user is logged in based on cookie"""
+    cookie = self.cookies.get('login')
+    if not cookie:
+      return None
     try:
-      user = Users.ValidateUserCookie(self.cookies.get('login'))
+      user = Users.ValidateUserCookie(cookie)
     except Exception:
       self.req.DeleteCookie('login')
       return None
