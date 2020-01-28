@@ -41,6 +41,7 @@ class SCookie(object):
     self.cookies = pagemaker.cookies
     self.__nextPrimaryKey = 1
     
+    self.primary = {}
     self.session = self.__GetSessionCookies()
 
   def __GetSessionCookies(self):
@@ -54,20 +55,75 @@ class SCookie(object):
           for item_keys, item_values in value.items():
             #Look for the __name prefix and set it as key and remove it from the dict
             if item_keys == '__name':
+              self.primary[key] = item_values 
               key = item_values
               value.pop(item_keys)
               break
           session[key] = value
         else:
           session[key] = 'INVALID COOKIE'
-          
     print('session', session)
     return session
+  
+  def Delete(self, name=None, primary=None):
+    """Deletes cookie based on name or primary key
     
+    Arguments:
+      % name: str
+        Delete the cookie based on the 'table' name
+      % primary: str/int
+        Deletes the cookie based on the id found in the cookiejar
+    
+    Raises:
+      ValueError: When primary key is not of type str or int
+      ValueError: When cookie with given primary key does not exists
+    """
+    if name:
+      for key, value in self.primary.items():
+        if name == value:
+          self.req.DeleteCookie(key)
+          self.session.pop(name)
+          self.primary.pop(key)
+          break
+    if primary:
+      if not isinstance(primary, (str, int)):
+        raise ValueError('Primary has to be either string ot int')
+      primary = str(primary)
+      name = self.primary.get(primary)
+      if not name:
+        raise ValueError('Cookie with given primary key does not exists')
+      self.req.DeleteCookie(primary)
+      self.primary.pop(primary)
+      self.session.pop(name)
+
+  
   def FromPrimary(self, key):
-    print(self.session.get(str(key)))
+    """Select a cookie based on primary key
+    
+    Arguments:
+      @ key: str or int
+    Raises:
+      ValueError: When key is not of type str or int
+    Returns:
+      dict: With result of requested key
+      None: When no result found
+    """
+    if not isinstance(key, (str, int)):
+      raise ValueError('Key has to be either string ot int')
+    
+    key = self.primary.get(str(key))
+    return self.session.get(key)
       
   def Create(self, data):
+    """Creates a secure cookie
+    
+    Arguments:
+      @ data: dict 
+      Needs to have a key called __name with value of how you want to name the 'table'
+    Raises:
+      ValueError: When __name prefix is missing
+      ValueError: When cookie with name already exists
+    """
     name = data.get('__name')
     if not name:
       raise ValueError("Cookie needs to have __name prefix")

@@ -14,8 +14,10 @@ class UserPageMaker(PageMaker):
     """Returns the index template"""
     # print(UserCookie(self).Create())
     test = UserCookie(self)
+    # print(test.FromPrimary(1))
+    # test.Delete(primary=2)
     # test.Create({
-    #             '__name': 'test',
+    #             '__name': 'qw',
     #             'user_id': 1,
     #             })
     # print(test.session)
