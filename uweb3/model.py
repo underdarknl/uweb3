@@ -5,6 +5,8 @@
 import datetime
 import simplejson
 import sys
+import hashlib
+import pickle
 
 
 class Error(Exception):
@@ -29,6 +31,78 @@ class NotExistError(Error):
 class PermissionError(Error):
   """The entity has insufficient rights to access the resource."""
 
+
+class SCookie(object):
+  """ """
+  cookie_salt = "test"
+  
+  def __init__(self, pagemaker):
+    self.req = pagemaker.req
+    self.cookies = pagemaker.cookies
+    self.__nextPrimaryKey = 1
+    
+    self.session = self.__GetSessionCookies()
+
+  def __GetSessionCookies(self):
+    session = {}
+    for key, value in self.cookies.items():
+      if key.isnumeric():
+        self.__nextPrimaryKey = int(key) + 1
+        isValid, value = self.__ValidateCookieHash(value)
+        #If the cookie is invalid replace contents TODO: Remove cookie if invalid?
+        if isValid:
+          for item_keys, item_values in value.items():
+            #Look for the __name prefix and set it as key and remove it from the dict
+            if item_keys == '__name':
+              key = item_values
+              value.pop(item_keys)
+              break
+          session[key] = value
+        else:
+          session[key] = 'INVALID COOKIE'
+          
+    print('session', session)
+    return session
+    
+  def FromPrimary(self, key):
+    print(self.session.get(str(key)))
+      
+  def Create(self, data):
+    name = data.get('__name')
+    if not name:
+      raise ValueError("Cookie needs to have __name prefix")
+    
+    if name in self.session:
+      raise ValueError("Cookie with name already exists")
+    
+    hashed = self.__CreateCookieHash(data)
+    self.req.AddCookie(str(self.__nextPrimaryKey), hashed)
+  
+  def __CreateCookieHash(self, data):
+    hex_string = pickle.dumps(data).hex()
+      
+    hashed = (hex_string + self.cookie_salt).encode('utf-8')
+    h = hashlib.new('ripemd160')
+    h.update(hashed)
+    return '{}+{}'.format(h.hexdigest(), hex_string)
+  
+  def __ValidateCookieHash(self, cookie):
+    """Takes a cookie and validates it
+    Arguments
+      @ str: A hashed cookie from the `CreateValidationCookieHash` method 
+    """
+    if not cookie:
+      return None
+    try:
+      data = cookie.rsplit('+', 1)[1]
+      data = pickle.loads(bytes.fromhex(data))
+    except Exception:
+      return (False, None)
+
+    if cookie != self.__CreateCookieHash(data):
+      return (False, None)
+    
+    return (True, data)
 
 # Record classes have many methods, this is not an actual problem.
 # pylint: disable=R0904

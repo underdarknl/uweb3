@@ -7,6 +7,9 @@ from .. import model
 class UserCookieInvalidError(Exception):
   """Superclass for errors returned by the user class."""  
 
+class UserCookie(model.SCookie):
+  """ """
+
 class Users(model.Record):
   """ """
   salt = "SomeSaltyBoi"
