@@ -138,7 +138,7 @@ class Request(object):
       attrs['max-age'] = attrs.pop('max_age')
     new_cookie[key].update(attrs)
     self.AddHeader('Set-Cookie', new_cookie[key].OutputString())
-
+   
   def AddHeader(self, name, value):
     self.response.headers[name] = value
     

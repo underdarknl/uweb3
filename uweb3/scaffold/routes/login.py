@@ -14,12 +14,21 @@ class UserPageMaker(PageMaker):
     """Returns the index template"""
     # print(UserCookie(self).Create())
     test = UserCookie(self)
-    # print(test.FromPrimary(1))
-    # test.Delete(primary=2)
     # test.Create({
-    #             '__name': 'qw',
+    #             '__name': 'login',
     #             'user_id': 1,
+    #             'premissions': 10,
+    #             'data': {'data': 'data'}
     #             })
+    # test.Update({
+    #           '__name': 'login',
+    #           'user_id': 1,
+    #           'premissions': 0,
+    #           'data': {'data': 'data'}
+    #           })
+    # print(test.FromPrimary(1))
+    # print(test.session.get('login'))
+    # test.Delete(primary=2)
     # print(test.session)
     # print(test.session)
     # test.FromPrimary(1)
@@ -29,12 +38,18 @@ class UserPageMaker(PageMaker):
       try:
         user = Users.FromName(self.connection, self.post.form.get('username'))._record
         if Users.ComparePassword(self.post.form.get('password'), user['password']):
-          cookie = Users.CreateValidationCookieHash({'id': user['id'],
-                                                      'premissions': 1,
-                                                      'someothervalue': 'value',
-                                                      'more_values': 'test',
-                                                       })
-          self.req.AddCookie('login', cookie)
+          # cookie = Users.CreateValidationCookieHash({'id': user['id'],
+          #                                             'premissions': 1,
+          #                                             'someothervalue': 'value',
+          #                                             'more_values': 'test',
+          #                                              })
+          test.Create({
+                '__name': 'login',
+                'user_id': user['id'],
+                'premissions': 1,
+                'data': {'data': 'data'}
+                })
+          # self.req.AddCookie('login', cookie)
           return self.req.Redirect('/test')
         else:
           print('Wrong username/password combination')      

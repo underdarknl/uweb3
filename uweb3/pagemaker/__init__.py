@@ -522,7 +522,6 @@ class SqliteMixin(object):
           self.options['sqlite']['database']))
     return self.persistent.Get('__sqlite')
 
-
 class SmorgasbordMixin(object):
   """Provides multiple-database connectivity.
 

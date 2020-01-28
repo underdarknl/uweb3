@@ -50,7 +50,6 @@ class SCookie(object):
       if key.isnumeric():
         self.__nextPrimaryKey = int(key) + 1
         isValid, value = self.__ValidateCookieHash(value)
-        #If the cookie is invalid replace contents TODO: Remove cookie if invalid?
         if isValid:
           for item_keys, item_values in value.items():
             #Look for the __name prefix and set it as key and remove it from the dict
@@ -61,9 +60,57 @@ class SCookie(object):
               break
           session[key] = value
         else:
-          session[key] = 'INVALID COOKIE'
-    print('session', session)
+          self.req.DeleteCookie(key)
     return session
+  
+  def Create(self, data, only_return_hash=False):
+    """Creates a secure cookie
+    
+    Arguments:
+      @ data: dict 
+        Needs to have a key called __name with value of how you want to name the 'table'
+    Raises:
+      ValueError: When __name prefix is missing
+      ValueError: When cookie with name already exists
+    """
+    name = data.get('__name')
+    if not name:
+      raise ValueError("Cookie needs to have __name prefix")
+    
+    if name in self.session and not only_return_hash:
+      raise ValueError("Cookie with name already exists")
+    
+    hashed = self.__CreateCookieHash(data)
+    if not only_return_hash:
+      self.req.AddCookie(str(self.__nextPrimaryKey), hashed)
+    else:
+      return hashed
+    
+  def Update(self, data):
+    """"Updates a secure cookie
+    
+    Arguments:
+      @ data: dict 
+        Needs to have a key called __name with value of how you want to name the 'table'
+    Raises:
+      ValueError: When __name prefix is missing
+      ValueError: When no cookie with given name found
+    """
+    name = str(data.get('__name'))
+    if not name:
+      raise ValueError("Cookie needs to have __name prefix")
+    
+    hashed = self.Create(data, only_return_hash=True)
+    primary_key = None
+    for key, value in self.primary.items():
+        if name == value:
+          primary_key = key
+          break
+    if primary_key:
+      self.req.AddCookie(str(primary_key), hashed)
+    else:
+      raise ValueError("No cookie with given name found")
+    
   
   def Delete(self, name=None, primary=None):
     """Deletes cookie based on name or primary key
@@ -81,6 +128,7 @@ class SCookie(object):
     if name:
       for key, value in self.primary.items():
         if name == value:
+          #TODO: Maybe not delete it from the session since the cookie is valid untill next request
           self.req.DeleteCookie(key)
           self.session.pop(name)
           self.primary.pop(key)
@@ -96,7 +144,6 @@ class SCookie(object):
       self.primary.pop(primary)
       self.session.pop(name)
 
-  
   def FromPrimary(self, key):
     """Select a cookie based on primary key
     
@@ -112,27 +159,10 @@ class SCookie(object):
       raise ValueError('Key has to be either string ot int')
     
     key = self.primary.get(str(key))
+    
+    self._record = self.session.get(key)
     return self.session.get(key)
-      
-  def Create(self, data):
-    """Creates a secure cookie
-    
-    Arguments:
-      @ data: dict 
-      Needs to have a key called __name with value of how you want to name the 'table'
-    Raises:
-      ValueError: When __name prefix is missing
-      ValueError: When cookie with name already exists
-    """
-    name = data.get('__name')
-    if not name:
-      raise ValueError("Cookie needs to have __name prefix")
-    
-    if name in self.session:
-      raise ValueError("Cookie with name already exists")
-    
-    hashed = self.__CreateCookieHash(data)
-    self.req.AddCookie(str(self.__nextPrimaryKey), hashed)
+  
   
   def __CreateCookieHash(self, data):
     hex_string = pickle.dumps(data).hex()
@@ -144,8 +174,9 @@ class SCookie(object):
   
   def __ValidateCookieHash(self, cookie):
     """Takes a cookie and validates it
-    Arguments
-      @ str: A hashed cookie from the `CreateValidationCookieHash` method 
+    
+    Arguments:
+      @ str: A hashed cookie from the `__CreateCookieHash` method 
     """
     if not cookie:
       return None
