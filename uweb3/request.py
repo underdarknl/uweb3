@@ -141,7 +141,6 @@ class Request(object):
    
   def AddHeader(self, name, value):
     if name == 'Set-Cookie':
-      #TODO: FIX SETTING COOKIES
       if not self.response.headers.get('Set-Cookie'):
         self.response.headers['Set-Cookie'] = [value]
         return

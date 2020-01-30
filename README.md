@@ -103,6 +103,7 @@ After creating your pagemaker be sure to add the route endpoint to routes list i
   - Method called Redirect #Moved from the response class to the request class so cookies that are set before a redirect are actually set.
   - Method called DeleteCookie
   - A if statement that checks string like cookies and raises an error if the size is equal or bigger than 4096 bytes.
+  - AddCookie method, edited this and the response class to handle the setting of multiple cookies. Previously setting multiple cookies with the       Set-Cookie header would make the last cookie the only cookie. 
 - In pagemaker/new_login Users class:
   - Create user
   - Find user by name
