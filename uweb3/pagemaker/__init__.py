@@ -11,11 +11,11 @@ import threading
 import uweb3
 from base64 import b64encode
 
-
 # Package modules
 from .. import response
 from .. import templateparser
 from .new_login import Users
+from uweb3.model import SCookie
 
 RFC_1123_DATE = '%a, %d %b %Y %T GMT'
 
@@ -229,17 +229,17 @@ class BasePageMaker(object):
   
   def _GetUserLoggedIn(self):
     """Checks if user is logged in based on cookie"""
-    cookie = self.cookies.get('login')
-    if not cookie:
+    scookie = SCookie(self)
+    if not scookie.session.get('login'):
       return None
     try:
-      user = Users.ValidateUserCookie(cookie)
+      user = scookie.session.get('login')
     except Exception:
       self.req.DeleteCookie('login')
       return None
     if not user:
       return None
-    return Users(None, {'id': user})
+    return Users(None, user)
     
   @classmethod
   def loadModules(self, default_routes='routes', excluded_files=('__init__', '.pyc')):

@@ -13,43 +13,31 @@ class UserPageMaker(PageMaker):
   def Login(self):
     """Returns the index template"""
     # print(UserCookie(self).Create())
-    test = UserCookie(self)
-    # test.Create({
-    #             '__name': 'login',
-    #             'user_id': 1,
-    #             'premissions': 10,
-    #             'data': {'data': 'data'}
-    #             })
-    # test.Update({
+    scookie = UserCookie(self)
+    # scookie.Update({
     #           '__name': 'login',
     #           'user_id': 1,
     #           'premissions': 0,
     #           'data': {'data': 'data'}
     #           })
-    # print(test.FromPrimary(1))
-    # print(test.session.get('login'))
-    # test.Delete(primary=2)
-    # print(test.session)
-    # print(test.session)
-    # test.FromPrimary(1)
+    # print(scookie.FromPrimary(1))
+    # print(scookie.session.get('login'))
+    # scookie.Delete(primary=2)
+    # print(scookie.session)
+    # print(scookie.session)
+
     
     
     if self.req.method == 'POST':
       try:
         user = Users.FromName(self.connection, self.post.form.get('username'))._record
         if Users.ComparePassword(self.post.form.get('password'), user['password']):
-          # cookie = Users.CreateValidationCookieHash({'id': user['id'],
-          #                                             'premissions': 1,
-          #                                             'someothervalue': 'value',
-          #                                             'more_values': 'test',
-          #                                              })
-          test.Create({
+          scookie.Create({
                 '__name': 'login',
                 'user_id': user['id'],
                 'premissions': 1,
                 'data': {'data': 'data'}
                 })
-          # self.req.AddCookie('login', cookie)
           return self.req.Redirect('/test')
         else:
           print('Wrong username/password combination')      
@@ -59,5 +47,6 @@ class UserPageMaker(PageMaker):
     return self.parser.Parse('login.html', xsrf=self.xsrf_token)
 
   def Logout(self):
-    self.req.DeleteCookie('login')
+    scookie = UserCookie(self)
+    scookie.Delete(name='login')
     return self.req.Redirect('/login')

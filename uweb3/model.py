@@ -111,7 +111,6 @@ class SCookie(object):
     else:
       raise ValueError("No cookie with given name found")
     
-  
   def Delete(self, name=None, primary=None):
     """Deletes cookie based on name or primary key
     
@@ -159,7 +158,6 @@ class SCookie(object):
       raise ValueError('Key has to be either string ot int')
     
     key = self.primary.get(str(key))
-    
     self._record = self.session.get(key)
     return self.session.get(key)
   
