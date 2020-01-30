@@ -140,8 +140,13 @@ class Request(object):
     self.AddHeader('Set-Cookie', new_cookie[key].OutputString())
    
   def AddHeader(self, name, value):
-    self.response.headers[name] = value
-    
+    if name == 'Set-Cookie':
+      #TODO: FIX SETTING COOKIES
+      if not self.response.headers.get('Set-Cookie'):
+        self.response.headers['Set-Cookie'] = [value]
+        return
+      self.response.headers['Set-Cookie'].append(value)
+      
   def DeleteCookie(self, name):
     """Deletes cookie by name
     

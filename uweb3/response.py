@@ -7,6 +7,8 @@ try:
 except ImportError:
   import http.client as httplib
 
+from collections import defaultdict
+
 class Response(object):
   """Defines a full HTTP response.
 
@@ -63,8 +65,16 @@ class Response(object):
   # Retrieve a header list
   @property
   def headerlist(self):
-    return [(key, val.encode('ascii', 'ignore').decode('ascii')) for key, val in self.headers.items()]
-
+    tuple_list = []
+    print(self.headers.items())
+    for key, val in self.headers.items():
+      if key == 'Set-Cookie':
+        for cookie in val:
+          tuple_list.append((key, cookie.encode('ascii', 'ignore').decode('ascii')))
+        continue
+      tuple_list.append((key, val.encode('ascii', 'ignore').decode('ascii')))
+    return tuple_list
+  
   @property
   def status(self):
     return '%d %s' % (self.httpcode, httplib.responses[self.httpcode])

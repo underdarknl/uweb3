@@ -14,6 +14,7 @@ class UserPageMaker(PageMaker):
     """Returns the index template"""
     # print(UserCookie(self).Create())
     scookie = UserCookie(self)
+
     # scookie.Update({
     #           '__name': 'login',
     #           'user_id': 1,
@@ -25,7 +26,10 @@ class UserPageMaker(PageMaker):
     # scookie.Delete(primary=2)
     # print(scookie.session)
     # print(scookie.session)
-
+    self.req.AddCookie('test', 'valueq')
+    self.req.AddCookie('test2', 'value')
+    
+    
     
     
     if self.req.method == 'POST':
@@ -38,7 +42,7 @@ class UserPageMaker(PageMaker):
                 'premissions': 1,
                 'data': {'data': 'data'}
                 })
-          return self.req.Redirect('/test')
+          # return self.req.Redirect('/test')
         else:
           print('Wrong username/password combination')      
       except uweb3.model.NotExistError as e:
