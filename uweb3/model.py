@@ -7,6 +7,7 @@ import simplejson
 import sys
 import hashlib
 import pickle
+import secrets
 
 
 class Error(Exception):
@@ -34,7 +35,7 @@ class PermissionError(Error):
 
 class SCookie(object):
   """ """
-  cookie_salt = "test"
+  cookie_salt = str(secrets.token_bytes(16))
   
   def __init__(self, pagemaker):
     self.req = pagemaker.req

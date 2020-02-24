@@ -14,7 +14,6 @@ class UserPageMaker(PageMaker):
     """Returns the index template"""
     # print(UserCookie(self).Create())
     scookie = UserCookie(self)
-
     # scookie.Update({
     #           '__name': 'login',
     #           'user_id': 1,
