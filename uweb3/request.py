@@ -93,7 +93,6 @@ class Request(object):
       headers=headers
       )
     
-
   def headers_from_env(self, env):
     for key, value in env.items():
       if key.startswith('HTTP_'):

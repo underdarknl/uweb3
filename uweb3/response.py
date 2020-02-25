@@ -66,7 +66,6 @@ class Response(object):
   @property
   def headerlist(self):
     tuple_list = []
-    print(self.headers.items())
     for key, val in self.headers.items():
       if key == 'Set-Cookie':
         for cookie in val:

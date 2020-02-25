@@ -8,29 +8,15 @@ from uweb3.pagemaker.new_decorators import checkxsrf
 
 class UserPageMaker(PageMaker):
   """Holds all the request handlers for the application"""
-    
-  @checkxsrf
+  
   def Login(self):
     """Returns the index template"""
-    # print(UserCookie(self).Create())
     scookie = UserCookie(self)
-    # scookie.Update({
-    #           '__name': 'login',
-    #           'user_id': 1,
-    #           'premissions': 0,
-    #           'data': {'data': 'data'}
-    #           })
-    # print(scookie.FromPrimary(1))
-    # print(scookie.session.get('login'))
-    # scookie.Delete(primary=2)
-    # print(scookie.session)
-    # print(scookie.session)
     if self.req.method == 'POST':
       try:
         user = Users.FromName(self.connection, self.post.form.get('username'))._record
         if Users.ComparePassword(self.post.form.get('password'), user['password']):
-          scookie.Create({
-                '__name': 'login',
+          scookie.Create("login", {
                 'user_id': user['id'],
                 'premissions': 1,
                 'data': {'data': 'data'}
@@ -41,9 +27,10 @@ class UserPageMaker(PageMaker):
       except uweb3.model.NotExistError as e:
         print(e)
         
-    return self.parser.Parse('login.html', xsrf=self.xsrf_token)
+    return self.parser.Parse('login.html')
 
+  @checkxsrf
   def Logout(self):
     scookie = UserCookie(self)
-    scookie.Delete(name='login')
+    scookie.Delete('login')
     return self.req.Redirect('/login')

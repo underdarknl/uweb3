@@ -35,134 +35,71 @@ class PermissionError(Error):
 
 class SCookie(object):
   """ """
-  cookie_salt = str(secrets.token_bytes(16))
+  # cookie_salt = str(secrets.token_bytes(16))
+  cookie_salt = 'test'
   
   def __init__(self, pagemaker):
     self.req = pagemaker.req
-    self.cookies = pagemaker.cookies
-    self.__nextPrimaryKey = 1
-    
-    self.primary = {}
+    self.cookies = pagemaker.cookies    
     self.session = self.__GetSessionCookies()
 
   def __GetSessionCookies(self):
     session = {}
     for key, value in self.cookies.items():
-      if key.isnumeric():
-        self.__nextPrimaryKey = int(key) + 1
-        isValid, value = self.__ValidateCookieHash(value)
-        if isValid:
-          for item_keys, item_values in value.items():
-            #Look for the __name prefix and set it as key and remove it from the dict
-            if item_keys == '__name':
-              self.primary[key] = item_values 
-              key = item_values
-              value.pop(item_keys)
-              break
-          session[key] = value
-        else:
-          self.req.DeleteCookie(key)
+      isValid, value = self.__ValidateCookieHash(value)
+      if isValid:
+        session[key] = value
     return session
   
-  def Create(self, data, only_return_hash=False):
+  def Create(self, name, data, update=False, only_return_hash=False):
     """Creates a secure cookie
     
     Arguments:
       @ data: dict 
         Needs to have a key called __name with value of how you want to name the 'table'
     Raises:
-      ValueError: When __name prefix is missing
       ValueError: When cookie with name already exists
-    """
-    name = data.get('__name')
-    if not name:
-      raise ValueError("Cookie needs to have __name prefix")
-    
-    if name in self.session and not only_return_hash:
+    """       
+    if not update and self.session.get(name):
       raise ValueError("Cookie with name already exists")
+    if update:
+      self.session[name] = data
     
     hashed = self.__CreateCookieHash(data)
     if not only_return_hash:
-      self.req.AddCookie(str(self.__nextPrimaryKey), hashed)
+      self.req.AddCookie(name, hashed)
     else:
       return hashed
     
-  def Update(self, data):
+  def Update(self, name, data):
     """"Updates a secure cookie
+    Keep in mind that the actual cookie is updated on the next request. After calling
+    this method it will update the session attribute to the new value however.
     
     Arguments:
       @ data: dict 
         Needs to have a key called __name with value of how you want to name the 'table'
     Raises:
-      ValueError: When __name prefix is missing
       ValueError: When no cookie with given name found
     """
-    name = str(data.get('__name'))
-    if not name:
-      raise ValueError("Cookie needs to have __name prefix")
+    if not self.session.get(name):
+      raise ValueError("No cookie with name `{}` found".format(name))
     
-    hashed = self.Create(data, only_return_hash=True)
-    primary_key = None
-    for key, value in self.primary.items():
-        if name == value:
-          primary_key = key
-          break
-    if primary_key:
-      self.req.AddCookie(str(primary_key), hashed)
-    else:
-      raise ValueError("No cookie with given name found")
+    self.Create(name, data, update=True)
     
-  def Delete(self, name=None, primary=None):
-    """Deletes cookie based on name or primary key
+    
+  def Delete(self, name):
+    """Deletes cookie based on name
+    The cookie is no longer in the session after calling this method
     
     Arguments:
       % name: str
-        Delete the cookie based on the 'table' name
-      % primary: str/int
-        Deletes the cookie based on the id found in the cookiejar
-    
-    Raises:
-      ValueError: When primary key is not of type str or int
-      ValueError: When cookie with given primary key does not exists
+        Deletes cookie by name
     """
-    if name:
-      for key, value in self.primary.items():
-        if name == value:
-          #TODO: Maybe not delete it from the session since the cookie is valid untill next request
-          self.req.DeleteCookie(key)
-          self.session.pop(name)
-          self.primary.pop(key)
-          break
-    if primary:
-      if not isinstance(primary, (str, int)):
-        raise ValueError('Primary has to be either string ot int')
-      primary = str(primary)
-      name = self.primary.get(primary)
-      if not name:
-        raise ValueError('Cookie with given primary key does not exists')
-      self.req.DeleteCookie(primary)
-      self.primary.pop(primary)
-      self.session.pop(name)
+    self.req.DeleteCookie(name)
+    self.session.pop(name)
 
-  def FromPrimary(self, key):
-    """Select a cookie based on primary key
-    
-    Arguments:
-      @ key: str or int
-    Raises:
-      ValueError: When key is not of type str or int
-    Returns:
-      dict: With result of requested key
-      None: When no result found
-    """
-    if not isinstance(key, (str, int)):
-      raise ValueError('Key has to be either string ot int')
-    
-    key = self.primary.get(str(key))
-    self._record = self.session.get(key)
-    return self.session.get(key)
-  
-  
+        
   def __CreateCookieHash(self, data):
     hex_string = pickle.dumps(data).hex()
       
