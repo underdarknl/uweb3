@@ -11,7 +11,7 @@ class UserPageMaker(PageMaker):
   
   def Login(self):
     """Returns the index template"""
-    scookie = UserCookie(self)
+    scookie = UserCookie(self.secure_cookie_connection)
     if self.req.method == 'POST':
       try:
         user = Users.FromName(self.connection, self.post.form.get('username'))._record
@@ -31,6 +31,6 @@ class UserPageMaker(PageMaker):
 
   @checkxsrf
   def Logout(self):
-    scookie = UserCookie(self)
+    scookie = UserCookie(self.secure_cookie_connection)
     scookie.Delete('login')
     return self.req.Redirect('/login')

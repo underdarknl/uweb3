@@ -33,14 +33,13 @@ class PermissionError(Error):
   """The entity has insufficient rights to access the resource."""
 
 
-class SCookie(object):
+class SecureCookie(object):
   """ """
-  # cookie_salt = str(secrets.token_bytes(16))
-  cookie_salt = 'test'
+  cookie_salt = str(secrets.token_bytes(16))
   
-  def __init__(self, pagemaker):
-    self.req = pagemaker.req
-    self.cookies = pagemaker.cookies    
+  def __init__(self, connection):
+    self.req = connection[0]
+    self.cookies = connection[1]
     self.session = self.__GetSessionCookies()
 
   def __GetSessionCookies(self):
@@ -97,7 +96,8 @@ class SCookie(object):
         Deletes cookie by name
     """
     self.req.DeleteCookie(name)
-    self.session.pop(name)
+    if self.session.get(name):
+      self.session.pop(name)
 
         
   def __CreateCookieHash(self, data):

@@ -12,6 +12,6 @@ class Test(PageMaker):
   @loggedin
   # @checkxsrf
   def Test(self):
-    scookie = UserCookie(self)    
+    scookie = UserCookie(self.secure_cookie_connection)    
     """Returns the index template"""
     return self.parser.Parse('test.html', xsrf=self.cookies.get('xsrf'))

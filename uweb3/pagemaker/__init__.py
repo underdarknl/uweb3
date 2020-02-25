@@ -15,7 +15,7 @@ from base64 import b64encode
 from .. import response
 from .. import templateparser
 from .new_login import Users
-from uweb3.model import SCookie
+from uweb3.model import SecureCookie
 
 RFC_1123_DATE = '%a, %d %b %Y %T GMT'
 
@@ -176,8 +176,8 @@ class BasePageMaker(object):
     self.options = config or {}
     self.persistent = self.PERSISTENT
     self.post.form = { item.name: item.value for item in req.vars['post'].value } if bool(req.vars['post'].value) else None
+    self.secure_cookie_connection = (self.req, self.cookies)
     self.user = self._GetLoggedInUser()
-   
   
   def XSRFInvalidToken(self, command):
     """Returns an error message regarding an incorrect XSRF token."""
@@ -188,7 +188,7 @@ class BasePageMaker(object):
   
   def _GetLoggedInUser(self):
     """Checks if user is logged in based on cookie"""
-    scookie = SCookie(self)
+    scookie = SecureCookie(self.secure_cookie_connection)
     if not scookie.session.get('login'):
       return None
     try:
