@@ -3,7 +3,7 @@
 
 import uweb3
 from uweb3 import PageMaker
-from uweb3.pagemaker.new_login import Users, UserCookie
+from uweb3.pagemaker.new_login import Users, UserCookie, Test
 from uweb3.pagemaker.new_decorators import checkxsrf
 
 class UserPageMaker(PageMaker):
@@ -12,6 +12,7 @@ class UserPageMaker(PageMaker):
   def Login(self):
     """Returns the index template"""
     scookie = UserCookie(self.secure_cookie_connection)
+    test = Test()
     if self.req.method == 'POST':
       try:
         user = Users.FromName(self.connection, self.post.form.get('username'))._record
