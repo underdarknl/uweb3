@@ -52,42 +52,107 @@ class SecureCookie(object):
         cookiejar[key] = value
     return cookiejar
   
-  def Create(self, name, data, update=False, only_return_hash=False):
-    #TODO: Needs to have all options of the addcookie class
+  def Create(self, name, data, **attrs):
     """Creates a secure cookie
     
     Arguments:
+      @ name: str
+        Name of the cookie
       @ data: dict 
         Needs to have a key called __name with value of how you want to name the 'table'
+      % only_return_hash: boolean
+        If this is set it will just return the hash of the cookie. This is used to 
+        validate the cookies hash 
+      % update: boolean
+        Used to update the cookie. Updating actually means deleting and setting a new 
+        one. This attribute is used by the update method from this class
+      % expires: str ~~ None
+        The date + time when the cookie should expire. The format should be:
+        "Wdy, DD-Mon-YYYY HH:MM:SS GMT" and the time specified in UTC.
+        The default means the cookie never expires.
+        N.B. Specifying both this and `max_age` leads to undefined behavior.
+      % path: str ~~ '/'
+        The path for which this cookie is valid. This default ('/') is different
+        from the rule stated on Wikipedia: "If not specified, they default to
+        the domain and path of the object that was requested".
+      % domain: str ~~ None
+        The domain for which the cookie is valid. The default is that of the
+        requested domain.
+      % max_age: int
+        The number of seconds this cookie should be used for. After this period,
+        the cookie should be deleted by the client.
+        N.B. Specifying both this and `expires` leads to undefined behavior.
+      % secure: boolean
+        When True, the cookie is only used on https connections.
+      % httponly: boolean
+        When True, the cookie is only used for http(s) requests, and is not
+        accessible through Javascript (DOM).
+        
     Raises:
       ValueError: When cookie with name already exists
-    """       
-    if not update and self.cookiejar.get(name):
+    """ 
+    if not attrs.get('update') and self.cookiejar.get(name):
       raise ValueError("Cookie with name already exists")
-    if update:
+    if attrs.get('update'):
       self.cookiejar[name] = data
     
     hashed = self.__CreateCookieHash(data)
-    if not only_return_hash:
-      self.req.AddCookie(name, hashed)
+    if not attrs.get('only_return_hash'):
+      #Delete all these settings to prevent them from injecting in a cookie
+      if attrs.get('update'):
+          del attrs['update']
+      if attrs.get('only_return_hash'):
+        del attrs['only_return_hash']
+      self.req.AddCookie(name, hashed, **attrs)
     else:
       return hashed
     
-  def Update(self, name, data):
+  def Update(self, name, data, **attrs):
     """"Updates a secure cookie
     Keep in mind that the actual cookie is updated on the next request. After calling
     this method it will update the session attribute to the new value however.
     
     Arguments:
+      @ name: str
+        Name of the cookie
       @ data: dict 
         Needs to have a key called __name with value of how you want to name the 'table'
+      % only_return_hash: boolean
+        If this is set it will just return the hash of the cookie. This is used to 
+        validate the cookies hash 
+      % update: boolean
+        Used to update the cookie. Updating actually means deleting and setting a new 
+        one. This attribute is used by the update method from this class
+      % expires: str ~~ None
+        The date + time when the cookie should expire. The format should be:
+        "Wdy, DD-Mon-YYYY HH:MM:SS GMT" and the time specified in UTC.
+        The default means the cookie never expires.
+        N.B. Specifying both this and `max_age` leads to undefined behavior.
+      % path: str ~~ '/'
+        The path for which this cookie is valid. This default ('/') is different
+        from the rule stated on Wikipedia: "If not specified, they default to
+        the domain and path of the object that was requested".
+      % domain: str ~~ None
+        The domain for which the cookie is valid. The default is that of the
+        requested domain.
+      % max_age: int
+        The number of seconds this cookie should be used for. After this period,
+        the cookie should be deleted by the client.
+        N.B. Specifying both this and `expires` leads to undefined behavior.
+      % secure: boolean
+        When True, the cookie is only used on https connections.
+      % httponly: boolean
+        When True, the cookie is only used for http(s) requests, and is not
+        accessible through Javascript (DOM).
+        
     Raises:
       ValueError: When no cookie with given name found
     """
     if not self.cookiejar.get(name):
       raise ValueError("No cookie with name `{}` found".format(name))
     
-    self.Create(name, data, update=True)
+    attrs['update'] = True
+    self.Create(name, data, **attrs)
     
     
   def Delete(self, name):
