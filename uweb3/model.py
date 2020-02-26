@@ -2,12 +2,14 @@
 """uWeb3 model base classes."""
 
 # Standard modules
+import os
 import datetime
 import simplejson
 import sys
 import hashlib
 import pickle
 import secrets
+import configparser
 
 
 class Error(Exception):
@@ -32,7 +34,88 @@ class NotExistError(Error):
 class PermissionError(Error):
   """The entity has insufficient rights to access the resource."""
 
-
+class SettingsManager(object):
+  def __init__(self):
+    """Creates a ini file with the childs class name"""
+    self.options = None
+    self.FILENAME = "{}.ini".format(self.__class__.__name__)
+    self.FILE_LOCATION = os.path.join(os.getcwd(), "base", self.FILENAME)
+    if not os.path.isfile(self.FILE_LOCATION):
+      os.mknod(self.FILE_LOCATION)
+    self.config = configparser.ConfigParser()
+    self.Read()
+    
+  def Create(self, section, key, value):
+    """Creates a section or/and key = value
+    
+    Arguments:
+      @ section: str
+        Name of the section you want to create or append key = value to
+      @ key: str
+        Name of the key you want to create
+      @ value: str
+      
+    Raises:
+      ValueError
+    """
+    if not self.options.get(section):
+      self.config.add_section(section)
+    else:
+      if self.config[section].get(key):
+        raise ValueError("key already exists")
+        
+    self.config.set(section, key, value)
+    
+    with open(self.FILE_LOCATION, 'w') as configfile:
+      self.config.write(configfile)
+    self.Read()
+    
+  def Read(self):
+    self.config.read(self.FILE_LOCATION)
+    self.options = self.config._sections
+  
+  def Update(self, section, key, value):
+    """Updates ini file
+    After update reads file again and updates options attribute
+    
+    Arguments:
+      @ section: str
+      @ key: str
+      @ value: str
+      
+    Raises
+      TypeError: Option values must be string
+    """
+    if not self.options.get(section):
+      self.config.add_section(section)
+    self.config.set(section, key, value)
+    
+    with open(self.FILE_LOCATION, 'w') as configfile:
+      self.config.write(configfile)
+    self.Read()
+  
+  def Delete(self, section, key, delete_section=False):
+    """Delete sections/keys from the INI file
+    Be aware, deleting a section that is not empty will remove all keys from that
+    given section
+    
+    Arguments:
+      @ section: str
+        Name of the section
+      @ key: str
+        Name of the key you want to remove
+      % delete_section: boolean
+        If set to true it will delete the supplied section
+    Raises:
+      configparser.NoSectionError
+    """
+    self.config.remove_option(section, key)
+    if delete_section:
+      self.config.remove_section(section)
+    with open(self.FILE_LOCATION, 'w') as configfile:
+      self.config.write(configfile)
+    self.Read()
+    
 class SecureCookie(object):
   """ """
   #TODO: ini class in the model which makes a file based on the class name with

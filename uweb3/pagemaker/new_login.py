@@ -7,6 +7,9 @@ from .. import model
 class UserCookieInvalidError(Exception):
   """Superclass for errors returned by the user class."""  
 
+class Test(model.SettingsManager):
+  """ """
+
 class UserCookie(model.SecureCookie):
   """ """
 
