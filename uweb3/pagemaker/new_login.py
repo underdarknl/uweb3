@@ -7,6 +7,9 @@ from .. import model
 class UserCookieInvalidError(Exception):
   """Superclass for errors returned by the user class."""  
 
+class UserCookie(model.SecureCookie):
+  """ """
+
 class Users(model.Record):
   """ """
   salt = "SomeSaltyBoi"
@@ -66,7 +69,14 @@ class Users(model.Record):
   
   @classmethod
   def ComparePassword(cls, password, hashed):
-    """Check if passwords match"""
+    """Check if passwords match
+    
+    Arguments:
+      @ password: str
+      @ hashed: str password hash from users database table
+    Returns:
+      Boolean: True if match False if not
+    """
     if not isinstance(hashed, bytes):
       hashed = hashed.encode('utf-8')
       

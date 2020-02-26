@@ -11,11 +11,11 @@ import threading
 import uweb3
 from base64 import b64encode
 
-
 # Package modules
 from .. import response
 from .. import templateparser
 from .new_login import Users
+from uweb3.model import SecureCookie
 
 RFC_1123_DATE = '%a, %d %b %Y %T GMT'
 
@@ -143,38 +143,6 @@ class MimeTypeDict(dict):
           self[key] = value
     if kwargs:
       self.update(kwargs)
-
-
-class XSRF(object):
-  
-  def __new__(cls, cookies, req, post):
-    """Checks if cookie with xsrf key is present. 
-    
-    If not generates xsrf token and places it in a cookie.
-    Checks if xsrf token in post is equal to the one in the cookie and returns
-    True when they do not match and False when they do match for the 'incorrect_xsrf_token' flag.
-    """
-    xsrf = cookies.get('xsrf')
-    
-    if not xsrf:
-      xsrf = XSRF.Generate_random_xsrf()
-      req.AddCookie('xsrf', xsrf)
-    
-    if req.method == 'POST':
-      return (XSRF.Validate_xsrf(xsrf, post), xsrf)
-    
-    return (False, xsrf)
-  
-  @staticmethod
-  def Generate_random_xsrf():
-    random_bytes = os.urandom(64)
-    return b64encode(random_bytes).decode('utf-8')
-  
-  @staticmethod
-  def Validate_xsrf(xsrf, post):
-    if str(xsrf) != post.getfirst('xsrf'):
-      return True
-    return False
     
 class BasePageMaker(object):
   """Provides the base pagemaker methods for all the html generators."""
@@ -189,7 +157,7 @@ class BasePageMaker(object):
   # Default Static() handler cache durations, per MIMEtype, in days
   CACHE_DURATION = MimeTypeDict({'text': 7, 'image': 30, 'application': 7})
 
-  def __init__(self, req, config=None):
+  def __init__(self, req, config=None, secure_cookie_hash=None):
     """sets up the template parser and database connections
 
     Arguments:
@@ -208,18 +176,9 @@ class BasePageMaker(object):
     self.options = config or {}
     self.persistent = self.PERSISTENT
     self.post.form = { item.name: item.value for item in req.vars['post'].value } if bool(req.vars['post'].value) else None
-    #Check if the xrsf flag is enabled in the config
-    #If so we enable xsrf validation
-    #If not we set the token to be always valid
-    self.xsrf_token = None
-    if config.get('security').get('xsrf_enabled'):
-      response, token = XSRF(self.cookies, self.req, self.post)
-      self.xsrf_token = token
-      self.incorrect_xsrf_token = response
-    else:
-      self.incorrect_xsrf_token = False
-    self.user = self._GetUserLoggedIn()
-
+    self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_hash)
+    self.user = self._GetLoggedInUser()
+  
   def XSRFInvalidToken(self, command):
     """Returns an error message regarding an incorrect XSRF token."""
     page_data = self.parser.Parse('403.html', error=command,
@@ -227,19 +186,19 @@ class BasePageMaker(object):
   
     return uweb3.Response(content=page_data, httpcode=403)
   
-  def _GetUserLoggedIn(self):
+  def _GetLoggedInUser(self):
     """Checks if user is logged in based on cookie"""
-    cookie = self.cookies.get('login')
-    if not cookie:
+    scookie = SecureCookie(self.secure_cookie_connection)
+    if not scookie.cookiejar.get('login'):
       return None
     try:
-      user = Users.ValidateUserCookie(cookie)
+      user = scookie.cookiejar.get('login')
     except Exception:
       self.req.DeleteCookie('login')
       return None
     if not user:
       return None
-    return Users(None, {'id': user})
+    return Users(None, user)
     
   @classmethod
   def loadModules(self, default_routes='routes', excluded_files=('__init__', '.pyc')):
@@ -521,7 +480,6 @@ class SqliteMixin(object):
       self.persistent.Set('__sqlite', sqlite.Connect(
           self.options['sqlite']['database']))
     return self.persistent.Get('__sqlite')
-
 
 class SmorgasbordMixin(object):
   """Provides multiple-database connectivity.

@@ -93,7 +93,6 @@ class Request(object):
       headers=headers
       )
     
-
   def headers_from_env(self, env):
     for key, value in env.items():
       if key.startswith('HTTP_'):
@@ -138,10 +137,14 @@ class Request(object):
       attrs['max-age'] = attrs.pop('max_age')
     new_cookie[key].update(attrs)
     self.AddHeader('Set-Cookie', new_cookie[key].OutputString())
-
+   
   def AddHeader(self, name, value):
-    self.response.headers[name] = value
-    
+    if name == 'Set-Cookie':
+      if not self.response.headers.get('Set-Cookie'):
+        self.response.headers['Set-Cookie'] = [value]
+        return
+      self.response.headers['Set-Cookie'].append(value)
+      
   def DeleteCookie(self, name):
     """Deletes cookie by name
     
@@ -216,4 +219,6 @@ def ParseForm(file_handle, environ):
   """
   #TODO see if we need to encode in utf8 or is ascii is fine based on the headers
   data = stringIO.StringIO(file_handle.read(int(environ['CONTENT_LENGTH'])).decode('ascii'))
-  return IndexedFieldStorage(fp=data, environ=environ, keep_blank_values=1)
+  # return IndexedFieldStorage(fp=data, environ=environ, keep_blank_values=1)
+  return IndexedFieldStorage(fp=data, environ=environ)
+  

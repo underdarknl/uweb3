@@ -5,6 +5,9 @@
 import datetime
 import simplejson
 import sys
+import hashlib
+import pickle
+import secrets
 
 
 class Error(Exception):
@@ -29,6 +32,103 @@ class NotExistError(Error):
 class PermissionError(Error):
   """The entity has insufficient rights to access the resource."""
 
+
+class SecureCookie(object):
+  """ """
+  #TODO: ini class in the model which makes a file based on the class name with
+  #settings in it 
+  
+  def __init__(self, connection):
+    self.req = connection[0]
+    self.cookies = connection[1]
+    self.cookie_salt = connection[2]
+    self.cookiejar = self.__GetSessionCookies()
+
+  def __GetSessionCookies(self):
+    cookiejar = {}
+    for key, value in self.cookies.items():
+      isValid, value = self.__ValidateCookieHash(value)
+      if isValid:
+        cookiejar[key] = value
+    return cookiejar
+  
+  def Create(self, name, data, update=False, only_return_hash=False):
+    #TODO: Needs to have all options of the addcookie class
+    """Creates a secure cookie
+    
+    Arguments:
+      @ data: dict 
+        Needs to have a key called __name with value of how you want to name the 'table'
+    Raises:
+      ValueError: When cookie with name already exists
+    """       
+    if not update and self.cookiejar.get(name):
+      raise ValueError("Cookie with name already exists")
+    if update:
+      self.cookiejar[name] = data
+    
+    hashed = self.__CreateCookieHash(data)
+    if not only_return_hash:
+      self.req.AddCookie(name, hashed)
+    else:
+      return hashed
+    
+  def Update(self, name, data):
+    """"Updates a secure cookie
+    Keep in mind that the actual cookie is updated on the next request. After calling
+    this method it will update the session attribute to the new value however.
+    
+    Arguments:
+      @ data: dict 
+        Needs to have a key called __name with value of how you want to name the 'table'
+    Raises:
+      ValueError: When no cookie with given name found
+    """
+    if not self.cookiejar.get(name):
+      raise ValueError("No cookie with name `{}` found".format(name))
+    
+    self.Create(name, data, update=True)
+    
+    
+  def Delete(self, name):
+    """Deletes cookie based on name
+    The cookie is no longer in the session after calling this method
+    
+    Arguments:
+      % name: str
+        Deletes cookie by name
+    """
+    self.req.DeleteCookie(name)
+    if self.cookiejar.get(name):
+      self.cookiejar.pop(name)
+
+        
+  def __CreateCookieHash(self, data):
+    hex_string = pickle.dumps(data).hex()
+      
+    hashed = (hex_string + self.cookie_salt).encode('utf-8')
+    h = hashlib.new('ripemd160')
+    h.update(hashed)
+    return '{}+{}'.format(h.hexdigest(), hex_string)
+  
+  def __ValidateCookieHash(self, cookie):
+    """Takes a cookie and validates it
+    
+    Arguments:
+      @ str: A hashed cookie from the `__CreateCookieHash` method 
+    """
+    if not cookie:
+      return None
+    try:
+      data = cookie.rsplit('+', 1)[1]
+      data = pickle.loads(bytes.fromhex(data))
+    except Exception:
+      return (False, None)
+
+    if cookie != self.__CreateCookieHash(data):
+      return (False, None)
+    
+    return (True, data)
 
 # Record classes have many methods, this is not an actual problem.
 # pylint: disable=R0904
