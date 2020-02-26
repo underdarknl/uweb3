@@ -35,22 +35,25 @@ class PermissionError(Error):
 
 class SecureCookie(object):
   """ """
-  cookie_salt = str(secrets.token_bytes(16))
+  #TODO: ini class in the model which makes a file based on the class name with
+  #settings in it 
   
   def __init__(self, connection):
     self.req = connection[0]
     self.cookies = connection[1]
-    self.session = self.__GetSessionCookies()
+    self.cookie_salt = connection[2]
+    self.cookiejar = self.__GetSessionCookies()
 
   def __GetSessionCookies(self):
-    session = {}
+    cookiejar = {}
     for key, value in self.cookies.items():
       isValid, value = self.__ValidateCookieHash(value)
       if isValid:
-        session[key] = value
-    return session
+        cookiejar[key] = value
+    return cookiejar
   
   def Create(self, name, data, update=False, only_return_hash=False):
+    #TODO: Needs to have all options of the addcookie class
     """Creates a secure cookie
     
     Arguments:
@@ -59,10 +62,10 @@ class SecureCookie(object):
     Raises:
       ValueError: When cookie with name already exists
     """       
-    if not update and self.session.get(name):
+    if not update and self.cookiejar.get(name):
       raise ValueError("Cookie with name already exists")
     if update:
-      self.session[name] = data
+      self.cookiejar[name] = data
     
     hashed = self.__CreateCookieHash(data)
     if not only_return_hash:
@@ -81,7 +84,7 @@ class SecureCookie(object):
     Raises:
       ValueError: When no cookie with given name found
     """
-    if not self.session.get(name):
+    if not self.cookiejar.get(name):
       raise ValueError("No cookie with name `{}` found".format(name))
     
     self.Create(name, data, update=True)
@@ -96,8 +99,8 @@ class SecureCookie(object):
         Deletes cookie by name
     """
     self.req.DeleteCookie(name)
-    if self.session.get(name):
-      self.session.pop(name)
+    if self.cookiejar.get(name):
+      self.cookiejar.pop(name)
 
         
   def __CreateCookieHash(self, data):

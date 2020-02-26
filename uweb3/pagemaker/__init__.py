@@ -157,7 +157,7 @@ class BasePageMaker(object):
   # Default Static() handler cache durations, per MIMEtype, in days
   CACHE_DURATION = MimeTypeDict({'text': 7, 'image': 30, 'application': 7})
 
-  def __init__(self, req, config=None):
+  def __init__(self, req, config=None, secure_cookie_hash=None):
     """sets up the template parser and database connections
 
     Arguments:
@@ -176,7 +176,7 @@ class BasePageMaker(object):
     self.options = config or {}
     self.persistent = self.PERSISTENT
     self.post.form = { item.name: item.value for item in req.vars['post'].value } if bool(req.vars['post'].value) else None
-    self.secure_cookie_connection = (self.req, self.cookies)
+    self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_hash)
     self.user = self._GetLoggedInUser()
   
   def XSRFInvalidToken(self, command):
@@ -189,10 +189,10 @@ class BasePageMaker(object):
   def _GetLoggedInUser(self):
     """Checks if user is logged in based on cookie"""
     scookie = SecureCookie(self.secure_cookie_connection)
-    if not scookie.session.get('login'):
+    if not scookie.cookiejar.get('login'):
       return None
     try:
-      user = scookie.session.get('login')
+      user = scookie.cookiejar.get('login')
     except Exception:
       self.req.DeleteCookie('login')
       return None

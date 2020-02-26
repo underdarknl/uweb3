@@ -77,6 +77,7 @@ class uWeb(object):
     self.registry.logger = logging.getLogger('root')
     self.router = router(routes)
     self.config = config if config is not None else {}
+    self.secure_cookie_hash = str(os.urandom(32))
 
   def __call__(self, env, start_response):
     """WSGI request handler.
@@ -85,7 +86,7 @@ class uWeb(object):
     response and returns a response iterator.
     """
     req = request.Request(env, self.registry)
-    page_maker = self.page_class(req, config=self.config)
+    page_maker = self.page_class(req, config=self.config, secure_cookie_hash=self.secure_cookie_hash)
     response = self.get_response(page_maker,
         req.path,
         req.env['REQUEST_METHOD'],

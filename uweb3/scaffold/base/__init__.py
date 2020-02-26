@@ -26,6 +26,9 @@ def main():
       ('/', 'Index'),
       ('/login', 'Login'),
       ('/test', 'Test'),
+      ('/test/create', 'Create'),
+      ('/test/update', 'Update'),
+      ('/test/delete', 'Delete'),
       ('/logout', 'Logout'),
       ('/(.*)', 'FourOhFour'),
       ]

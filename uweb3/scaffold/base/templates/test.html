@@ -31,9 +31,18 @@
     </div>
   </header>
   <section>
-    <form method="POST">
+    <!-- <form method="POST">
       {{xsrf [xsrf]}}
       <input type="submit" value="ok">
+    </form> -->
+    <form method="POST" action="/test/create">
+      <input type="submit" value="create">
+    </form>
+    <form method="POST" action="/test/update">
+      <input type="submit" value="update">
+    </form>
+    <form method="POST" action="/test/delete">
+      <input type="submit" value="delete">
     </form>
     <p>
       Logged in
