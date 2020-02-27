@@ -178,7 +178,6 @@ class BasePageMaker(object):
     self.post.form = { item.name: item.value for item in req.vars['post'].value } if bool(req.vars['post'].value) else None
     self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_hash)
     self.user = self._GetLoggedInUser()
-  
   def XSRFInvalidToken(self, command):
     """Returns an error message regarding an incorrect XSRF token."""
     page_data = self.parser.Parse('403.html', error=command,

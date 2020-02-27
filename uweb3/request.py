@@ -62,7 +62,16 @@ class Request(object):
                                 Cookie(self.env.get('HTTP_COOKIE')).items()),
                  'get': QueryArgsDict(cgi.parse_qs(self.env['QUERY_STRING']))}
     self.env['host'] = self.headers.get('Host', '')
+    
     if self.env['REQUEST_METHOD'] == 'POST':
+      #TODO: Keep an eye out for changes for this glorious bug
+      #This is to prevent uWeb from crashing because some browser(Chrome) decided
+      #to not include the content-type attribute when a request is pulled from
+      #the history. WSGI defaults to text/plain and because we are actually trying
+      #to parse post data in the ParseForm it will cause the application to crash
+      if self.env['CONTENT_TYPE'] == "text/plain":
+        if self.env['CONTENT_LENGTH']:
+          self.env['CONTENT_TYPE'] = "application/x-www-form-urlencoded"
       self.vars['post'] = ParseForm(env['wsgi.input'], env)
     else:
       self.vars['post'] = IndexedFieldStorage()
@@ -220,7 +229,6 @@ def ParseForm(file_handle, environ):
   #TODO see if we need to encode in utf8 or is ascii is fine based on the headers
   data = stringIO.StringIO(file_handle.read(int(environ['CONTENT_LENGTH'])).decode('ascii'))
   # return IndexedFieldStorage(fp=data, environ=environ, keep_blank_values=1)
-  # print(environ.get('CONTENT_TYPE'))
   return IndexedFieldStorage(fp=data, environ=environ)
 
   
