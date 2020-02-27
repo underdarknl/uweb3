@@ -220,5 +220,7 @@ def ParseForm(file_handle, environ):
   #TODO see if we need to encode in utf8 or is ascii is fine based on the headers
   data = stringIO.StringIO(file_handle.read(int(environ['CONTENT_LENGTH'])).decode('ascii'))
   # return IndexedFieldStorage(fp=data, environ=environ, keep_blank_values=1)
+  # print(environ.get('CONTENT_TYPE'))
   return IndexedFieldStorage(fp=data, environ=environ)
+
   
