@@ -15,8 +15,8 @@ class UserPageMaker(PageMaker):
     test = Test()
     if self.req.method == 'POST':
       try:
-        user = Users.FromName(self.connection, self.post.form.get('username'))._record
-        if Users.ComparePassword(self.post.form.get('password'), user['password']):
+        user = Users.FromName(self.connection, self.post.get('username'))._record
+        if Users.ComparePassword(self.post.get('password'), user['password']):
           scookie.Create("login", {
                 'user_id': user['id'],
                 'premissions': 1,

@@ -34,8 +34,7 @@ class Test(PageMaker):
     return self.req.Redirect('/test')
 
   def StringEscaping(self):
-    print(self.post.form)
     # print(self.post.getfirst('hello'))
-    if self.post.form:
-      print(MYSQLsafestring("DELETE * FROM customers WHERE id=%s", (self.post.form.get('hello'),), unsafe=True))
+    if self.post:
+      print(MYSQLsafestring("DELETE * FROM customers WHERE id=%s", (self.post.get('hello'),), unsafe=True))
     return self.req.Redirect('/test')
