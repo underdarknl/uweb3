@@ -29,6 +29,7 @@ def main():
       ('/test/create', 'Create'),
       ('/test/update', 'Update'),
       ('/test/delete', 'Delete'),
+      ('/test/escaping', 'StringEscaping'),
       ('/logout', 'Logout'),
       ('/(.*)', 'FourOhFour'),
       ]

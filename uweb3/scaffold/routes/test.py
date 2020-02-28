@@ -5,14 +5,14 @@ import uweb3
 from uweb3 import PageMaker
 from uweb3.pagemaker.new_login import UserCookie
 from uweb3.pagemaker.new_decorators import loggedin, checkxsrf
+from uweb3.ext_lib.underdark.libs.safestring import MYSQLsafestring, HTMLsafestring
+
 
 class Test(PageMaker):
   """Holds all the request handlers for the application"""
   
-  @loggedin
+  # @loggedin
   def Test(self):
-    scookie = UserCookie(self.secure_cookie_connection)
-    print(scookie.cookiejar)    
     """Returns the index template"""
     return self.parser.Parse('test.html')
 
@@ -33,4 +33,9 @@ class Test(PageMaker):
     scookie.Delete("test")
     return self.req.Redirect('/test')
 
-    
+  def StringEscaping(self):
+    print(self.post.form)
+    # print(self.post.getfirst('hello'))
+    if self.post.form:
+      print(MYSQLsafestring("DELETE * FROM customers WHERE id=%s", (self.post.form.get('hello'),), unsafe=True))
+    return self.req.Redirect('/test')
