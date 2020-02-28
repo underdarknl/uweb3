@@ -28,16 +28,16 @@ class XSRF(object):
     """ 
     token = self.Generate_xsrf_token(userid)
     #Check if the post request is not empty
-    if self.post.form:
+    if self.post:
       #Check if the xsrf token is in the request and ensure that its valid
-      if not self.post.form.get('xsrf'):
+      if not self.post.get('xsrf'):
         return True
-      if self.post.form.get('xsrf') != token:
+      if self.post.get('xsrf') != token:
         self.req.AddCookie('xsrf', token)
         return True
     else:
       return True
-    return token != self.post.form.get('xsrf')
+    return token != self.post.get('xsrf')
 
   def Generate_xsrf_token(self, userid):    
       hashed = (str(self.unix_timestamp) + self.secret + userid).encode('utf-8')
@@ -65,7 +65,7 @@ def checkxsrf(f):
         if args[0].user:
           args[0].req.AddCookie('xsrf', xsrf.Generate_xsrf_token(args[0].user.get('user_id')))
       if args[0].req.method == "POST":
-        post_xsrf_token = args[0].post.form.get('xsrf')
+        post_xsrf_token = args[0].post.get('xsrf')
         if not post_xsrf_token:
           return args[0].XSRFInvalidToken(
                     'Your XSRF token was incorrect, please try again.'

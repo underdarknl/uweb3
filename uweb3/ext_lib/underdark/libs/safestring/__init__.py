@@ -20,6 +20,9 @@ Additions of unsafe types to a safe type automatically escape up to the safe
 type. Handy escape() functions are present to do manual escaping if required.
 """
 
+#TODO: logger geen enters
+#bash injection 
+#mysql escaping
 __author__ = 'Jan Klopper (jan@underdark.nl)'
 __version__ = 0.1
 
@@ -77,10 +80,54 @@ class Basesafestring(str):
     raise NotImplementedError
 
 
+class MYSQLsafestring(Basesafestring):
+  def __new__(cls, sql, values, **kwargs):
+    if 'unsafe' in kwargs:
+      safe_tuple = tuple()
+      for item in values:
+        safe_tuple = safe_tuple + (str(item),)
+      return super().__new__(cls, cls.escape(cls, str(sql), values))
+    else:
+      return super().__new__(cls, cls.escape(cls, sql, values))
+    
+  def escape(self, sql, values):
+    if not isinstance(values, tuple):
+      raise TypeError
+    placeholders = []
+    sql = sql.split()
+    
+    for index, value in enumerate(sql):
+      if '%s' in value:
+        index_of_placeholder = value.index('%s')
+        placeholders.append({'index': index, 'placeholder': index_of_placeholder})
+        
+    if(len(values) != len(placeholders)):
+      raise ValueError("The amount of values and placeholders does not match")  
+      
+    escaped_tuple = tuple()
+    
+    for index, item in enumerate(values):
+      item = item.replace('"', '\"')
+      item = item.replace("/", '\/')
+      item = item.replace("\"", "\\")
+      item = item.replace("\n", "")
+      item = item.replace("\r", "")
+      item = item.replace("\t", "")
+      escaped_tuple = escaped_tuple + (item,)
+  
+    for i, item in enumerate(placeholders):
+      index = item['index']
+      index_placeholder = item['placeholder']
+      new_data = sql[index][0:index_placeholder] + escaped_tuple[i]
+      sql[index] = "'{}'".format(new_data)
+    
+    return " ".join(sql)
+
 # what follows are the actual useable classes that are safe in specific contexts
 class HTMLsafestring(Basesafestring):
   """This class signals that the content is HTML safe"""
-
+ 
+    
   def escape(self, data):
     return html.escape(data)
 
@@ -101,9 +148,9 @@ class JSONsafestring(Basesafestring):
     return json.dumps(data)
 
   def unescape(self, data):
-    data = json.loads(data)
     if not isinstance(data, str):
       raise TypeError
+    data = json.loads(data)
     return data
 
 

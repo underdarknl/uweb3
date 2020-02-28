@@ -18,7 +18,7 @@ import os
 import re
 import urllib.parse as urlparse
 from .ext_lib.underdark.libs.safestring import *
-
+#TODO: create a ifNotPresent 
 class Error(Exception):
   """Superclass used for inheritance and external exception handling."""
 
