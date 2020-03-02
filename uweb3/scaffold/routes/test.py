@@ -5,7 +5,7 @@ import uweb3
 from uweb3 import PageMaker
 from uweb3.pagemaker.new_login import UserCookie
 from uweb3.pagemaker.new_decorators import loggedin, checkxsrf
-from uweb3.ext_lib.underdark.libs.safestring import MYSQLsafestring, HTMLsafestring
+from uweb3.ext_lib.underdark.libs.safestring import SQLSAFE, HTMLsafestring
 
 
 class Test(PageMaker):
@@ -34,7 +34,13 @@ class Test(PageMaker):
     return self.req.Redirect('/test')
 
   def StringEscaping(self):
-    # print(self.post.getfirst('hello'))
     if self.post:
-      print(MYSQLsafestring("DELETE * FROM customers WHERE id=%s", (self.post.get('hello'),), unsafe=True))
+      # SQLSAFE(self.post.getfirst('sql'), 
+      #                      ('test', 'test',), 
+      #                      kwd=self.post.getfirst('kwd'))
+      # print(SQLSAFE("SELECT * FROM users where username={} and test=test and this is this".format('username')))
+      sql = "SELECT * FROM users (id, username) VALUES ({}, {})".format(self.post.getfirst('value1'), str(self.post.getfirst('value2')))
+      SQLSAFE(sql)
+      # SQLSAFE("INSERT INTO users (username, password, test) VALUES ('test','test', 1)")
+      
     return self.req.Redirect('/test')

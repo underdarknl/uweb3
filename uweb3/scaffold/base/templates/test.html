@@ -13,6 +13,7 @@
 </head>
 
 <body id="header" class="layout">
+  {{ifpresent [xsrf]}}test{{endif}}
   <header>
     <div>
       <div class="logo">
@@ -32,7 +33,18 @@
   </header>
   <section>
     <form method="POST" action="/test/escaping">
-      <input type="text" name="textfield">
+      <div>
+        <label for="sql">SQL</label>
+        <input type="text" id="sql" name="sql">
+      </div>
+      <div>
+        <label for="value1">value1</label>
+        <input type="text" id="value1" name="value1">
+      </div>
+      <div>
+        <label for="value2">value2</label>
+        <input type="text" id="value2" name="value2">
+      </div>
       <input type="submit" value="ok">
     </form>
     <form method="POST" action="/test/create">
