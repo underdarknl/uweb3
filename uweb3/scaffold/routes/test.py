@@ -14,7 +14,8 @@ class Test(PageMaker):
   # @loggedin
   def Test(self):
     """Returns the index template"""
-    return self.parser.Parse('test.html')
+    # print(type(HTMLsafestring("oi")))
+    return self.parser.Parse('test.html', q=HTMLsafestring('test<b>hello</b>', unsafe=True))
 
   def Create(self):
     scookie = UserCookie(self.secure_cookie_connection)    
@@ -35,12 +36,11 @@ class Test(PageMaker):
 
   def StringEscaping(self):
     if self.post:
-      # SQLSAFE(self.post.getfirst('sql'), 
-      #                      ('test', 'test',), 
-      #                      kwd=self.post.getfirst('kwd'))
-      # print(SQLSAFE("SELECT * FROM users where username={} and test=test and this is this".format('username')))
-      sql = "SELECT * FROM users (id, username) VALUES ({}, {})".format(self.post.getfirst('value1'), str(self.post.getfirst('value2')))
-      SQLSAFE(sql)
-      # SQLSAFE("INSERT INTO users (username, password, test) VALUES ('test','test', 1)")
-      
+      result = SQLSAFE(self.post.getfirst('sql'), 
+              self.post.getfirst('value1'), 
+              self.post.getfirst('value2'), 
+              kwd=self.post.getfirst('keyword') 
+              )
+      print(result)
+      # print(SQLSAFE("INSERT INTO user (username, password) VALUES ('test', 'test')", unsafe=True))
     return self.req.Redirect('/test')

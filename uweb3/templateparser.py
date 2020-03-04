@@ -383,6 +383,10 @@ class Template(list):
     """Processing for {{ ifpresent }} template syntax."""
     self._StartScope(TemplateConditionalPresence(' '.join(nodes)))
 
+  def _TemplateConstructIfnotpresent(self, *nodes):
+    """Processing for {{ ifnotpresent }} template syntax."""
+    self._StartScope(TemplateConditionalPresence(' '.join(nodes), checking_presence=True))
+
   def _TemplateConstructElif(self, *nodes):
     """Processing for {{ elif }} template syntax."""
     self._VerifyOpenScope(TemplateConditional)
@@ -490,7 +494,8 @@ class FileTemplate(Template):
 
 class TemplateConditional(object):
   """A template construct to control flow based on the value of a tag."""
-  def __init__(self, expr):
+  def __init__(self, expr, checking_presence=True):
+    self.checking_presence = checking_presence
     self.branches = []
     self.default = None
     self.NewBranch(expr)
@@ -582,30 +587,37 @@ class TemplateConditional(object):
     `else` branch exists '' is returned.
     """
     for expr, branch in self.branches:
+      if type(self) == TemplateConditionalPresence:
+        kwds['checking_presence'] = True
       if self.Expression(expr, **kwds):
         return ''.join(part.Parse(**kwds) for part in branch)
     if self.default:
       return ''.join(part.Parse(**kwds) for part in self.default)
     return ''
 
+  
 
 class TemplateConditionalPresence(TemplateConditional):
   """A template construct to safely check for the presence of tags."""
+
   @staticmethod
   def Expression(tags, **kwds):
     """Checks the presence of all tags named on the branch."""
     try:
       for tag in tags:
         tag.GetValue(kwds)
-      return True
-    except (TemplateKeyError, TemplateNameError):
+      if kwds.get('checking_presence'):
+        return True
       return False
+    except (TemplateKeyError, TemplateNameError):
+      if kwds.get('checking_presence'):
+        return False
+      return True
 
   def NewBranch(self, tags):
     """Begins a new branch based on the given tags."""
     self.branches.append((map(TemplateTag.FromString, tags.split()), []))
-
-
+    
 class TemplateLoop(list):
   """Template loops are used to repeat a portion of template multiple times.
 

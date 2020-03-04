@@ -172,8 +172,6 @@ class BasePageMaker(object):
     self.cookies = req.vars['cookie']
     self.get = req.vars['get']
     self.post = req.vars['post']
-    self.post.form = None
-    # self.post.form = { item.name.decode('ascii'): item.value.decode('ascii') for item in req.vars['post'].value } if bool(req.vars['post'].value) else None
     self.options = config or {}
     self.persistent = self.PERSISTENT
     self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_hash)
@@ -451,6 +449,22 @@ class MongoMixin(object):
       else:
         self.persistent.Set('__mongo', connection)
     return self.persistent.Get('__mongo')
+
+
+class SqlAlchemyMixin(object):
+  """Adds MysqlAlchemy connection to PageMaker."""
+  @property
+  def connection(self):
+    if '__sql_alchemy' not in self.persistent:
+      from sqlalchemy import create_engine
+      mysql_config = self.options['mysql']
+      connection = create_engine('mysql://{username}:{password}@{host}/{database}'.format(
+        username=mysql_config.get('user'), 
+        password=mysql_config.get('password'), 
+        host=mysql_config.get('host', 'localhost'), 
+        database=mysql_config.get('database')))
+      self.persistent.Set('__sql_alchemy', connection)
+    return self.persistent.Get('__sql_alchemy')
 
 
 class MysqlMixin(object):

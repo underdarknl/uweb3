@@ -52,34 +52,54 @@ class Cookie(cookie.SimpleCookie):
       morsel.set(key, real_value, coded_value)
       dict.__setitem__(self, key, morsel)
 
-class PostDictionary(dict):
-  def getfirst(self, key, default=None):
-    """ Return the first value received."""
-    if key in self:
-      value = self[key]
-      if isinstance(value, list):
-        return value[0]
-      else:
-        return value
-    else:
-      return default
-          
-  def getlist(self, key):
-    """ Return list of received values."""
-    if key in self:
-      value = self[key]
-      if isinstance(value, list):
-          return [x[0] for x in value]
-      else:
-          return [value[0]]
-    else:
-      return []
-          
-  def iteritems(self):
-    return ((key, self.getlist(key)) for key in self)
+
+class PostDictionary(MultiDict):
+  """ """
+  #TODO: Add basic uweb functions
+  
+  def getfirst(self, key):
+    """Returns the first item out of the list from the given key
     
-  def items(self):
-    return list(self.iteritems())
+    Arguments:
+      @key: str
+    
+    Raises:
+      ValueError
+    """
+    items = dict(self.lists())
+    target = items.get(key, None)
+    
+    if not target:
+      raise ValueError("Given key not found")
+    
+    return target[0]
+  # def getfirst(self, key, default=None):
+  #   """ Return the first value received."""
+  #   if key in self:
+  #     value = self[key]
+  #     if isinstance(value, list):
+  #       return value[0]
+  #     else:
+  #       return value
+  #   else:
+  #     return default
+          
+  # def getlist(self, key):
+  #   """ Return list of received values."""
+  #   if key in self:
+  #     value = self[key]
+  #     if isinstance(value, list):
+  #       return [x[0] for x in value]
+  #     else:
+  #       return [value]
+  #   else:
+  #     return []
+          
+  # def iteritems(self):
+  #   return ((key, self.getlist(key)) for key in self)
+    
+  # def items(self):
+  #   return list(self.iteritems())
 
 class Request(object):
   def __init__(self, env, registry):
@@ -107,13 +127,11 @@ class Request(object):
           request_body_size = 0
         request_body = self.env['wsgi.input'].read(request_body_size)
         data = json.loads(request_body)
-        self.vars['post'] = MultiDict(data)
+        self.vars['post'] = PostDictionary(MultiDict(data))
       else:   
-        self.vars['post'] = form
+        self.vars['post'] = PostDictionary(form)
         for f in files:
           self.vars['post'][f] = files.get(f)
-      print(self.vars['post'])
-     
      
   @property
   def path(self):
