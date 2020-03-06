@@ -18,40 +18,33 @@ class User(alchemy_model.Record, Base):
   id = Column(Integer, primary_key=True)
   username = Column(String, nullable=False, unique=True)
   password = Column(String, nullable=False)    
-    
-  def __repr__(self):
-    return "<User(id=%s, username='%s', password='%s')>" % (
-                          self.id, self.username, self.password)
       
 class Author(alchemy_model.Record, Base):
   __tablename__ = 'author'
 
   id = Column(Integer, primary_key=True)
   name = Column(String, unique=True)
-
-  def __repr__(self):
-      return "<Author(id='%s', name='%s')>" % (
-                            self.id, self.name)
-
+  
+class Persons(alchemy_model.Record, Base):
+  __tablename__ = 'persons'
+  
+  id = Column(Integer)
+  name = Column(String, primary_key=True)
          
 class UserPageMaker(SqAlchemyPageMaker):
   """Holds all the request handlers for the application"""
   
   def Login(self):
     """Returns the index template"""
-    # user = User(self.session, username='name', password='test')
-    aut = Author(self.session, {'name': 'stef'})
-    print(aut)
-    result = User.Create(self.session, {'username': 'name', 'password': 'test'})
+    aut = Author(self.session, {'name': 'stef', 'email': 'test'})
+    # result = User.Create(self.session, {'username': 'name', 'password': 'test'})
     # print("Created: ", result)
     # print("FromPrimary: ", User.FromPrimary(self.session, result.id))
-    # print("FromPrimary: ", User.FromPrimary(self.session, result.id))
-    
+    # print("List: ", list(User.List(self.session, order=(User.id.desc(), User.username.asc()))))
     # print("DeletePrimary: ", User.DeletePrimary(self.session, result.id))
-    # print("List: ", User.List(self.session, order=(User.id.desc(), User.username.asc())))
     # print("List: ", User.List(self.session, conditions=[{'id': '10', 'operator': '<='}]))
     
-    
+    # person = Persons.Create(self.session, {'id': 1, 'name': 'test2'})
 
     # self.session.add(aut)
     # self.session.add(user)

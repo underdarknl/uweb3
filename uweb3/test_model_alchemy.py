@@ -18,6 +18,7 @@ import pymysql
 from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from contextlib import contextmanager
+from pymysql.err import InternalError
 
 # ##############################################################################
 # Record classes for testing
@@ -26,11 +27,8 @@ Base = declarative_base()
 
 class Author(uweb3.alchemy_model.Record, Base):
   __tablename__ = 'author'
-  id = Column(Integer, primary_key=True)
+  ID = Column(Integer, primary_key=True)
   name = Column(String(32), nullable=False)
-
-  def __repr__(self):
-    return "<Author(ID='%s', name='%s')>" % (self.id, self.name)
   
 
 
@@ -61,14 +59,25 @@ class RecordTests(unittest.TestCase):
 
   def testLoadPrimary(self):
     """[Record] Records can be loaded by primary key using FromPrimary()"""
-    author = Author.Create(self.session, {'name': 'A. Chrstie'})
+    inserted = Author.Create(self.session, {'name': 'A. Chrstie'})
+    author = Author.FromPrimary(self.session, inserted.key)
     self.assertEqual(type(author), Author)
-    print(author)
-    # author = Author.FromPrimary(self.connection, inserted.insertid)
-    # self.assertEqual(type(author), Author)
-    # self.assertEqual(len(author), 2)
-    # self.assertEqual(author.key, inserted.insertid)
-    # self.assertEqual(author['name'], 'A. Chrstie')
+    self.assertEqual(len(author), 2)
+    self.assertEqual(author.key, author.ID)
+    self.assertEqual(author.name, 'A. Chrstie')
+    
+  def testCreateRecord(self):
+    """Database records can be created using Create()"""
+    new_author = Author.Create(self.session, {'name': 'W. Shakespeare'})
+    author = Author.FromPrimary(self.session, new_author.key)
+    self.assertEqual(author._record['name'], 'W. Shakespeare')
+    self.assertEqual(author.name, 'W. Shakespeare')
+
+  def testCreateRecordWithBadField(self):
+      """Database record creation fails if there are unknown fields present"""
+      self.assertRaises(AttributeError, Author.Create, self.session,
+                        {'name': 'L. Tolstoy', 'email': 'leo@tolstoy.ru'})
+      
 
 
 def DatabaseConnection():
