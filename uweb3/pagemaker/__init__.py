@@ -457,16 +457,26 @@ class SqlAlchemyMixin(object):
   def connection(self):
     if '__sql_alchemy' not in self.persistent:
       from sqlalchemy import create_engine
+      from sqlalchemy.orm import sessionmaker
       mysql_config = self.options['mysql']
-      connection = create_engine('mysql://{username}:{password}@{host}/{database}'.format(
-        username=mysql_config.get('user'), 
-        password=mysql_config.get('password'), 
-        host=mysql_config.get('host', 'localhost'), 
-        database=mysql_config.get('database')))
-      self.persistent.Set('__sql_alchemy', connection)
+      engine = create_engine('mysql://{username}:{password}@{host}/{database}'.format(
+          username=mysql_config.get('user'), 
+          password=mysql_config.get('password'), 
+          host=mysql_config.get('host', 'localhost'), 
+          database=mysql_config.get('database')))
+      Session = sessionmaker(autocommit=False)
+      Session.configure(bind=engine)
+      self.persistent.Set('__sql_alchemy', engine)
+      self.persistent.Set('__sql_alchemy_session', Session)
     return self.persistent.Get('__sql_alchemy')
 
-
+  @property
+  def session(self):
+    self.connection
+    if '__sql_alchemy_session' in self.persistent:
+      return self.persistent.Get('__sql_alchemy_session')
+    return None
+  
 class MysqlMixin(object):
   """Adds MySQL support to PageMaker."""
   @property
@@ -545,6 +555,8 @@ class SmorgasbordMixin(object):
 class PageMaker(MysqlMixin, BasePageMaker):
   """The basic PageMaker class, providing MySQL support."""
 
+class SqAlchemyPageMaker(SqlAlchemyMixin, BasePageMaker):
+  """The basic PageMaker class, providing MySQL support."""
 
 class DebuggingPageMaker(DebuggerMixin, PageMaker):
   """The same basic PageMaker, with added debugging on HTTP 500."""

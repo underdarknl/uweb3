@@ -228,7 +228,6 @@ class HTMLsafestring(Basesafestring):
  
     
   def escape(self, data):
-    print("Called")
     return html.escape(data)
 
   def unescape(self, data):

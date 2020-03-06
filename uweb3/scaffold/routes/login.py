@@ -2,6 +2,7 @@
 """Request handlers for the uWeb3 project scaffold"""
 
 import uweb3
+from uweb3 import alchemy_model
 from uweb3 import PageMaker, SqAlchemyPageMaker
 from uweb3.pagemaker.new_login import Users, UserCookie, Test
 from uweb3.pagemaker.new_decorators import checkxsrf
@@ -11,7 +12,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 Base = declarative_base()
-class User(uweb3.alchemy_model.Record, Base):
+class User(alchemy_model.Record, Base):
   __tablename__ = 'users'
 
   id = Column(Integer, primary_key=True)
@@ -22,7 +23,7 @@ class User(uweb3.alchemy_model.Record, Base):
     return "<User(id=%s, username='%s', password='%s')>" % (
                           self.id, self.username, self.password)
       
-class Author(uweb3.alchemy_model.Record, Base):
+class Author(alchemy_model.Record, Base):
   __tablename__ = 'author'
 
   id = Column(Integer, primary_key=True)
@@ -39,16 +40,16 @@ class UserPageMaker(SqAlchemyPageMaker):
   def Login(self):
     """Returns the index template"""
     # user = User(self.session, username='name', password='test')
-    aut = Author(self.session, structure={'name': 'stef'})
+    aut = Author(self.session, {'name': 'stef'})
     print(aut)
     result = User.Create(self.session, {'username': 'name', 'password': 'test'})
-    print("Created: ", result)
-    print("FromPrimary: ", User.FromPrimary(self.session, result.id))
-    print("FromPrimary: ", User.FromPrimary(self.session, result.id))
+    # print("Created: ", result)
+    # print("FromPrimary: ", User.FromPrimary(self.session, result.id))
+    # print("FromPrimary: ", User.FromPrimary(self.session, result.id))
     
-    print("DeletePrimary: ", User.DeletePrimary(self.session, result.id))
-    print("List: ", User.List(self.session, order=(User.id.desc(), User.username.asc())))
-    print("List: ", User.List(self.session, conditions=[{'id': '10', 'operator': '<='}]))
+    # print("DeletePrimary: ", User.DeletePrimary(self.session, result.id))
+    # print("List: ", User.List(self.session, order=(User.id.desc(), User.username.asc())))
+    # print("List: ", User.List(self.session, conditions=[{'id': '10', 'operator': '<='}]))
     
     
 
