@@ -36,18 +36,15 @@ class UserPageMaker(SqAlchemyPageMaker):
   
   def Login(self):
     """Returns the index template"""
-    # aut = Author(self.session, {'name': 'stef'})
-    # result = User.Create(self.session, {'username': 'name', 'password': 'test'})
-    # print("Created: ", result)
-    user = User.FromPrimary(self.session, 12)
-    print(user.TableName())
-    # # print("FromPrimary: ", user)
-    # print(user)
-    # user.id = 1
-    # user.Save()
+    result = User.Create(self.session, {'username': 'name', 'password': 'test'})
+    print("Created: ", result)
+    user = User.FromPrimary(self.session, result.id)
+    print("FromPrimary: ", user)
+    print("DeletePrimary: ", User.DeletePrimary(self.session, result.id))
+    user.id = 120
+    user.Save()
     # print(user)
     # print("List: ", list(User.List(self.session, order=(User.id.desc(), User.username.asc()))))
-    # print("DeletePrimary: ", User.DeletePrimary(self.session, result.id))
     # print("List: ", User.List(self.session, conditions=[{'id': '10', 'operator': '<='}]))
     
     # person = Persons.Create(self.session, {'id': 1, 'name': 'test2'})

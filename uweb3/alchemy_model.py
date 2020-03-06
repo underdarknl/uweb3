@@ -448,6 +448,8 @@ class Record(BaseRecord):
     with self.session_scope(self.session) as current_session:
       record = current_session.query(type(self)).filter(
         self._PrimaryKeyCondition(type(self)) == self.key).first()
+      if isinstance(record, type(None)):
+        raise NotExistError("Record no longer exists.")
       for key, value in difference.items():
         setattr(record, key, value)
       return type(self)(self.session, self._AlchemyRecordToDict(record))

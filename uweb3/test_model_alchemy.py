@@ -44,7 +44,7 @@ class Book(uweb3.alchemy_model.Record, Base):
   __tablename__ = 'book'
   ID = Column(Integer, primary_key=True)
   author = Column(Integer, nullable=False)
-  title = String(32, nullable=False)
+  title = Column(String(32), nullable=False)
   
   
 class BaseRecordTests(unittest.TestCase):
@@ -127,6 +127,13 @@ class RecordTests(unittest.TestCase):
     same_author = Author.FromPrimary(self.session, author.key)
     self.assertEqual(author.name, 'S. King')
     self.assertEqual(author, same_author)
+    
+  def testUpdatingDeletedRecord(self):
+    """Should raise an error because the record no longer exists"""
+    author = Author.Create(self.session, {'name': 'B. King'})
+    Author.DeletePrimary(self.session, author.ID)
+    author.name = 'S. King'
+    self.assertRaises(model.NotExistError, author.Save)
     
   def testUpdatePrimaryKey(self):
     """Saving with an updated primary key properly saved the record"""
