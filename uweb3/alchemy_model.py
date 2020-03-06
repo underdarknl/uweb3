@@ -292,7 +292,6 @@ class BaseRecord(dict):
   def __init__(self, session, record):
     """"""
     self.session = session
-    
     if record:
       self._ValidateRecord(record, type(self))
       self.__dict__.update(record)
@@ -300,7 +299,7 @@ class BaseRecord(dict):
       primary_key = inspect(type(self)).primary_key[0].name
       if primary_key in record:
         self.key = record[primary_key]
-  
+          
   def __repr__(self):
     return f'{type(self).__name__}({self._record})'
   
@@ -366,9 +365,9 @@ class Record(BaseRecord):
     #Create a new instance of the class that needs to be inserted into the database
     record = cls(session, record)
     #Set record values to the class. 
-    with cls.session_scope(session) as session:
-      session.add(record)
-      session.commit()
+    with cls.session_scope(session) as current_session:
+      current_session.add(record)
+      current_session.commit()
     return cls(session, cls._AlchemyRecordToDict(record))
     
   @classmethod
@@ -382,10 +381,38 @@ class Record(BaseRecord):
         primary_key of the object to delete
     """
     record = None
-    with cls.session_scope(session) as session:
-      record = session.query(cls).filter(
+    with cls.session_scope(session) as current_session:
+      record = current_session.query(cls).filter(
         cls._PrimaryKeyCondition(cls) == p_key).first()
     return cls(session, cls._AlchemyRecordToDict(record))
+  
+  def _Changes(self, new_record):
+    """Returns the differences of the current state vs the last stored state."""
+    sql_record = self._record
+    changes = {}
+    for key, value in sql_record.items():
+      if new_record.get(key) != value:
+        changes[key] = value
+    return changes
+  
+  def _SaveSelf(self):
+    new_record = {}
+    for item in inspect(type(self)).attrs:
+      new_record[item.key] = getattr(self, item.key)
+    difference = self._Changes(new_record)
+    if difference:
+      self._Update()
+      print(f"update record with primary {self.key} and changes: {difference}")
+  
+  def Save(self, save_foreign=False):
+    if save_foreign:
+      return NotImplemented
+    self._SaveSelf()
+    
+  def _Update(self):
+    with self.session_scope(self.session) as current_session:
+      record = current_session.query(type(self))
+      print(record)
     
   @classmethod
   def DeletePrimary(cls, session, p_key):
@@ -401,10 +428,10 @@ class Record(BaseRecord):
       @ P_key: integer
         primary_key of the object to delete
     """
-    with cls.session_scope(session) as session:
-      record = session.query(cls).filter(
+    with cls.session_scope(session) as current_session:
+      record = current_session.query(cls).filter(
         cls._PrimaryKeyCondition(cls) == p_key).first()
-      session.delete(record)
+      current_session.delete(record)
       return cls(session, cls._AlchemyRecordToDict(record))
     
     
@@ -446,8 +473,8 @@ class Record(BaseRecord):
            "!=": operator.ne, 
            "==": operator.eq
            } 
-    with cls.session_scope(session) as session:
-      query = session.query(cls)
+    with cls.session_scope(session) as current_session:
+      query = current_session.query(cls)
       if conditions:
         for item in conditions:
           attr = next(iter(item))
