@@ -285,13 +285,16 @@ class SecureCookie(object):
 
 
 
-class BaseRecord(dict):
+class BaseRecord(object):
   _record = {}
   key = None
   
   def __init__(self, session, record):
     """"""
     self.session = session
+    self._BuildRecordClass(record)
+  
+  def _BuildRecordClass(self, record):
     if record:
       self._ValidateRecord(record, type(self))
       self.__dict__.update(record)
@@ -299,13 +302,36 @@ class BaseRecord(dict):
       primary_key = inspect(type(self)).primary_key[0].name
       if primary_key in record:
         self.key = record[primary_key]
-          
+  
   def __repr__(self):
     return f'{type(self).__name__}({self._record})'
   
   def __len__(self):
     return len(self._record)
   
+  def __eq__(self, other):
+    if type(self) != type(other):
+      return False  # Types must be the same.
+    elif not (self.key == other.key is not None):
+      return False  # Records should have the same non-None primary key value.
+    elif len(self) != len(other):
+      return False  # Records must contain the same number of objects.
+    for key, value in self._record.items():
+      other_value = other._record[key]
+      if isinstance(self, BaseRecord) != isinstance(other, BaseRecord):
+        # Only one of the two is a BaseRecord instance
+        if (isinstance(self, BaseRecord) and value.key != other_value or
+            isinstance(other, BaseRecord) and other_value.key != value):
+          return False
+      elif value != other_value:
+        return False
+    return True
+  
+  @classmethod
+  def TableName(cls):
+    """Returns the database table name for the Record class."""
+    return cls.__tablename__
+
   @classmethod
   def _ValidateRecord(self, record, record_type):
     for item in record:
@@ -384,6 +410,10 @@ class Record(BaseRecord):
     with cls.session_scope(session) as current_session:
       record = current_session.query(cls).filter(
         cls._PrimaryKeyCondition(cls) == p_key).first()
+      
+    result = cls(session, cls._AlchemyRecordToDict(record))
+    if not len(result):
+      raise NotExistError(f"Record with primary key {p_key} does not exist")
     return cls(session, cls._AlchemyRecordToDict(record))
   
   def _Changes(self, new_record):
@@ -392,7 +422,7 @@ class Record(BaseRecord):
     changes = {}
     for key, value in sql_record.items():
       if new_record.get(key) != value:
-        changes[key] = value
+        changes[key] = new_record.get(key)
     return changes
   
   def _SaveSelf(self):
@@ -401,18 +431,26 @@ class Record(BaseRecord):
       new_record[item.key] = getattr(self, item.key)
     difference = self._Changes(new_record)
     if difference:
-      self._Update()
-      print(f"update record with primary {self.key} and changes: {difference}")
+      return self._Update(difference)
   
   def Save(self, save_foreign=False):
+    """When changes are made to the class save them to the database and rebuild the 
+    current record object
+    """
     if save_foreign:
       return NotImplemented
-    self._SaveSelf()
+    result = self._SaveSelf()
+    if result:
+      self._BuildRecordClass(result._record)
     
-  def _Update(self):
+  def _Update(self, difference):
+    """Update the object and return the new record class"""
     with self.session_scope(self.session) as current_session:
-      record = current_session.query(type(self))
-      print(record)
+      record = current_session.query(type(self)).filter(
+        self._PrimaryKeyCondition(type(self)) == self.key).first()
+      for key, value in difference.items():
+        setattr(record, key, value)
+      return type(self)(self.session, self._AlchemyRecordToDict(record))
     
   @classmethod
   def DeletePrimary(cls, session, p_key):

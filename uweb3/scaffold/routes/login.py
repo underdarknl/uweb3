@@ -39,11 +39,13 @@ class UserPageMaker(SqAlchemyPageMaker):
     # aut = Author(self.session, {'name': 'stef'})
     # result = User.Create(self.session, {'username': 'name', 'password': 'test'})
     # print("Created: ", result)
-    user = User.FromPrimary(self.session, 313)
-    # print("FromPrimary: ", user)
-    print(user)
-    user.username = 'stef'
-    user.Save()
+    user = User.FromPrimary(self.session, 12)
+    print(user.TableName())
+    # # print("FromPrimary: ", user)
+    # print(user)
+    # user.id = 1
+    # user.Save()
+    # print(user)
     # print("List: ", list(User.List(self.session, order=(User.id.desc(), User.username.asc()))))
     # print("DeletePrimary: ", User.DeletePrimary(self.session, result.id))
     # print("List: ", User.List(self.session, conditions=[{'id': '10', 'operator': '<='}]))
