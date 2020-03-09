@@ -29,7 +29,7 @@ class Author(alchemy_model.Record, Base):
   name = Column(String, unique=True)
   personid = Column('personid', Integer, ForeignKey('persons.id'))
   children = relationship("Persons",  lazy="joined")
-  # test = Column(Integer)
+  test = Column(Integer)
   
   
 class Persons(alchemy_model.Record, Base):
@@ -39,20 +39,21 @@ class Persons(alchemy_model.Record, Base):
   name = Column(String, primary_key=True)
          
 
-def buildTables(connection):
+def buildTables(connection, session):
   meta = MetaData()
   Table(
       'users', meta,
       Column('id', Integer, primary_key=True),
       Column('username', String(255), nullable=False),
       Column('password', String(255), nullable=False),
-      Column('authorid', Integer, ForeignKey('author.id'))
+      Column('authorid', Integer, ForeignKey('author.id')),
     )
   Table(
     'author', meta, 
     Column('id', Integer,primary_key=True),
     Column('name', String(32), nullable=False),
-    Column('personid', Integer, ForeignKey('persons.id'))
+    Column('personid', Integer, ForeignKey('persons.id')),
+    Column('test', Integer)
   )
   Table(
     'persons', meta,
@@ -60,13 +61,18 @@ def buildTables(connection):
     Column('name', String(32), nullable=False)
   )
   meta.create_all(connection)
+  Persons.Create(session, {'name': 'Person name'})
+  Author.Create(session, {'name': 'Author name', 'personid': 1, 'test': 1})
+  Author.Create(session, {'name': 'Author number 2', 'personid': 1, 'test': 1})
+  User.Create(session, {'username': 'name', 'password': 'test', 'authorid': 1})
+  
 
 class UserPageMaker(SqAlchemyPageMaker):
   """Holds all the request handlers for the application"""
   
   def Login(self):
     """Returns the index template"""
-    # buildTables(self.connection)
+    buildTables(self.connection, self.session)
     """Create column"""
     # result = User.Create(self.session, {'username': 'name', 'password': 'test', 'authorid': 1})
     # print(result)
