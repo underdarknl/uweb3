@@ -7,23 +7,30 @@ from uweb3 import PageMaker, SqAlchemyPageMaker
 from uweb3.pagemaker.new_login import Users, UserCookie, Test
 from uweb3.pagemaker.new_decorators import checkxsrf
 
-from sqlalchemy import Column, Integer, String, update
+from sqlalchemy import Column, Integer, String, update, MetaData, Table, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship, lazyload
 
 Base = declarative_base()
+
 class User(alchemy_model.Record, Base):
   __tablename__ = 'users'
 
   id = Column(Integer, primary_key=True)
   username = Column(String, nullable=False, unique=True)
-  password = Column(String, nullable=False)    
+  password = Column(String, nullable=False) 
+  authorid = Column('authorid', Integer, ForeignKey('author.id'))
+  children = relationship("Author",  lazy="joined")
       
 class Author(alchemy_model.Record, Base):
   __tablename__ = 'author'
 
   id = Column(Integer, primary_key=True)
   name = Column(String, unique=True)
+  personid = Column('personid', Integer, ForeignKey('persons.id'))
+  children = relationship("Persons",  lazy="joined")
+  # test = Column(Integer)
+  
   
 class Persons(alchemy_model.Record, Base):
   __tablename__ = 'persons'
@@ -31,39 +38,56 @@ class Persons(alchemy_model.Record, Base):
   id = Column(Integer)
   name = Column(String, primary_key=True)
          
+
+def buildTables(connection):
+  meta = MetaData()
+  Table(
+      'users', meta,
+      Column('id', Integer, primary_key=True),
+      Column('username', String(255), nullable=False),
+      Column('password', String(255), nullable=False),
+      Column('authorid', Integer, ForeignKey('author.id'))
+    )
+  Table(
+    'author', meta, 
+    Column('id', Integer,primary_key=True),
+    Column('name', String(32), nullable=False),
+    Column('personid', Integer, ForeignKey('persons.id'))
+  )
+  Table(
+    'persons', meta,
+    Column('id', Integer,primary_key=True),
+    Column('name', String(32), nullable=False)
+  )
+  meta.create_all(connection)
+
 class UserPageMaker(SqAlchemyPageMaker):
   """Holds all the request handlers for the application"""
   
   def Login(self):
     """Returns the index template"""
-    result = User.Create(self.session, {'username': 'name', 'password': 'test'})
-    print("Created: ", result)
-    user = User.FromPrimary(self.session, result.id)
-    print("FromPrimary: ", user)
-    print("DeletePrimary: ", User.DeletePrimary(self.session, result.id))
-    user.id = 120
-    user.Save()
+    # buildTables(self.connection)
+    """Create column"""
+    # result = User.Create(self.session, {'username': 'name', 'password': 'test', 'authorid': 1})
+    # print(result)
+    # print("Created: ", result)
+    """Select FromPrimary"""
+    # user = User.FromPrimary(self.session, 2)
+    # session = self.session()
+    """Join tables"""
+    # session.query(Persons, Author).join(Author).filter().all():
+    """Edit record"""
+    # user.author.name = 'qwerty'
+    # user.author.Save()
+    #print(user)
+    """Delete record"""
+    # print("DeletePrimary: ", User.DeletePrimary(self.session, result.id))
     # print(user)
-    # print("List: ", list(User.List(self.session, order=(User.id.desc(), User.username.asc()))))
+    """List with conditions"""
+    print("List: ", list(User.List(self.session, order=(User.id.desc(), User.username.asc()))))
     # print("List: ", User.List(self.session, conditions=[{'id': '10', 'operator': '<='}]))
-    
-    # person = Persons.Create(self.session, {'id': 1, 'name': 'test2'})
 
-    # self.session.add(aut)
-    # self.session.add(user)
-    # user = self.session.query(User).filter_by(id=1).first()
-    # user.username = "test"
-    # print(self.session.new)
-    # print(self.session.dirty)
-    # self.session.commit()
-    # print(self.session.query(User).filter_by(username='noname').first())
-    
     return 200
-    # self.session.close()
-    # print(self.session.query(User).filter_by(username='test'))
-    
-    # print(self.session.query(Author).filter_by(name=2).first())    
-    # session.add(user)
     scookie = UserCookie(self.secure_cookie_connection)
     # test = Test()
     if self.req.method == 'POST':

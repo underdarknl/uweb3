@@ -15,8 +15,11 @@ from uweb3.ext_lib.underdark.libs.sqltalk import mysql
 # Unittest target
 from uweb3 import alchemy_model as model
 import pymysql
-from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData
+from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData, ForeignKey
+from sqlalchemy.orm import relationship, lazyload
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.exc import IntegrityError, OperationalError
+
 from contextlib import contextmanager
 from pymysql.err import InternalError
 
@@ -31,7 +34,7 @@ class BasicTestRecord(uweb3.alchemy_model.Record, Base):
   ID = Column(Integer, primary_key=True)
   name = Column(String(32), nullable=False)
   x = Column(String(32))
-
+  
 
 class Author(uweb3.alchemy_model.Record, Base):
   __tablename__ = 'author'
@@ -43,8 +46,9 @@ class Book(uweb3.alchemy_model.Record, Base):
   """Book class for testing purposes."""
   __tablename__ = 'book'
   ID = Column(Integer, primary_key=True)
-  author = Column(Integer, nullable=False)
   title = Column(String(32), nullable=False)
+  authorid = Column('authorid', Integer, ForeignKey('author.ID'))
+  children = relationship("Author",  lazy="joined")
   
   
 class BaseRecordTests(unittest.TestCase):
@@ -86,7 +90,7 @@ class RecordTests(unittest.TestCase):
     book = Table(
       'book', self.meta, 
       Column('ID', Integer,primary_key=True),
-      Column('author', Integer, nullable=False),
+      Column('authorid', Integer, ForeignKey('author.ID')),
       Column('title', String(32), nullable=False)
     )
     self.engine = DatabaseConnection()
@@ -148,12 +152,24 @@ class RecordTests(unittest.TestCase):
     
   def testLoadRelated(self):
     """Fieldnames that match tablenames trigger automatic loading"""
-    Author.Create(self.session, {'name': 'D. Koontz'})
-    book = Book(self.session, {'author': 1})
-    # self.assertEqual(type(book['author']), Author)
-    # self.assertEqual(book['author']['name'], 'D. Koontz')
-    # self.assertEqual(book['author'].key, 1)
+    author = Author.Create(self.session, {'name': 'D. Koontz'})
+    book = Book.Create(self.session, {'title': 'test', 'authorid': 1})
+    self.assertEqual(type(author), Author)
+    self.assertEqual(type(book.author), Author)
+    self.assertEqual(book.author.name, 'D. Koontz')
+    self.assertEqual(book.author.key, 1)
+  
+  def testLoadRelatedFailure(self):
+    """Automatic loading raises IntegrityError if the foreign record is absent"""
+    self.assertRaises(IntegrityError, Book.Create, self.session, {'title': 'test', 'authorid': 1})
+
+  def testLoadRelatedSuppressedForNone(self):
+    """Automatic loading is not attempted when the field value is `None`"""
+    self.assertRaises(OperationalError, Book.Create, self.session, {'title': None})
       
+
+
+
 
 
 def DatabaseConnection():
