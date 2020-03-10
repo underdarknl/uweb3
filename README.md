@@ -150,7 +150,7 @@ Defining classes that represent a table is different from how we used to do it i
 SQLAlchemy requires you to define all columns from the table that you want to use. 
 For example, creating a class that represents the user table could look like this:
 
-`
+```
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -162,19 +162,14 @@ class User(Base):
   id = Column(Integer, primary_key=True)
   username = Column(String, nullable=False, unique=True)
   password = Column(String, nullable=False) 
-`  
+``` 
 We can now use this class to query our users table in the SqAlchemyPageMaker to get the user with id 1:
-`
-self.session.query(User).filter(User.id == 1).first() 
-`
+`self.session.query(User).filter(User.id == 1).first() `
 or to list all users:
-`
-self.session.query(User).all()
-`
-
+`self.session.query(User).all()`
 uWeb3's SQLAlchemy model.Record has almost the same functionality as uWeb3's regular model.Record so we can simplify our code to this:
 
-`
+```
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -187,24 +182,24 @@ class User(alchemy_model.Record, Base):
   id = Column(Integer, primary_key=True)
   username = Column(String, nullable=False, unique=True)
   password = Column(String, nullable=False) 
-`  
+```  
 We can now query the users table like this:
-`
+```
 User.FromPrimary(self.session, 1)
 >>> User({'id': 1, 'username': 'username', 'password': 'password'})
-`
+```
 Or to get a list of all users:
-`
+```
 User.List(self.session, conditions=[{'id': '1', 'operator': '>='}, {'id': '2', 'operator': '<='}])
 >>> [
   User({'id': 1, 'username': 'name', 'password': 'password'}), 
   User({'id': 2, 'username': 'user2', 'password': 'password'})
   ]
-`
+```
 
 Now if we want to automaticly load related tables we can set it up like this:
 
-`
+```
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
@@ -228,7 +223,7 @@ class UserInfo(alchemy_model.Record, Base):
 
   id = Column(Integer, primary_key=True)
   name = Column(String, unique=True)
-`
+```
 Now the UserInfo table will be loaded on the `userinfoid` attribute, but only after we try and access 
 this key a seperate query is send to retrieve the related information.
 SQLAlchemy's lazy loading is fast but should be avoided while in loops. Take a look at SQLAlchemys documentation for optimal use.
