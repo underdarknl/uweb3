@@ -54,7 +54,11 @@ class BaseRecord(object):
       if self.session:
         self.session.add(self)
         self.session.commit()
-                    
+    
+  def __hash__(self):
+    """Returns the hashed value of the key."""
+    return hash(self.key)
+                   
   def __repr__(self):
     s = {}
     for key in self.__table__.columns.keys():
@@ -82,8 +86,71 @@ class BaseRecord(object):
         return False
     return True
   
+  def __ne__(self, other):
+    """Returns the proper inverse of __eq__."""
+    # Without this, the non-equal checks used in __eq__ will not work,
+    # and the  `!=` operator would not be the logical inverse of `==`.
+    return not self == other
+  
   def __len__(self):
     return len(dict((col, getattr(self, col)) for col in self.__table__.columns.keys() if getattr(self, col)))
+    
+  def __int__(self):
+    """Returns the integer key value of the Record.
+
+    For record objects where the primary key value is not (always) an integer,
+    this function will raise an error in the situations where it is not.
+    """
+    key_val = self.key
+    if not isinstance(key_val, (int)):
+      # We should not truncate floating point numbers.
+      # Nor turn strings of numbers into an integer.
+      raise ValueError('The primary key is not an integral number.')
+    return key_val
+  
+  def copy(self):
+    """Returns a shallow copy of the Record that is a new functional Record."""
+    import copy
+    return copy.copy(self)
+  
+  def deepcopy(self):
+    import copy
+    return copy.deepcopy(self)
+   
+  def __gt__(self, other):
+    """Index of this record is greater than the other record's.
+
+    This requires both records to be of the same record class."""
+    if type(self) == type(other):
+      return self.key > other.key
+    return NotImplemented
+
+  def __ge__(self, other):
+    """Index of this record is greater than, or equal to, the other record's.
+
+    This requires both records to be of the same record class."""
+    if type(self) == type(other):
+      return self.key >= other.key
+    return NotImplemented
+
+  def __lt__(self, other):
+    """Index of this record is smaller than the other record's.
+
+    This requires both records to be of the same record class."""
+    if type(self) == type(other):
+      return self.key < other.key
+    return NotImplemented
+
+  def __le__(self, other):
+    """Index of this record is smaller than, or equal to, the other record's.
+
+    This requires both records to be of the same record class."""
+    if type(self) == type(other):
+      return self.key <= other.key
+    return NotImplemented 
+  
+  def __getitem__(self, field):
+    return getattr(self, field)
     
   @property
   def key(self):

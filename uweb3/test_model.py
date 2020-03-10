@@ -101,12 +101,19 @@ class RecordTests(unittest.TestCase):
                             `title` varchar(32) NOT NULL,
                             PRIMARY KEY (`ID`)
                           ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+      cursor.Execute("""CREATE TABLE `writers` (
+                            `ID` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
+                            `name` varchar(32) NOT NULL,
+                            PRIMARY KEY (`ID`)
+                          ) ENGINE=InnoDB  DEFAULT CHARSET=utf8""")
 
   def tearDown(self):
     """Destroy tables after testing."""
     with self.connection as cursor:
       cursor.Execute('DROP TABLE `author`')
       cursor.Execute('DROP TABLE `book`')
+      cursor.Execute('DROP TABLE `writers`')
+      
 
   def testLoadPrimary(self):
     """[Record] Records can be loaded by primary key using FromPrimary()"""
@@ -117,6 +124,12 @@ class RecordTests(unittest.TestCase):
     self.assertEqual(len(author), 2)
     self.assertEqual(author.key, inserted.insertid)
     self.assertEqual(author['name'], 'A. Chrstie')
+
+  def testCustom(self):
+    author = Writer.Create(self.connection, {'name': 'R.L. Stine'})
+    book = Book.Create(self.connection, {'author': 1, 'title': 'Fright Camp'})
+    Book._FOREIGN_RELATIONS = {'author': Writer}
+    print(book.GetRaw('author'))
 
   def testLoadPrimaryWithChangedKey(self):
     """[Record] Records can be loaded from alternative primary key"""

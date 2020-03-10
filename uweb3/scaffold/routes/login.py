@@ -75,10 +75,10 @@ class UserPageMaker(SqAlchemyPageMaker):
     #TODO: Make the session at the beginning of a request and close it in the post request    
     # buildTables(self.connection, self.session)
     user = User(self.session, {'username': 'name', 'password': 'test', 'authorid': 1})
+    user2 = User(self.session, {'username': 'second user', 'password': 'test', 'authorid': 1})
     from_primary = User.FromPrimary(self.session, user.id)
     user.username = 'q'
     print("User from primary key", from_primary)
-    print(len(from_primary.children))
     print("deleted", User.DeletePrimary(self.session, user.key))
     # print(user)
     # print("FromPrimary: ", user)
