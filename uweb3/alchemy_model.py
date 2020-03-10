@@ -13,7 +13,8 @@ import configparser
 
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, reconstructor
+from sqlalchemy.orm.session import object_session
 from sqlalchemy.inspection import inspect
 from contextlib import contextmanager
 
@@ -38,33 +39,29 @@ class NotExistError(Error):
 
 class PermissionError(Error):
   """The entity has insufficient rights to access the resource."""
-
-class BaseRecord(object):
-  _record = {}
-  key = None
   
+class BaseRecord(object):  
   def __init__(self, session, record):
-    """"""
     self.session = session
-    self._BuildRecordClass(record)
-  
-  def _BuildRecordClass(self, record):
-    if record:
-      self._ValidateRecord(record, type(self))
-      self.__dict__.update(record)
-      self._record = dict(record)
-      primary_key = inspect(type(self)).primary_key[0].name
-      if primary_key in record:
-        self.key = record[primary_key]
-  
-  # def __repr__(self):
-  #   return str(vars(self))
-  
+    self._BuildClassFromRecord(record)
+    
+  def _BuildClassFromRecord(self, record):
+    if isinstance(record, dict):
+      for key, value in record.items():
+        if not key in self.__table__.columns.keys():
+          raise AttributeError(f"Key '{key}' not specified in class '{self.__class__.__name__}'")
+        setattr(self, key, value)
+      if self.session:
+        self.session.add(self)
+        self.session.commit()
+                    
   def __repr__(self):
-    return f'{type(self).__name__}({self._record})'
-  
-  def __len__(self):
-    return len(self._record)
+    s = {}
+    for key in self.__table__.columns.keys():
+      value = getattr(self, key)
+      if value:
+        s[key] = value
+    return f'{type(self).__name__}({s})'
   
   def __eq__(self, other):
     if type(self) != type(other):
@@ -73,8 +70,9 @@ class BaseRecord(object):
       return False  # Records should have the same non-None primary key value.
     elif len(self) != len(other):
       return False  # Records must contain the same number of objects.
-    for key, value in self._record.items():
-      other_value = other._record[key]
+    for key in self.__table__.columns.keys():
+      value = getattr(self, key)
+      other_value = getattr(other, key)
       if isinstance(self, BaseRecord) != isinstance(other, BaseRecord):
         # Only one of the two is a BaseRecord instance
         if (isinstance(self, BaseRecord) and value.key != other_value or
@@ -84,44 +82,20 @@ class BaseRecord(object):
         return False
     return True
   
+  def __len__(self):
+    return len(dict((col, getattr(self, col)) for col in self.__table__.columns.keys() if getattr(self, col)))
+    
+  @property
+  def key(self):
+    return getattr(self, inspect(type(self)).primary_key[0].name)
+  
   @classmethod
   def TableName(cls):
     """Returns the database table name for the Record class."""
     return cls.__tablename__
-
-  @classmethod
-  def _ValidateRecord(cls, record, record_type):
-    """Validate if all attributes are part of the class. This validation works based
-    on how you defined the class with the sqlalchemy classes such as String, Integer.
-
-    Raises: 
-      AttributeError: if the item is not a valid column or child from the parent
-    """
-    for item in record:
-      if not item in (inspect(record_type).attrs):
-        if not issubclass(type(record[item]), BaseRecord):
-          raise AttributeError(f'{item} not a valid column in {record_type}')
   
   @classmethod
-  @contextmanager
-  def session_scope(cls, Session):
-    """Provide a transactional scope around a series of operations."""
-    session = Session(expire_on_commit=False)
-    try:
-      yield session
-      session.commit()
-    except:
-      session.rollback()
-      raise
-    finally:
-      session.close()
-  
-  @classmethod    
-  def _PrimaryKeyCondition(cls, target):
-    return getattr(cls, inspect(cls).primary_key[0].name)
-
-  @classmethod
-  def _AlchemyRecordToDict(cls, record, session):
+  def _AlchemyRecordToDict(cls, record):
     """This is needed because for some reason SQLalchemy makes a class of record it 
     returns from the database. However that record does not follow the init process
     and for that reason when we try and print it it will show Cls(None)
@@ -130,124 +104,65 @@ class BaseRecord(object):
     the name of the child is already in the dictionary it will add a _ prefix. 
     """
     if not isinstance(record, type(None)):
-      parent = dict((col, getattr(record, col)) for col in record.__table__.columns.keys())
-      if hasattr(record, 'children'):
-        if not isinstance(record.children, type(None)):
-          res = type(record.children)(session, cls._AlchemyRecordToDict(record.children, session))
-          child_name = res.__class__.__name__.lower()
-          if not child_name in parent:
-            parent[child_name] = res
-          else:
-            parent[f'_{child_name}'] = res
-      return parent
+      return dict((col, getattr(record, col)) for col in record.__table__.columns.keys())
     return None
   
+  @reconstructor
+  def reconstruct(self):
+    """This is called instead of __init__ when the result comes from the database"""
+    self.session = object_session(self)
+  
+  @classmethod    
+  def _PrimaryKeyCondition(cls, target):
+    return getattr(cls, inspect(cls).primary_key[0].name)
+    
 class Record(BaseRecord):
   """ """
-  
-  @classmethod
-  def Create(cls, session, record):
-    """Creates a new record of the class. 
-    
-    Keep in mind that it will only insert the fields that are specified in the child
-    that is inheriting from the Record/BaseRecord class.
-    
-    Arguments: 
-      @ Session: sqlalchemy session object
-        Available in the pagemaker with self.session
-      @ Record: dictionary with matching SQL attributes of the class
-      
-    Raises:
-      Sqlalchemy.exc
-      
-    Returns:
-      Class: returns record inside a usable class object depending on the class that
-      it was called with
-    """
-    #Create a new instance of the class that needs to be inserted into the database
-    record = cls(session, record)
-    with cls.session_scope(session) as current_session:
-      current_session.add(record)
-    return cls.FromPrimary(session, 
-                           getattr(record, cls._PrimaryKeyCondition(record).name))
-    
   @classmethod
   def FromPrimary(cls, session, p_key):
-    """Finds record based on given class and supplied primary key
+    """Finds record based on given class and supplied primary key.
     
     Arguments:
       @ Session: sqlalchemy session object
         Available in the pagemaker with self.session
       @ P_key: integer
         primary_key of the object to delete
+    Returns
+      BaseRecord
+      None
     """
-    record = None
-    with cls.session_scope(session) as current_session:
-      record = current_session.query(cls).filter(
-        cls._PrimaryKeyCondition(cls) == p_key).first()
-    result = cls(session, cls._AlchemyRecordToDict(record, session))
-    if not len(result):
+    record = session.query(cls).filter(cls._PrimaryKeyCondition(cls) == p_key).first()
+    if not record:
       raise NotExistError(f"Record with primary key {p_key} does not exist")
-    return result
+    return record
   
-  def _Changes(self, new_record):
-    """Returns the differences of the current state vs the last stored state."""
-    sql_record = self._record
-    changes = {}
-    for key, value in sql_record.items():
-      if new_record.get(key) != value:
-        changes[key] = new_record.get(key)
-    return changes
-  
-  def _SaveSelf(self):
-    new_record = {}
-    for item in inspect(type(self)).attrs:
-      new_record[item.key] = getattr(self, item.key)
-    difference = self._Changes(new_record)
-    if difference:
-      return self._Update(difference)
-  
-  def Save(self, save_foreign=False):
-    """When changes are made to the class save them to the database and rebuild the 
-    current record object
-    """
-    if save_foreign:
-      return NotImplemented
-    result = self._SaveSelf()
-    if result:
-      self._BuildRecordClass(result._record)
-    
-  def _Update(self, difference):
-    """Update the object and return the new record class"""
-    with self.session_scope(self.session) as current_session:
-      record = current_session.query(type(self)).filter(
-        self._PrimaryKeyCondition(type(self)) == self.key).first()
-      if isinstance(record, type(None)):
-        raise NotExistError("Record no longer exists.")
-      for key, value in difference.items():
-        setattr(record, key, value)
-      return type(self)(self.session, self._AlchemyRecordToDict(record, self.session))
-    
   @classmethod
   def DeletePrimary(cls, session, p_key):
-    """Deletes the record of given class based on the supplied primary key
-    
-    Keep in mind that the primary key will only be found if it is specified in the child
-    class. If for some reason multiple records match the criteria(shouldn't happen) 
-    only the first record will be deleted
+    """Deletes record base on primary key from given class.
     
     Arguments:
       @ Session: sqlalchemy session object
         Available in the pagemaker with self.session
       @ P_key: integer
         primary_key of the object to delete
+        
+    Returns:
+      isdeleted: boolean
+      True or False based on if a record was deleted or not    
     """
-    with cls.session_scope(session) as current_session:
-      record = current_session.query(cls).filter(
-        cls._PrimaryKeyCondition(cls) == p_key).first()
-      current_session.delete(record)
-      return cls(session, cls._AlchemyRecordToDict(record, session))
+    isdeleted = session.query(cls).filter(cls._PrimaryKeyCondition(cls) == p_key).delete()
+    session.commit()
+    return isdeleted
+   
+  def Save(self):
+    """Saves any changes made in the current record. Sqlalchemy automaticly detects 
+    these changes and only updates the changed values. If no values are present
+    no query will be commited."""
+    self.session.commit()
     
+  @classmethod  
+  def Create(cls, session, record):
+    return cls(session, record)
     
   @classmethod
   def List(cls, session, conditions=None, limit=None, offset=None,
@@ -275,8 +190,9 @@ class Record(BaseRecord):
         Instead of yielding only Record objects, the first item returned is the
         number of results from the query if it had been executed without limit.
         
-    Returns: int with length of results.
-    Yields: Classes of requested query.
+    Returns: 
+      Length: integer with length of results.
+      List: List of classes from request type
     """
     import operator
     ops = { 
@@ -287,25 +203,23 @@ class Record(BaseRecord):
            "!=": operator.ne, 
            "==": operator.eq
            } 
-    with cls.session_scope(session) as current_session:
-      query = current_session.query(cls)
-      if conditions:
-        for item in conditions:
-          attr = next(iter(item))
-          value = item[next(iter(item))]
-          operator = item.get('operator', '==')
-          query = query.filter(ops[operator](getattr(cls, attr), value))
-      if order:
-        for item in order:
-          query = query.order_by(item)
-      if limit:
-        query = query.limit(limit)
-      if offset:
-        query = query.offset(offset)
-      result = query.all()  
-      if yield_unlimited_total_first:
-        return len(result)
-      
-      for record in result:
-        yield cls(session, cls._AlchemyRecordToDict(record, session))
-      
+    query = session.query(cls)
+    if conditions:
+      for item in conditions:
+        attr = next(iter(item))
+        value = item[next(iter(item))]
+        operator = item.get('operator', '==')
+        query = query.filter(ops[operator](getattr(cls, attr), value))
+    if order:
+      for item in order:
+        query = query.order_by(item)
+    if limit:
+      query = query.limit(limit)
+    if offset:
+      query = query.offset(offset)
+    result = query.all()  
+    if yield_unlimited_total_first:
+      return len(result)
+    return result
+  
+     

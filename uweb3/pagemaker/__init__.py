@@ -176,7 +176,12 @@ class BasePageMaker(object):
     self.persistent = self.PERSISTENT
     self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_hash)
     self.user = self._GetLoggedInUser()
-    
+   
+  def _PostRequest(self, response):
+    if issubclass(type(self), SqAlchemyPageMaker):
+      self.session.close()
+      self.connection.dispose()
+    return response
 
   def XSRFInvalidToken(self, command):
     """Returns an error message regarding an incorrect XSRF token."""
@@ -457,25 +462,23 @@ class SqlAlchemyMixin(object):
   def connection(self):
     if '__sql_alchemy' not in self.persistent:
       from sqlalchemy import create_engine
-      from sqlalchemy.orm import sessionmaker
       mysql_config = self.options['mysql']
       engine = create_engine('mysql://{username}:{password}@{host}/{database}'.format(
           username=mysql_config.get('user'), 
           password=mysql_config.get('password'), 
           host=mysql_config.get('host', 'localhost'), 
           database=mysql_config.get('database')))
-      Session = sessionmaker(autocommit=False)
-      Session.configure(bind=engine)
       self.persistent.Set('__sql_alchemy', engine)
-      self.persistent.Set('__sql_alchemy_session', Session)
     return self.persistent.Get('__sql_alchemy')
 
   @property
   def session(self):
-    self.connection
-    if '__sql_alchemy_session' in self.persistent:
-      return self.persistent.Get('__sql_alchemy_session')
-    return None
+    from sqlalchemy.orm import sessionmaker
+    Session = sessionmaker()
+    Session.configure(bind=self.connection, expire_on_commit=False)
+    return Session()
+    
+    
   
 class MysqlMixin(object):
   """Adds MySQL support to PageMaker."""

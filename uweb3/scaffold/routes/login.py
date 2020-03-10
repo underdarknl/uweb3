@@ -20,7 +20,10 @@ class User(alchemy_model.Record, Base):
   username = Column(String, nullable=False, unique=True)
   password = Column(String, nullable=False) 
   authorid = Column('authorid', Integer, ForeignKey('author.id'))
-  children = relationship("Author",  lazy="joined")
+  children = relationship("Author",  lazy="select")
+  
+  def __init__(self, *args, **kwargs):
+    super(User, self).__init__(*args, **kwargs)
       
 class Author(alchemy_model.Record, Base):
   __tablename__ = 'author'
@@ -28,8 +31,7 @@ class Author(alchemy_model.Record, Base):
   id = Column(Integer, primary_key=True)
   name = Column(String, unique=True)
   personid = Column('personid', Integer, ForeignKey('persons.id'))
-  children = relationship("Persons",  lazy="joined")
-  test = Column(Integer)
+  children = relationship("Persons",  lazy="select")
   
   
 class Persons(alchemy_model.Record, Base):
@@ -44,16 +46,15 @@ def buildTables(connection, session):
   Table(
       'users', meta,
       Column('id', Integer, primary_key=True),
-      Column('username', String(255), nullable=False),
+      Column('username', String(255), nullable=False, unique=True),
       Column('password', String(255), nullable=False),
       Column('authorid', Integer, ForeignKey('author.id')),
     )
   Table(
     'author', meta, 
-    Column('id', Integer,primary_key=True),
+    Column('id', Integer, primary_key=True),
     Column('name', String(32), nullable=False),
-    Column('personid', Integer, ForeignKey('persons.id')),
-    Column('test', Integer)
+    Column('personid', Integer, ForeignKey('persons.id'))
   )
   Table(
     'persons', meta,
@@ -62,36 +63,36 @@ def buildTables(connection, session):
   )
   meta.create_all(connection)
   Persons.Create(session, {'name': 'Person name'})
-  Author.Create(session, {'name': 'Author name', 'personid': 1, 'test': 1})
-  Author.Create(session, {'name': 'Author number 2', 'personid': 1, 'test': 1})
+  Author.Create(session, {'name': 'Author name', 'personid': 1})
+  Author.Create(session, {'name': 'Author number 2', 'personid': 1})
   User.Create(session, {'username': 'name', 'password': 'test', 'authorid': 1})
   
-
 class UserPageMaker(SqAlchemyPageMaker):
   """Holds all the request handlers for the application"""
   
   def Login(self):
     """Returns the index template"""
-    buildTables(self.connection, self.session)
-    """Create column"""
-    # result = User.Create(self.session, {'username': 'name', 'password': 'test', 'authorid': 1})
-    # print(result)
-    # print("Created: ", result)
-    """Select FromPrimary"""
-    # user = User.FromPrimary(self.session, 2)
-    # session = self.session()
-    """Join tables"""
-    # session.query(Persons, Author).join(Author).filter().all():
-    """Edit record"""
-    # user.author.name = 'qwerty'
-    # user.author.Save()
-    #print(user)
-    """Delete record"""
-    # print("DeletePrimary: ", User.DeletePrimary(self.session, result.id))
+    #TODO: Make the session at the beginning of a request and close it in the post request    
+    # buildTables(self.connection, self.session)
+    user = User(self.session, {'username': 'name', 'password': 'test', 'authorid': 1})
+    from_primary = User.FromPrimary(self.session, user.id)
+    user.username = 'q'
+    print("User from primary key", from_primary)
+    print(len(from_primary.children))
+    print("deleted", User.DeletePrimary(self.session, user.key))
     # print(user)
-    """List with conditions"""
-    print("List: ", list(User.List(self.session, order=(User.id.desc(), User.username.asc()))))
-    # print("List: ", User.List(self.session, conditions=[{'id': '10', 'operator': '<='}]))
+    # print("FromPrimary: ", user)
+    # # session.query(Persons, Author).join(Author).filter().all():
+    # user.username = f'USERNAME{result.id}'
+    # user.Save()
+    # user.author.name = f'AUTHOR{result.id}'
+    # user.author.Save()
+    # print("EditedUser", user)
+    # user_list = list(User.List(self.session, order=(User.id.desc(), User.username.asc())))
+    # print("List item 0: ", user_list[0])
+    # print("Conditional list: ", list(User.List(self.session, conditions=[{'id': '10', 'operator': '<='}])))
+    # print("DeletePrimary: ", User.DeletePrimary(self.session, result.id))
+    # print('---------------------------------------------------------------------------')
 
     return 200
     scookie = UserCookie(self.secure_cookie_connection)
