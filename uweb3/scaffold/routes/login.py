@@ -76,10 +76,11 @@ class UserPageMaker(SqAlchemyPageMaker):
     # buildTables(self.connection, self.session)
     user = User(self.session, {'username': 'name', 'password': 'test', 'authorid': 1})
     user2 = User(self.session, {'username': 'second user', 'password': 'test', 'authorid': 1})
-    from_primary = User.FromPrimary(self.session, user.id)
     user.username = 'q'
+    from_primary = User.FromPrimary(self.session, user.id)
     print("User from primary key", from_primary)
     print("deleted", User.DeletePrimary(self.session, user.key))
+    print(User.List(self.session, conditions=[{'id': '140', 'operator': '>='}, {'id': '160', 'operator': '<='}]))
     # print(user)
     # print("FromPrimary: ", user)
     # # session.query(Persons, Author).join(Author).filter().all():
