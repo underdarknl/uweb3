@@ -22,6 +22,7 @@ class User(alchemy_model.Record, Base):
   authorid = Column('authorid', Integer, ForeignKey('author.id'))
   children = relationship("Author",  lazy="select")
   
+  
   def __init__(self, *args, **kwargs):
     super(User, self).__init__(*args, **kwargs)
       
@@ -32,6 +33,7 @@ class Author(alchemy_model.Record, Base):
   name = Column(String, unique=True)
   personid = Column('personid', Integer, ForeignKey('persons.id'))
   children = relationship("Persons",  lazy="select")
+  
   
   
 class Persons(alchemy_model.Record, Base):
@@ -72,15 +74,17 @@ class UserPageMaker(SqAlchemyPageMaker):
   
   def Login(self):
     """Returns the index template"""
-    #TODO: Make the session at the beginning of a request and close it in the post request    
     # buildTables(self.connection, self.session)
-    user = User(self.session, {'username': 'name', 'password': 'test', 'authorid': 1})
-    user2 = User(self.session, {'username': 'second user', 'password': 'test', 'authorid': 1})
-    user.username = 'q'
-    from_primary = User.FromPrimary(self.session, user.id)
+    # user = User(self.session, {'username': 'name', 'password': 'test', 'authorid': 1})
+    # print(user)
+    # user2 = User(self.session, {'username': 'second user', 'password': 'test', 'authorid': 1})
+    from_primary = User.FromPrimary(self.session, 1)
+    author  = Author(None, {'name' : 'test'})
+    print(from_primary)
+    print(from_primary.values())
     print("User from primary key", from_primary)
-    print("deleted", User.DeletePrimary(self.session, user.key))
-    print(User.List(self.session, conditions=[{'id': '140', 'operator': '>='}, {'id': '160', 'operator': '<='}]))
+    # print("deleted", User.DeletePrimary(self.session, user.key))
+    # print(User.List(self.session, conditions=[{'id': '140', 'operator': '>='}, {'id': '160', 'operator': '<='}]))
     # print(user)
     # print("FromPrimary: ", user)
     # # session.query(Persons, Author).join(Author).filter().all():

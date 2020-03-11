@@ -18,6 +18,8 @@ from sqlalchemy.orm.session import object_session
 from sqlalchemy.inspection import inspect
 from contextlib import contextmanager
 
+from itertools import chain
+
 class Error(Exception):
   """Superclass used for inheritance and external exception handling."""
 
@@ -151,6 +153,30 @@ class BaseRecord(object):
   
   def __getitem__(self, field):
     return getattr(self, field)
+  
+  def iteritems(self):
+    """Yields all field+value pairs in the Record.
+
+    N.B. This automatically resolves foreign references.
+    """
+    return chain(((key, getattr(self, key)) for key in self.__table__.columns.keys()),  
+    ((child[0], getattr(self, child[0])) for child in inspect(type(self)).relationships.items()))
+
+  def itervalues(self):
+    """Yields all values in the Record, loading foreign references."""
+    return chain((getattr(self, key) for key in self.__table__.columns.keys()), 
+                 (getattr(self, child[0]) for child in inspect(type(self)).relationships.items()))
+
+  def items(self):
+    """Returns a list of field+value pairs in the Record.
+
+    N.B. This automatically resolves foreign references.
+    """
+    return list(self.iteritems())
+
+  def values(self):
+    """Returns a list of values in the Record, loading foreign references."""
+    return list(self.itervalues())
     
   @property
   def key(self):

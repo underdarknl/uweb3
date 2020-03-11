@@ -37,9 +37,13 @@ class BasicTestRecord(uweb3.alchemy_model.Record, Base):
   name = Column(String(32), nullable=False)
   x = Column(String(32))
   
-
 class Author(uweb3.alchemy_model.Record, Base):
   __tablename__ = 'author'
+  ID = Column(Integer, primary_key=True)
+  name = Column(String(32), nullable=False)
+  
+class Writers(uweb3.alchemy_model.Record, Base):
+  __tablename__ = 'writers'
   ID = Column(Integer, primary_key=True)
   name = Column(String(32), nullable=False)
   
@@ -88,12 +92,17 @@ class RecordTests(unittest.TestCase):
     self.meta = MetaData()
     book = Table(
       'book', self.meta, 
-      Column('ID', Integer,primary_key=True),
+      Column('ID', Integer, primary_key=True),
       Column('authorid', Integer, ForeignKey('author.ID')),
       Column('title', String(32), nullable=False)
     )
     author = Table(
       'author', self.meta,
+      Column('ID', Integer, primary_key=True),
+      Column('name', String(32), nullable=False),
+    )
+    writers = Table(
+      'writers', self.meta,
       Column('ID', Integer, primary_key=True),
       Column('name', String(32), nullable=False),
     )
@@ -169,6 +178,9 @@ class RecordTests(unittest.TestCase):
     """Automatic loading is not attempted when the field value is `None`"""
     self.assertRaises(OperationalError, Book.Create, self.session, {'title': None})
       
+  def testVerifyNoLoad(self):
+    """No loading is performed on a field that matches a class but no table"""
+    self.assertRaises(AttributeError, Book, self.session, {'writer': 1}) 
 
 def DatabaseConnection():
   """Returns an SQLTalk database connection to 'newweb_model_test'."""
