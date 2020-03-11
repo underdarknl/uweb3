@@ -35,7 +35,6 @@ class Author(alchemy_model.Record, Base):
   children = relationship("Persons",  lazy="select")
   
   
-  
 class Persons(alchemy_model.Record, Base):
   __tablename__ = 'persons'
   

@@ -122,7 +122,8 @@ class BaseRecord(object):
   def __gt__(self, other):
     """Index of this record is greater than the other record's.
 
-    This requires both records to be of the same record class."""
+    This requires both records to be of the same record class.
+    """
     if type(self) == type(other):
       return self.key > other.key
     return NotImplemented
@@ -130,7 +131,8 @@ class BaseRecord(object):
   def __ge__(self, other):
     """Index of this record is greater than, or equal to, the other record's.
 
-    This requires both records to be of the same record class."""
+    This requires both records to be of the same record class.
+    """
     if type(self) == type(other):
       return self.key >= other.key
     return NotImplemented
@@ -138,15 +140,17 @@ class BaseRecord(object):
   def __lt__(self, other):
     """Index of this record is smaller than the other record's.
 
-    This requires both records to be of the same record class."""
+    This requires both records to be of the same record class.
+    """
     if type(self) == type(other):
       return self.key < other.key
     return NotImplemented
 
   def __le__(self, other):
     """Index of this record is smaller than, or equal to, the other record's.
-
-    This requires both records to be of the same record class."""
+    
+    This requires both records to be of the same record class.
+    """
     if type(self) == type(other):
       return self.key <= other.key
     return NotImplemented 
@@ -156,21 +160,21 @@ class BaseRecord(object):
   
   def iteritems(self):
     """Yields all field+value pairs in the Record.
-
-    N.B. This automatically resolves foreign references.
+    
+    This automaticly loads in relationships.
     """
     return chain(((key, getattr(self, key)) for key in self.__table__.columns.keys()),  
     ((child[0], getattr(self, child[0])) for child in inspect(type(self)).relationships.items()))
 
   def itervalues(self):
-    """Yields all values in the Record, loading foreign references."""
+    """Yields all values in the Record, loads relationships"""
     return chain((getattr(self, key) for key in self.__table__.columns.keys()), 
                  (getattr(self, child[0]) for child in inspect(type(self)).relationships.items()))
 
   def items(self):
     """Returns a list of field+value pairs in the Record.
-
-    N.B. This automatically resolves foreign references.
+    
+    This automaticly loads in relationships.
     """
     return list(self.iteritems())
 
@@ -189,12 +193,15 @@ class BaseRecord(object):
   
   @classmethod
   def _AlchemyRecordToDict(cls, record):
-    """This is needed because for some reason SQLalchemy makes a class of record it 
-    returns from the database. However that record does not follow the init process
-    and for that reason when we try and print it it will show Cls(None)
+    """Turns the values of a given class into a dictionary. Doesn't trigger
+    automatic loading of child classes.
     
-    If a child class is present it will load it as the name of the childs class, if 
-    the name of the child is already in the dictionary it will add a _ prefix. 
+    Arguments:
+      @ record: cls
+        BaseRecord class that is retrieved from a database query
+    Returns
+      dict: dictionary with all table columns and values
+      None: when record is empty
     """
     if not isinstance(record, type(None)):
       return dict((col, getattr(record, col)) for col in record.__table__.columns.keys())
@@ -207,6 +214,12 @@ class BaseRecord(object):
   
   @classmethod    
   def _PrimaryKeyCondition(cls, target):
+    """Returns the name of the primary key of given class
+    
+    Arguments:
+      @ target: cls
+        Class that you want to know the primary key name from
+    """
     return getattr(cls, inspect(cls).primary_key[0].name)
     
 class Record(BaseRecord):
@@ -216,12 +229,12 @@ class Record(BaseRecord):
     """Finds record based on given class and supplied primary key.
     
     Arguments:
-      @ Session: sqlalchemy session object
+      @ session: sqlalchemy session object
         Available in the pagemaker with self.session
-      @ P_key: integer
+      @ p_key: integer
         primary_key of the object to delete
     Returns
-      BaseRecord
+      cls
       None
     """
     record = session.query(cls).filter(cls._PrimaryKeyCondition(cls) == p_key).first()
@@ -234,14 +247,13 @@ class Record(BaseRecord):
     """Deletes record base on primary key from given class.
     
     Arguments:
-      @ Session: sqlalchemy session object
+      @ session: sqlalchemy session object
         Available in the pagemaker with self.session
-      @ P_key: integer
+      @ p_key: integer
         primary_key of the object to delete
         
     Returns:
-      isdeleted: boolean
-      True or False based on if a record was deleted or not    
+      isdeleted: boolean  
     """
     isdeleted = session.query(cls).filter(cls._PrimaryKeyCondition(cls) == p_key).delete()
     session.commit()
@@ -255,6 +267,16 @@ class Record(BaseRecord):
     
   @classmethod  
   def Create(cls, session, record):
+    """Creates a new instance and commits it to the database
+    
+    Arguments:
+      @ session: sqlalchemy session object
+        Available in the pagemaker with self.session
+      @ record: dict
+        Dictionary with all key:value pairs that are required for the db record
+    Returns:
+      cls
+    """
     return cls(session, record)
     
   @classmethod
@@ -263,8 +285,8 @@ class Record(BaseRecord):
     """Yields a Record object for every table entry.
 
     Arguments:
-      @ connection: object
-        Database connection to use.
+      @ session: sqlalchemy session object
+        Available in the pagemaker with self.session
       % conditions: list[{'column': 'value', 'operator': 'operator'|}]
         Optional query portion that will be used to limit the list of results.
         If multiple conditions are provided, they are joined on an 'AND' string.
@@ -284,8 +306,8 @@ class Record(BaseRecord):
         number of results from the query if it had been executed without limit.
         
     Returns: 
-      Length: integer with length of results.
-      List: List of classes from request type
+      integer: integer with length of results.
+      list: List of classes from request type
     """
     import operator
     ops = { 
