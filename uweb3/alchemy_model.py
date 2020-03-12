@@ -54,8 +54,13 @@ class BaseRecord(object):
           raise AttributeError(f"Key '{key}' not specified in class '{self.__class__.__name__}'")
         setattr(self, key, value)
       if self.session:
-        self.session.add(self)
-        self.session.commit()
+        try:
+          self.session.add(self)
+        except:
+          self.session.rollback()
+          raise
+        else:
+          self.session.commit()
     
   def __hash__(self):
     """Returns the hashed value of the key."""
@@ -237,10 +242,15 @@ class Record(BaseRecord):
       cls
       None
     """
-    record = session.query(cls).filter(cls._PrimaryKeyCondition(cls) == p_key).first()
-    if not record:
-      raise NotExistError(f"Record with primary key {p_key} does not exist")
-    return record
+    try:
+      record = session.query(cls).filter(cls._PrimaryKeyCondition(cls) == p_key).first()
+    except:
+      session.rollback()
+      raise
+    else:
+      if not record:
+        raise NotExistError(f"Record with primary key {p_key} does not exist")
+      return record
   
   @classmethod
   def DeletePrimary(cls, session, p_key):
@@ -255,9 +265,14 @@ class Record(BaseRecord):
     Returns:
       isdeleted: boolean  
     """
-    isdeleted = session.query(cls).filter(cls._PrimaryKeyCondition(cls) == p_key).delete()
-    session.commit()
-    return isdeleted
+    try:
+      isdeleted = session.query(cls).filter(cls._PrimaryKeyCondition(cls) == p_key).delete()
+    except:
+      session.rollback()
+      raise
+    else:
+      session.commit()
+      return isdeleted
   
   @classmethod  
   def Create(cls, session, record):
@@ -303,22 +318,27 @@ class Record(BaseRecord):
       integer: integer with length of results.
       list: List of classes from request type
     """
-    query = session.query(cls)
-    if conditions:
-      for condition in conditions:
-        query = query.filter(condition)
-    if order:
-      for item in order:
-        query = query.order_by(item)
-    if limit:
-      query = query.limit(limit)
-    if offset:
-      query = query.offset(offset)
-    result = query.all()  
-    if yield_unlimited_total_first:
-      return len(result)
-    return result
-  
+    try:
+      query = session.query(cls)
+      if conditions:
+        for condition in conditions:
+          query = query.filter(condition)
+      if order:
+        for item in order:
+          query = query.order_by(item)
+      if limit:
+        query = query.limit(limit)
+      if offset:
+        query = query.offset(offset)
+      result = query.all()
+    except:
+      session.rollback()
+      raise
+    else:
+      if yield_unlimited_total_first:
+        return len(result)
+      return result
+    
   @classmethod
   def Update(cls, session, conditions, values):
     """Update table based on conditions.
@@ -331,17 +351,27 @@ class Record(BaseRecord):
       @ values: dict
         for example: {User.username: 'value'}
     """
-    query = session.query(cls)
-    for condition in conditions:
-      query = query.filter(condition)
-    query = query.update(values)
-    session.commit()
+    try:
+      query = session.query(cls)
+      for condition in conditions:
+        query = query.filter(condition)
+      query = query.update(values)
+    except:
+      session.rollback()
+      raise
+    else:
+      session.commit()
 
   def Delete(self):
     """Delete current instance from the database"""
-    isdeleted = self.session.query(type(self)).filter(self._PrimaryKeyCondition(self) == self.key).delete()
-    self.session.commit()
-    return isdeleted
+    try:
+      isdeleted = self.session.query(type(self)).filter(self._PrimaryKeyCondition(self) == self.key).delete()
+    except:
+      self.session.rollback()
+      raise
+    else:
+      self.session.commit()
+      return isdeleted
   
   def Save(self):
     """Saves any changes made in the current record. Sqlalchemy automaticly detects 

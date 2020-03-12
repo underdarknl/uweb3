@@ -77,8 +77,8 @@ class UserPageMaker(SqAlchemyPageMaker):
     # User.Update(self.session, [User.id > 2, User.id < 100], {User.username: 'username', User.password: 'password'})
     user = User.FromPrimary(self.session, 1)
     print("User from primary key", user)
+    user.Delete()
     # print(user.children)
-    
     # print("deleted", User.DeletePrimary(self.session, user.key))
     # print(User.List(self.session, conditions=[User.id >= 1, User.id <= 10]))
     # print(user)
