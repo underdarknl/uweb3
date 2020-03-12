@@ -190,7 +190,7 @@ User.FromPrimary(self.session, 1)
 ```
 Or to get a list of all users:
 ```
-User.List(self.session, conditions=[{'id': '1', 'operator': '>='}, {'id': '2', 'operator': '<='}])
+User.List(self.session, conditions=[User.id <= 2])
 >>> [
   User({'id': 1, 'username': 'name', 'password': 'password'}), 
   User({'id': 2, 'username': 'user2', 'password': 'password'})

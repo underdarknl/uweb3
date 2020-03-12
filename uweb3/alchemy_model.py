@@ -258,13 +258,7 @@ class Record(BaseRecord):
     isdeleted = session.query(cls).filter(cls._PrimaryKeyCondition(cls) == p_key).delete()
     session.commit()
     return isdeleted
-   
-  def Save(self):
-    """Saves any changes made in the current record. Sqlalchemy automaticly detects 
-    these changes and only updates the changed values. If no values are present
-    no query will be commited."""
-    self.session.commit()
-    
+  
   @classmethod  
   def Create(cls, session, record):
     """Creates a new instance and commits it to the database
@@ -287,10 +281,10 @@ class Record(BaseRecord):
     Arguments:
       @ session: sqlalchemy session object
         Available in the pagemaker with self.session
-      % conditions: list[{'column': 'value', 'operator': 'operator'|}]
+      % conditions: list
         Optional query portion that will be used to limit the list of results.
         If multiple conditions are provided, they are joined on an 'AND' string.
-        Operators are: <=, <, ==, >, >=, !=. Defaults to == if no operator is supplied 
+        For example: conditions=[User.id <= 10, User.id >=]
       % limit: int ~~ None
         Specifies a maximum number of items to be yielded. The limit happens on
         the database side, limiting the query results.
@@ -309,22 +303,10 @@ class Record(BaseRecord):
       integer: integer with length of results.
       list: List of classes from request type
     """
-    import operator
-    ops = { 
-           "<": operator.lt, 
-           "<=": operator.le, 
-           ">": operator.gt, 
-           ">=": operator.ge, 
-           "!=": operator.ne, 
-           "==": operator.eq
-           } 
     query = session.query(cls)
     if conditions:
-      for item in conditions:
-        attr = next(iter(item))
-        value = item[next(iter(item))]
-        operator = item.get('operator', '==')
-        query = query.filter(ops[operator](getattr(cls, attr), value))
+      for condition in conditions:
+        query = query.filter(condition)
     if order:
       for item in order:
         query = query.order_by(item)
@@ -337,4 +319,32 @@ class Record(BaseRecord):
       return len(result)
     return result
   
-     
+  @classmethod
+  def Update(cls, session, conditions, values):
+    """Update table based on conditions.
+    
+    Arguments:
+      @ session: sqlalchemy session object
+          Available in the pagemaker with self.session
+      @ conditions: list|tuple
+        for example: [User.id > 2, User.id < 100]
+      @ values: dict
+        for example: {User.username: 'value'}
+    """
+    query = session.query(cls)
+    for condition in conditions:
+      query = query.filter(condition)
+    query = query.update(values)
+    session.commit()
+
+  def Delete(self):
+    """Delete current instance from the database"""
+    isdeleted = self.session.query(type(self)).filter(self._PrimaryKeyCondition(self) == self.key).delete()
+    self.session.commit()
+    return isdeleted
+  
+  def Save(self):
+    """Saves any changes made in the current record. Sqlalchemy automaticly detects 
+    these changes and only updates the changed values. If no values are present
+    no query will be commited."""
+    self.session.commit()

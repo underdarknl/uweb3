@@ -236,8 +236,6 @@ class NonStandardTableAndRelations(unittest.TestCase):
     self.assertRaises(self.connection.ProgrammingError,
                       book.__getitem__, 'author')  # No table `author`
     Book._FOREIGN_RELATIONS = {'author': Writer}
-    print(book.values())
-    # print(list(book.itervalues()))
     self.assertEqual(book['author'], author)
     del Book._FOREIGN_RELATIONS  # Don't persist changes to global state
 

@@ -1279,7 +1279,7 @@ class Smorgasbord(object):
   connection types (Mongo and relational), and have the smorgasbord provide the
   correct connection for the caller's needs. MongoReceord would be given the
   MongoDB connection as expected, and all other users will be given a relational
-  datbaase connection.
+  database connection.
 
   This is highly beta and debugging is going to be at the very least interesting
   because of __getattribute__ overriding that is necessary for this type of

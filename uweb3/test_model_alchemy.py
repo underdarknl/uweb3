@@ -47,7 +47,6 @@ class Writers(uweb3.alchemy_model.Record, Base):
   ID = Column(Integer, primary_key=True)
   name = Column(String(32), nullable=False)
   
-  
 class Book(uweb3.alchemy_model.Record, Base):
   """Book class for testing purposes."""
   __tablename__ = 'book'
@@ -164,7 +163,7 @@ class RecordTests(unittest.TestCase):
   def testLoadRelated(self):
     """Fieldnames that match tablenames trigger automatic loading"""
     author = Author.Create(self.session, {'name': 'D. Koontz'})
-    book = Book.Create(self.session, {'title': 'test', 'authorid': 1})
+    book = Book.Create(self.session, {'title': 'The eyes of Darkness', 'authorid': 1})
     self.assertEqual(type(author), Author)
     self.assertEqual(type(book.author), Author)
     self.assertEqual(book.author.name, 'D. Koontz')
@@ -172,7 +171,7 @@ class RecordTests(unittest.TestCase):
     
   def testLoadRelatedFailure(self):
     """Automatic loading raises IntegrityError if the foreign record is absent"""
-    self.assertRaises(IntegrityError, Book.Create, self.session, {'title': 'test', 'authorid': 1})
+    self.assertRaises(IntegrityError, Book.Create, self.session, {'title': 'The eyes of Darkness', 'authorid': 1})
 
   def testLoadRelatedSuppressedForNone(self):
     """Automatic loading is not attempted when the field value is `None`"""
@@ -181,6 +180,22 @@ class RecordTests(unittest.TestCase):
   def testVerifyNoLoad(self):
     """No loading is performed on a field that matches a class but no table"""
     self.assertRaises(AttributeError, Book, self.session, {'writer': 1}) 
+    
+  def testValues(self):
+    author = Author.Create(self.session, {'name': 'D. Koontz'})
+    self.assertEqual(author.values(), [1, 'D. Koontz'])
+    book = Book.Create(self.session, {'title': 'The eyes of Darkness', 'authorid': author.key})
+    self.assertEqual(book.values(), [1, 'The eyes of Darkness', 1, Author(None, {'ID': 1, 'name': 'D. Koontz'})])
+        
+  def testItems(self):
+    author = Author.Create(self.session, {'name': 'D. Koontz'})
+    self.assertEqual(author.items(), [('ID', 1), ('name', 'D. Koontz')])
+    book = Book.Create(self.session, {'title': 'The eyes of Darkness', 'authorid': author.key})
+    self.assertEqual(book.items(), 
+                     [('ID', 1), 
+                      ('title', 'The eyes of Darkness'), 
+                      ('authorid', 1), 
+                      ('author', Author(None, {'ID': 1, 'name': 'D. Koontz'}))])
 
 def DatabaseConnection():
   """Returns an SQLTalk database connection to 'newweb_model_test'."""

@@ -74,16 +74,13 @@ class UserPageMaker(SqAlchemyPageMaker):
   def Login(self):
     """Returns the index template"""
     # buildTables(self.connection, self.session)
-    # user = User(self.session, {'username': 'name', 'password': 'test', 'authorid': 1})
-    # print(user)
-    # user2 = User(self.session, {'username': 'second user', 'password': 'test', 'authorid': 1})
-    from_primary = User.FromPrimary(self.session, 1)
-    author  = Author(None, {'name' : 'test'})
-    print(from_primary)
-    print(from_primary.values())
-    print("User from primary key", from_primary)
+    # User.Update(self.session, [User.id > 2, User.id < 100], {User.username: 'username', User.password: 'password'})
+    user = User.FromPrimary(self.session, 1)
+    print("User from primary key", user)
+    # print(user.children)
+    
     # print("deleted", User.DeletePrimary(self.session, user.key))
-    # print(User.List(self.session, conditions=[{'id': '140', 'operator': '>='}, {'id': '160', 'operator': '<='}]))
+    # print(User.List(self.session, conditions=[User.id >= 1, User.id <= 10]))
     # print(user)
     # print("FromPrimary: ", user)
     # # session.query(Persons, Author).join(Author).filter().all():
@@ -94,7 +91,7 @@ class UserPageMaker(SqAlchemyPageMaker):
     # print("EditedUser", user)
     # user_list = list(User.List(self.session, order=(User.id.desc(), User.username.asc())))
     # print("List item 0: ", user_list[0])
-    # print("Conditional list: ", list(User.List(self.session, conditions=[{'id': '10', 'operator': '<='}])))
+    # print("Conditional list: ", list(User.List(self.session, conditions=[User.id <= 10])))
     # print("DeletePrimary: ", User.DeletePrimary(self.session, result.id))
     # print('---------------------------------------------------------------------------')
 
