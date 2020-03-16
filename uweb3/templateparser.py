@@ -321,8 +321,9 @@ class Template(list):
 
     The template is parsed by parsing each of its members and combining that.
     """
-    
-    return HTMLsafestring(''.join(tag.Parse(**kwds) for tag in self))
+    htmlsafe = HTMLsafestring(''.join(tag.Parse(**kwds) for tag in self))
+    htmlsafe.tags = [[str(tag), tag.Parse(**kwds)] for tag in self if isinstance(tag, TemplateTag)]
+    return htmlsafe
 
   @classmethod
   def TagSplit(cls, template):
@@ -462,11 +463,15 @@ class FileTemplate(Template):
     The template is parsed by parsing each of its members and combining that.
     """
     self.ReloadIfModified()
+    # if self.parser and self.parser.noparse:
+      # return {'template': self._template_path,
+      #         'replacements': kwds}
+
+    result = super(FileTemplate, self).Parse(**kwds)
     if self.parser and self.parser.noparse:
       return {'template': self._template_path,
-              'replacements': kwds}
-
-    return super(FileTemplate, self).Parse(**kwds)
+              'replacements': result.tags}
+    return result
 
   def ReloadIfModified(self):
     """Reloads the template file if it was modified on disk.

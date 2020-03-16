@@ -10,12 +10,17 @@ from uweb3.ext_lib.underdark.libs.safestring import SQLSAFE, HTMLsafestring
 
 class Test(PageMaker):
   """Holds all the request handlers for the application"""
-  
+  @staticmethod
+  def Limit(length=80):
+    """Returns a closure that limits input to a number of chars/elements.""" 
+    return lambda string: string[:length]
+
   # @loggedin
   def Test(self):
     """Returns the index template"""
     # print(type(HTMLsafestring("oi")))
-    return self.parser.Parse('test.html', q=HTMLsafestring('test<b>hello</b>', unsafe=True))
+    self.parser.RegisterFunction('substr', self.Limit)
+    return self.parser.Parse('test.html', variable='test')
 
   def Create(self):
     scookie = UserCookie(self.secure_cookie_connection)    

@@ -3,7 +3,7 @@
 
 import uweb3
 from uweb3 import alchemy_model
-from uweb3 import PageMaker, SqAlchemyPageMaker
+from uweb3 import SqAlchemyPageMaker
 from uweb3.pagemaker.new_login import Users, UserCookie, Test
 from uweb3.pagemaker.new_decorators import checkxsrf
 
@@ -73,11 +73,12 @@ class UserPageMaker(SqAlchemyPageMaker):
   
   def Login(self):
     """Returns the index template"""
-    # buildTables(self.connection, self.session)
+    print(self.engine)
+    buildTables(self.engine, self.session)
     # User.Update(self.session, [User.id > 2, User.id < 100], {User.username: 'username', User.password: 'password'})
-    user = User.FromPrimary(self.session, 1)
-    print("User from primary key", user)
-    user.Delete()
+    # user = User.FromPrimary(self.session, 1)
+    # print("User from primary key", user)
+    # user.Delete()
     # print(user.children)
     # print("deleted", User.DeletePrimary(self.session, user.key))
     # print(User.List(self.session, conditions=[User.id >= 1, User.id <= 10]))
@@ -95,7 +96,6 @@ class UserPageMaker(SqAlchemyPageMaker):
     # print("DeletePrimary: ", User.DeletePrimary(self.session, result.id))
     # print('---------------------------------------------------------------------------')
 
-    return 200
     scookie = UserCookie(self.secure_cookie_connection)
     # test = Test()
     if self.req.method == 'POST':

@@ -179,8 +179,9 @@ class BasePageMaker(object):
    
   def _PostRequest(self, response):
     if issubclass(type(self), SqAlchemyPageMaker):
-      self.session.close()
-      self.connection.dispose()
+      """ """
+      # self.session.close()
+      # self.connection.dispose()
     return response
 
   def XSRFInvalidToken(self, command):
@@ -277,7 +278,7 @@ class BasePageMaker(object):
     """
     if '__parser' not in self.persistent:
       self.persistent.Set('__parser', templateparser.Parser(
-          self.options.get('templates', {}).get('path', self.TEMPLATE_DIR)))
+          self.options.get('templates', {}).get('path', self.TEMPLATE_DIR), noparse=True))
     return self.persistent.Get('__parser')
 
   def InternalServerError(self, exc_type, exc_value, traceback):
@@ -458,8 +459,9 @@ class MongoMixin(object):
 
 class SqlAlchemyMixin(object):
   """Adds MysqlAlchemy connection to PageMaker."""
+
   @property
-  def connection(self):
+  def engine(self):
     if '__sql_alchemy' not in self.persistent:
       from sqlalchemy import create_engine
       mysql_config = self.options['mysql']
@@ -475,15 +477,14 @@ class SqlAlchemyMixin(object):
   def session(self):
     from sqlalchemy.orm import sessionmaker
     Session = sessionmaker()
-    Session.configure(bind=self.connection, expire_on_commit=False)
+    Session.configure(bind=self.engine, expire_on_commit=False)
     return Session()
     
-    
-  
 class MysqlMixin(object):
   """Adds MySQL support to PageMaker."""
   @property
   def connection(self):
+    raise Exception
     """Returns a MySQL database connection."""
     if '__mysql' not in self.persistent:
       from underdark.libs.sqltalk import mysql
@@ -496,7 +497,6 @@ class MysqlMixin(object):
           charset=mysql_config.get('charset', 'utf8'),
           debug=DebuggerMixin in self.__class__.__mro__))
     return self.persistent.Get('__mysql')
-
 
 class SqliteMixin(object):
   """Adds SQLite support to PageMaker."""
@@ -555,10 +555,10 @@ class SmorgasbordMixin(object):
 # ##############################################################################
 # Classes for public use (wildcard import)
 #
-class PageMaker(MysqlMixin, BasePageMaker):
+class SqAlchemyPageMaker(SqlAlchemyMixin, BasePageMaker):
   """The basic PageMaker class, providing MySQL support."""
 
-class SqAlchemyPageMaker(SqlAlchemyMixin, BasePageMaker):
+class PageMaker(MysqlMixin, BasePageMaker):
   """The basic PageMaker class, providing MySQL support."""
 
 class DebuggingPageMaker(DebuggerMixin, PageMaker):
