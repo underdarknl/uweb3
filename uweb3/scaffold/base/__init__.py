@@ -26,11 +26,14 @@ def main():
       ('/', 'Index'),
       ('/login', 'Login'),
       ('/test', 'Test'),
+      ('/getrawtemplate.*', 'GetRawTemplate'),
+      ('/parsed', 'Parsed'),
       ('/test/create', 'Create'),
       ('/test/update', 'Update'),
       ('/test/delete', 'Delete'),
       ('/test/escaping', 'StringEscaping'),
       ('/logout', 'Logout'),
+      ('/static/(.*)', 'Static'),
       ('/(.*)', 'FourOhFour'),
       ]
   

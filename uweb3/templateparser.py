@@ -18,6 +18,7 @@ import os
 import re
 import urllib.parse as urlparse
 from .ext_lib.underdark.libs.safestring import *
+import hashlib
 #TODO: create a ifNotPresent 
 class Error(Exception):
   """Superclass used for inheritance and external exception handling."""
@@ -316,13 +317,19 @@ class Template(list):
         raise TemplateSyntaxError('Closed %d scopes too many' % abs(scope_diff))
       raise TemplateSyntaxError('Template left %d open scopes.' % scope_diff)
 
-  def Parse(self, **kwds):
+  def Parse(self, returnRawTemplate=False, **kwds):
     """Returns the parsed template as SafeString.
 
     The template is parsed by parsing each of its members and combining that.
     """
+    if returnRawTemplate:
+      return HTMLsafestring(self)
     htmlsafe = HTMLsafestring(''.join(tag.Parse(**kwds) for tag in self))
-    htmlsafe.tags = [[str(tag), tag.Parse(**kwds)] for tag in self if isinstance(tag, TemplateTag)]
+    #Hash the page so that we can compare on the frontend if the html has changed
+    htmlsafe.page_hash = hashlib.md5(HTMLsafestring(self).encode()).hexdigest()
+    #Hashes the page and the content so we can know if we need to refresh the page on the frontend
+    htmlsafe.content_hash = hashlib.md5(htmlsafe.encode()).hexdigest()
+    htmlsafe.tags = {str(tag):tag.Parse(**kwds) for tag in self if isinstance(tag, TemplateTag)}
     return htmlsafe
 
   @classmethod
@@ -463,14 +470,13 @@ class FileTemplate(Template):
     The template is parsed by parsing each of its members and combining that.
     """
     self.ReloadIfModified()
-    # if self.parser and self.parser.noparse:
-      # return {'template': self._template_path,
-      #         'replacements': kwds}
-
     result = super(FileTemplate, self).Parse(**kwds)
     if self.parser and self.parser.noparse:
       return {'template': self._template_path,
-              'replacements': result.tags}
+              'replacements': result.tags,
+              'content_hash':result.content_hash,
+              'page_hash': result.page_hash
+              }
     return result
 
   def ReloadIfModified(self):

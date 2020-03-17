@@ -1,15 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+  <title>Header - Underdark CSS</title>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Document</title>
+  <title>Uweb</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="//css.underdark.nl/0.2/base.css" rel="stylesheet" />
+  <link href="//css.underdark.nl/0.2/layout.css" rel="stylesheet" />
+  <link href="//css.underdark.nl/0.2/module.css" rel="stylesheet" />
+  <link href="//css.underdark.nl/0.2/theme.css" rel="stylesheet" />
 </head>
-<body>
-  [variable]
-  [variable|len]
-  [variable|substr(1)]
-  [variable|substr(2)]
+
+<body id="header" class="layout">
+  <header>
+    <div>
+      <div class="logo">
+        <a href="/">Uweb3</a>
+        <p>Lorem ipsum dolor sit amet</p>
+      </div>
+      <button class="toggle">Menu</button>
+    </div>
+  </header>
+  <section>
+    <div>
+    <p>Alt + click to generate new content</p>
+    <a href='/parsed'>Generate content</a>
+  </div>
+  <p>
+    variable1: [variable]
+  </p>
+  <p>
+    variable2: [variable2]
+  </p>
+  <p>
+    variabl1|len: [variable|len]
+  </p>
+  <p>
+    substr1: [variable|substr(1)]
+  </p>
+  <p>
+    substr2: [variable|substr(2)]
+  </p>
+  <p>
+  {{if [variable]}}
+    [variable]
+  {{endif}}
+  </p>
+  {{for item in [variable]}} [item] {{endfor}}
+  </section>
+
+  <script src="/static/scripts/ajax.js"></script>
+  <script src="/static/scripts/uweb-dynamic.js"></script>
 </body>
 </html>

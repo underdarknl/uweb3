@@ -278,7 +278,7 @@ class BasePageMaker(object):
     """
     if '__parser' not in self.persistent:
       self.persistent.Set('__parser', templateparser.Parser(
-          self.options.get('templates', {}).get('path', self.TEMPLATE_DIR), noparse=True))
+          self.options.get('templates', {}).get('path', self.TEMPLATE_DIR)))
     return self.persistent.Get('__parser')
 
   def InternalServerError(self, exc_type, exc_value, traceback):
@@ -316,7 +316,7 @@ class BasePageMaker(object):
     rel_path = os.path.abspath(os.path.join(os.path.sep, rel_path))[1:]
     abs_path = os.path.join(self.PUBLIC_DIR, rel_path)
     try:
-      with file(abs_path) as staticfile:
+      with open(abs_path) as staticfile:
         content_type, _encoding = mimetypes.guess_type(abs_path)
         if not content_type:
           content_type = 'text/plain'
