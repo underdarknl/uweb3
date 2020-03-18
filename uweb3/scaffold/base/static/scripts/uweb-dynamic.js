@@ -2,18 +2,84 @@ var ud = ud || {};
 var _paq = _paq || [];
 
 
+// class Page {
+//   content_hash = null
+//   page_hash = null
+//   template = null
+//   replacements = {}
+// }
+
 class Page {
-  content_hash = null
-  page_hash = null
-  template = null
-  replacements = {}
+  html = null
+
+  constructor(page){
+    this.page_hash = page[2].page_hash;
+    this.content_hash = page[2].content_hash;
+    this.template = page[2].template;
+    this.replacements = page[2].replacements;
+  }
+  
 }
 
 (function () {
-  let i = 0;
-  let page = new Page();
   'use strict';
+  let i = 0;
+  let currentPage = null;
+  let cacheHandler = {
+    previous_key: null,
+    create: function(page){
+      if(this.cacheSize() >= 5){
+        this.delete(0);
+      }
+      window.localStorage.setItem(page.page_hash, 
+      JSON.stringify({
+        'created': new Date().getTime(),
+        'content_hash': page.content_hash,
+        'replacements': page.replacements,
+        'template': page.template, 
+        'html': page.html
+      }));
+      this.previous_key = page.page_hash;
+      return 200
+    },
+    insertHTML: function(html){
+      if(this.previous_key){
+        let storedPage = this.read(this.previous_key);
+        if(!storedPage.html){
+          storedPage.html = html;
+          window.localStorage.setItem(this.previous_key, JSON.stringify(storedPage));
+        }
+        return storedPage;
+      }
+    },
+    read: function(page_hash){
+      return JSON.parse(window.localStorage.getItem(page_hash));
+    },
+    delete: function(index){
+      let key = window.localStorage.key(index);
+      let oldest_item = {
+        created: null,
+        key: null
+      }
+      if(index === 0){
+        const items = { ...localStorage };
+        for(let item in items){
+          let current = this.read(item);
+          if(current.created < oldest_item.created || oldest_item.created == null){
+            oldest_item.created = current.created;
+            oldest_item.key = item;
+          }
+        }
+        return window.localStorage.removeItem(oldest_item.key);
+      }
+      window.localStorage.removeItem(key);
+    },
+    cacheSize: function(){
+      return window.localStorage.length;
+    }
+  }
 
+  cacheHandler.delete(0);
   function handleAnchors(){ 
     var anchors = document.getElementsByTagName('a');
     for(var i=0;i<anchors.length;i++){
@@ -45,9 +111,9 @@ class Page {
       if(path.length>0){
         if(event.altKey){
           //TODO: delete this when done
-          path += `?variable=newContent${i}&variable2=moreContent${i}`;
+          path += `&variable=newContent${i}&variable2=moreContent${i}`;
         }else{
-          path += '?variable=samecontent&variable2=moresamecontent';
+          path += '&variable=samecontent&variable2=moresamecontent';
         }
         fetchPage(path);        
         event.preventDefault();
@@ -69,31 +135,48 @@ class Page {
   }
 
   function fetchPage(url, data){
+    console.log(url);
     ud.ajax(url, {success: handlePage});
     i++;
   }
 
-  function renderPage(data){
-    for(let key in page.replacements){
-      data = data.replace(key, page.replacements[key]);
+  function handleReplacements(html, replacements){
+    for(let placeholder in replacements){
+      html = html.replace(placeholder, replacements[placeholder]);
     }
-    document.querySelector('html').innerHTML = data;
-    handleAnchors();
+    return html;
   }
-  
+  function sleep (time) {
+    return new Promise((resolve) => setTimeout(resolve, time));
+  }
   function handlePage(data){
     //If the page is the same but the content is different we can retrieve the page from the hash and replace the placeholders with new values
     //If the page is different we need to reload everything and update the cache
-    if(page.content_hash !== data[2].content_hash){
-      console.log('hashes do not match, retrieve new template');
-      ud.ajax('/getrawtemplate', {success: renderPage, mimeType: 'text/html'});
-
-      page.page_hash = data[2].page_hash;
-      page.content_hash = data[2].content_hash;
-      page.replacements = data[2].replacements;
-      return
+    //Create a new instance of the page object. This only happends on the first call.
+    if(typeof data === 'object'){
+      const { content_hash, page_hash } = data[2];
+      const cached = cacheHandler.read(page_hash);
+      if(cached){
+        if(cached.content_hash === content_hash){
+          console.log(`Retrieving page from hash: ${page_hash} with content hash: ${content_hash}`);
+          let html = handleReplacements(cached.html, cached.replacements);
+          document.querySelector('html').innerHTML = html;
+        }else{
+          console.log(`Retrieving page from hash: ${page_hash} with content hash: ${content_hash}`);
+          let html = handleReplacements(cached.html, data[2].replacements);
+          document.querySelector('html').innerHTML = html;
+        }
+      }else{
+        //If there is no cached page...
+        cacheHandler.create(new Page(data));
+        return ud.ajax(`/getrawtemplate?template=${data[2].template}`,  {success: handlePage, mimeType: 'text/html'});
+      }
+    }else if(typeof data === 'string'){
+      let html = cacheHandler.insertHTML(data);
+      html = handleReplacements(html.html, html.replacements)
+      document.querySelector('html').innerHTML = html;
     }
-    console.log('hashes match, retrieve shit from cache');
+    handleAnchors();
   }
   
   function init(){

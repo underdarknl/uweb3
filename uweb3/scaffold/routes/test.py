@@ -25,18 +25,22 @@ class Test(PageMaker):
   
   def GetRawTemplate(self):
     """Endpoint that only returns the raw template"""
-    return self.parser.Parse('test.html', returnRawTemplate=True)
+    template = self.get.getfirst('template')
+    if template:
+      return self.parser.Parse(template, returnRawTemplate=True)
+    return 404
 
   def Parsed(self):
     self.parser.RegisterFunction('substr', self.Limit)
     kwds = {}
+    template = self.get.getfirst('template')
+    del self.get['template']
     for item in self.get:
       kwds[item] = self.get.getfirst(item)
     self.parser.noparse = True
     content = self.parser.Parse(
-        'test.html', **kwds)
+        template, **kwds)
     self.parser.noparse = False
-    print(content)
     return json.dumps(((self.req.headers.get('http_x_requested_with', None), self.parser.noparse, content)))
   
   def Create(self):

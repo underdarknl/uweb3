@@ -472,7 +472,7 @@ class FileTemplate(Template):
     self.ReloadIfModified()
     result = super(FileTemplate, self).Parse(**kwds)
     if self.parser and self.parser.noparse:
-      return {'template': self._template_path,
+      return {'template': self._file_name.rsplit('/')[-1],
               'replacements': result.tags,
               'content_hash':result.content_hash,
               'page_hash': result.page_hash
