@@ -74,7 +74,7 @@ class UserPageMaker(SqAlchemyPageMaker):
   def Login(self):
     """Returns the index template"""
     print(self.engine)
-    buildTables(self.engine, self.session)
+    # buildTables(self.engine, self.session)
     # User.Update(self.session, [User.id > 2, User.id < 100], {User.username: 'username', User.password: 'password'})
     # user = User.FromPrimary(self.session, 1)
     # print("User from primary key", user)

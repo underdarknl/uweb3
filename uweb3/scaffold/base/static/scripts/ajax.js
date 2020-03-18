@@ -71,12 +71,12 @@ ud.ajax = (function () {
       if (this.xhr.readyState === 4) {
         if(this.mimeType === 'application/json'){
           if (this.xhr.status === 200 && this.success) {
-            this.success(JSON.parse(this.xhr.responseText));
+            this.success(JSON.parse(this.xhr.responseText), this.url);
           } else if (this.error) {
             this.error(this.xhr);
           }
         }else{
-          this.success(this.xhr.responseText)
+          this.success(this.xhr.responseText, this.url)
         }
         if (this.type === 'update') {
           this.remove();

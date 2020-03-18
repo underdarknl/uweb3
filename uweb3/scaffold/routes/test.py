@@ -8,7 +8,6 @@ from uweb3.pagemaker.new_login import UserCookie
 from uweb3.pagemaker.new_decorators import loggedin, checkxsrf
 from uweb3.ext_lib.underdark.libs.safestring import SQLSAFE, HTMLsafestring
 
-
 class Test(PageMaker):
   """Holds all the request handlers for the application"""
   
@@ -26,8 +25,17 @@ class Test(PageMaker):
   def GetRawTemplate(self):
     """Endpoint that only returns the raw template"""
     template = self.get.getfirst('template')
-    if template:
-      return self.parser.Parse(template, returnRawTemplate=True)
+    content_hash = self.get.getfirst('content_hash')
+    if not template or not content_hash:
+      return 404 
+    del self.get['template']
+    del self.get['content_hash']  
+    kwds = {}
+    for item in self.get:
+      kwds[item] = self.get.getfirst(item)
+    content = self.parser.Parse(template, returnRawTemplate=True, **kwds)
+    if content.content_hash == content_hash:
+      return content
     return 404
 
   def Parsed(self):

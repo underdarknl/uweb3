@@ -2,13 +2,6 @@ var ud = ud || {};
 var _paq = _paq || [];
 
 
-// class Page {
-//   content_hash = null
-//   page_hash = null
-//   template = null
-//   replacements = {}
-// }
-
 class Page {
   html = null
 
@@ -24,7 +17,6 @@ class Page {
 (function () {
   'use strict';
   let i = 0;
-  let currentPage = null;
   let cacheHandler = {
     previous_key: null,
     create: function(page){
@@ -135,8 +127,7 @@ class Page {
   }
 
   function fetchPage(url, data){
-    console.log(url);
-    ud.ajax(url, {success: handlePage});
+    ud.ajax(url, { success: handlePage });
     i++;
   }
 
@@ -146,13 +137,15 @@ class Page {
     }
     return html;
   }
-  function sleep (time) {
-    return new Promise((resolve) => setTimeout(resolve, time));
-  }
-  function handlePage(data){
+
+  function handlePage(data, url){
     //If the page is the same but the content is different we can retrieve the page from the hash and replace the placeholders with new values
     //If the page is different we need to reload everything and update the cache
     //Create a new instance of the page object. This only happends on the first call.
+    if(url.split('?').length >= 2){
+      url = url.split('?')[1];
+      console.log(url);
+    }
     if(typeof data === 'object'){
       const { content_hash, page_hash } = data[2];
       const cached = cacheHandler.read(page_hash);
@@ -169,7 +162,9 @@ class Page {
       }else{
         //If there is no cached page...
         cacheHandler.create(new Page(data));
-        return ud.ajax(`/getrawtemplate?template=${data[2].template}`,  {success: handlePage, mimeType: 'text/html'});
+        // return ud.ajax(`/getrawtemplate?template=${data[2].template}&content_hash=${data[2].content_hash}`,  {success: handlePage, mimeType: 'text/html'});
+        return ud.ajax(`/getrawtemplate?${url}&content_hash=${data[2].content_hash}`,  {success: handlePage, mimeType: 'text/html'});
+
       }
     }else if(typeof data === 'string'){
       let html = cacheHandler.insertHTML(data);

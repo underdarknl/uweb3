@@ -322,9 +322,11 @@ class Template(list):
 
     The template is parsed by parsing each of its members and combining that.
     """
-    if returnRawTemplate:
-      return HTMLsafestring(self)
     htmlsafe = HTMLsafestring(''.join(tag.Parse(**kwds) for tag in self))
+    if returnRawTemplate:
+      raw = HTMLsafestring(self)
+      raw.content_hash = hashlib.md5(htmlsafe.encode()).hexdigest()
+      return raw
     #Hash the page so that we can compare on the frontend if the html has changed
     htmlsafe.page_hash = hashlib.md5(HTMLsafestring(self).encode()).hexdigest()
     #Hashes the page and the content so we can know if we need to refresh the page on the frontend
