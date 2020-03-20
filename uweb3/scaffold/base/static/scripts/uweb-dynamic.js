@@ -143,33 +143,34 @@ class Page {
     //If the page is different we need to reload everything and update the cache
     //Create a new instance of the page object. This only happends on the first call.
     if(url.split('?').length >= 2){
+      // console.log(url);
       url = url.split('?')[1];
-      console.log(url);
     }
     if(typeof data === 'object'){
       const { content_hash, page_hash } = data[2];
       const cached = cacheHandler.read(page_hash);
       if(cached){
         if(cached.content_hash === content_hash){
-          console.log(`Retrieving page from hash: ${page_hash} with content hash: ${content_hash}`);
-          let html = handleReplacements(cached.html, cached.replacements);
-          document.querySelector('html').innerHTML = html;
+          // console.log(`Retrieving page from hash: ${page_hash} with content hash: ${content_hash}`);
+          let template = new Template(cached.html, cached.replacements);
+          document.querySelector('html').innerHTML = template.template;
         }else{
-          console.log(`Retrieving page from hash: ${page_hash} with content hash: ${content_hash}`);
-          let html = handleReplacements(cached.html, data[2].replacements);
-          document.querySelector('html').innerHTML = html;
+          // console.log(`Retrieving page from hash: ${page_hash} with content hash: ${content_hash}`);
+          let template = new Template(cached.html, data[2].replacements);
+          document.querySelector('html').innerHTML = template.template;
         }
       }else{
         //If there is no cached page...
         cacheHandler.create(new Page(data));
         // return ud.ajax(`/getrawtemplate?template=${data[2].template}&content_hash=${data[2].content_hash}`,  {success: handlePage, mimeType: 'text/html'});
         return ud.ajax(`/getrawtemplate?${url}&content_hash=${data[2].content_hash}`,  {success: handlePage, mimeType: 'text/html'});
-
+        
       }
     }else if(typeof data === 'string'){
       let html = cacheHandler.insertHTML(data);
-      html = handleReplacements(html.html, html.replacements)
-      document.querySelector('html').innerHTML = html;
+      let template = new Template(html.html, html.replacements);
+
+      document.querySelector('html').innerHTML = template.template;
     }
     handleAnchors();
   }

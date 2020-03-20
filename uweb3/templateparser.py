@@ -311,6 +311,8 @@ class Template(list):
         self._ExtendFunction(node)
       else:
         self._ExtendText(node)
+    for tag in self:
+      print(type(tag), tag)
     if len(self.scopes) != scope_depth:
       scope_diff = len(self.scopes) - scope_depth
       if scope_diff < 0:
