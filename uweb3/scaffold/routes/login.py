@@ -93,3 +93,9 @@ class UserPageMaker(PageMaker):
         print(e)
         
     return self.parser.Parse('login.html')
+
+  @checkxsrf
+  def Logout(self):
+    scookie = UserCookie(self.secure_cookie_connection)
+    scookie.Delete('login')
+    return self.req.Redirect('/login')
