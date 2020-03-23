@@ -47,11 +47,11 @@
    [variable|substr(2)]
   </p>
   <p>
-  {{if [variable]}}
+  {{if [variable|len] > '5'}}
     [variable]
+    [variable2]
   {{endif}}
   </p>
-  {{for item in [variable]}} [item] {{endfor}}
   </section>
 
   <script src="/static/scripts/ajax.js"></script>

@@ -47,10 +47,13 @@
   </p>
   <p>
   {{if [variable]}}
+    {{if [variable]}}
+        [variable]
+      {{endif}}
     [variable]
   {{endif}}
   </p>
-  {{for item in [variable]}} [item] {{endfor}}
+  {{ for item in [variable] }} [item] {{endfor}}
   </section>
 
   <script src="/static/scripts/ajax.js"></script>

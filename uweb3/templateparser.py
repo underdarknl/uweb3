@@ -311,8 +311,6 @@ class Template(list):
         self._ExtendFunction(node)
       else:
         self._ExtendText(node)
-    for tag in self:
-      print(type(tag), tag)
     if len(self.scopes) != scope_depth:
       scope_diff = len(self.scopes) - scope_depth
       if scope_diff < 0:
@@ -325,14 +323,14 @@ class Template(list):
     The template is parsed by parsing each of its members and combining that.
     """
     htmlsafe = HTMLsafestring(''.join(tag.Parse(**kwds) for tag in self))
+    htmlsafe.content_hash = hashlib.md5(htmlsafe.encode()).hexdigest()
     if returnRawTemplate:
       raw = HTMLsafestring(self)
-      raw.content_hash = hashlib.md5(htmlsafe.encode()).hexdigest()
+      raw.content_hash = htmlsafe.content_hash
       return raw
     #Hash the page so that we can compare on the frontend if the html has changed
     htmlsafe.page_hash = hashlib.md5(HTMLsafestring(self).encode()).hexdigest()
     #Hashes the page and the content so we can know if we need to refresh the page on the frontend
-    htmlsafe.content_hash = hashlib.md5(htmlsafe.encode()).hexdigest()
     htmlsafe.tags = {str(tag):tag.Parse(**kwds) for tag in self if isinstance(tag, TemplateTag)}
     return htmlsafe
 
