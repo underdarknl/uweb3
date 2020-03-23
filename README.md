@@ -128,3 +128,103 @@ To create a new cookie make use of the `Create` method, it works the same ass th
 
 If you want to see which cookies are managed by the SecureCookie class you can call the session attribute.
 The session attribute decodes all managed cookies and can be used to read them. 
+
+# SQLAlchemy
+SQLAlchemy is available in uWeb3 by using the SqAlchemyPageMaker instead of the regular pagemaker.
+SQLAlchemy comes with most of the methods that are available in the default model.Record class, however because SQLAlchemy works like an ORM
+there are some adjustments. Instead of inheriting from dict the SQLAlchemy model.Record inherits from object, meaning you can no longer use 
+dict like functions such as get and set. Instead the model is accessible by the columns defined in the class you want to create. 
+
+The SQLAlchemy model.Record class makes use of the session attribute accessible in the SqAlchemyPageMaker. 
+The session keeps track of all queries to the database and comes with some usefull features. 
+
+An example of a few usefull features: 
+`session.new`: The set of all instances marked as ‘new’ within this Session.
+`session.dirty`: Instances are considered dirty when they were modified but not deleted.
+`session.deleted`: The set of all instances marked as ‘deleted’ within this Session
+the rest can be found at https://docs.sqlalchemy.org/en/13/orm/session_api.html
+
+Objects in the session will only be updated/created in the actuall database on session.commit()/session.flush().
+
+Defining classes that represent a table is different from how we used to do it in uWeb2. 
+SQLAlchemy requires you to define all columns from the table that you want to use. 
+For example, creating a class that represents the user table could look like this:
+
+```
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
+
+class User(Base):
+  __tablename__ = 'users'
+
+  id = Column(Integer, primary_key=True)
+  username = Column(String, nullable=False, unique=True)
+  password = Column(String, nullable=False) 
+``` 
+We can now use this class to query our users table in the SqAlchemyPageMaker to get the user with id 1:
+`self.session.query(User).filter(User.id == 1).first() `
+or to list all users:
+`self.session.query(User).all()`
+uWeb3's SQLAlchemy model.Record has almost the same functionality as uWeb3's regular model.Record so we can simplify our code to this:
+
+```
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
+
+#Notice how we load in the alchemy_model.Record class to gain access to all sorts of functionality
+class User(alchemy_model.Record, Base):
+  __tablename__ = 'users'
+
+  id = Column(Integer, primary_key=True)
+  username = Column(String, nullable=False, unique=True)
+  password = Column(String, nullable=False) 
+```  
+We can now query the users table like this:
+```
+User.FromPrimary(self.session, 1)
+>>> User({'id': 1, 'username': 'username', 'password': 'password'})
+```
+Or to get a list of all users:
+```
+User.List(self.session, conditions=[User.id <= 2])
+>>> [
+  User({'id': 1, 'username': 'name', 'password': 'password'}), 
+  User({'id': 2, 'username': 'user2', 'password': 'password'})
+  ]
+```
+
+Now if we want to automaticly load related tables we can set it up like this:
+
+```
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, relationship
+
+Base = declarative_base()
+
+class User(alchemy_model.Record, Base):
+  __tablename__ = 'users'
+
+  id = Column(Integer, primary_key=True)
+  username = Column(String, nullable=False, unique=True)
+  password = Column(String, nullable=False) 
+  userinfoid = Column('userinfoid', Integer, ForeignKey('UserInfo.id'))
+  userdata = relationship("UserInfo",  lazy="select")
+  
+  def __init__(self, *args, **kwargs):
+    super(User, self).__init__(*args, **kwargs)
+      
+class UserInfo(alchemy_model.Record, Base):
+  __tablename__ = 'UserInfo'
+
+  id = Column(Integer, primary_key=True)
+  name = Column(String, unique=True)
+```
+Now the UserInfo table will be loaded on the `userinfoid` attribute, but only after we try and access 
+this key a seperate query is send to retrieve the related information.
+SQLAlchemy's lazy loading is fast but should be avoided while in loops. Take a look at SQLAlchemys documentation for optimal use.
+

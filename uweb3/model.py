@@ -568,14 +568,14 @@ class BaseRecord(dict):
   def _Changes(self):
     """Returns the differences of the current state vs the last stored state."""
     sql_record = self._DataRecord()
+    changes = {}
     for key, value in sql_record.items():
-      if self._record.get(key) == value:
-        del sql_record[key]
-    return sql_record
+      if self._record.get(key) != value:
+        changes[key] = value
+    return changes
 
   def _DataRecord(self):
     """Returns a dictionary of the record's database values
-
     For any Record object present, its primary key value (`Record.key`) is used.
     """
     sql_record = {}
@@ -889,7 +889,7 @@ class Record(BaseRecord):
             'Compound keys should be loaded using a tuple of key values.')
       if len(value) != len(cls._PRIMARY_KEY):
         raise ValueError('Not enough values (%d) for compound key.', len(value))
-      values = map(cls._ValueOrPrimary, value)
+      values = tuple(map(cls._ValueOrPrimary, value))
       return ' AND '.join('`%s` = %s' % (field, value) for field, value
                    in zip(cls._PRIMARY_KEY, connection.EscapeValues(values)))
     else:
@@ -1171,7 +1171,7 @@ class VersionedRecord(Record):
     last_key = cursor.Select(table=cls.TableName(), fields=cls.RecordKey(),
                              order=[(cls.RecordKey(), True)], limit=1)
     if last_key:
-      return last_key[0][0]
+      return last_key[0][cls.RecordKey()]
 
   def _PreCreate(self, cursor):
     """Attaches a RecordKey to the Record if it doens't have one already.
@@ -1279,7 +1279,7 @@ class Smorgasbord(object):
   connection types (Mongo and relational), and have the smorgasbord provide the
   correct connection for the caller's needs. MongoReceord would be given the
   MongoDB connection as expected, and all other users will be given a relational
-  datbaase connection.
+  database connection.
 
   This is highly beta and debugging is going to be at the very least interesting
   because of __getattribute__ overriding that is necessary for this type of

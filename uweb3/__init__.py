@@ -29,6 +29,7 @@ from .response import Response
 from .response import Redirect
 from .pagemaker import PageMaker
 from .pagemaker import DebuggingPageMaker
+from .pagemaker import SqAlchemyPageMaker
 
 
 class Error(Exception):
@@ -94,9 +95,13 @@ class uWeb(object):
     if not isinstance(response, Response):
       req.response.text = response
       response = req.response
+      
+    if hasattr(page_maker, '_PostRequest'):
+      response = page_maker._PostRequest(response)
+      
     start_response(response.status, response.headerlist)
     yield response.content.encode(response.charset)
-
+    
   def get_response(self, page_maker, path, method, host):
     try:
       # We're specifically calling _PostInit here as promised in documentation.

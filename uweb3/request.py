@@ -3,6 +3,9 @@
 
 # Standard modules
 import cgi
+import sys
+import urllib
+from cgi import parse_qs
 try:
   # python 2
   import cStringIO as stringIO
@@ -12,9 +15,12 @@ except ImportError:
   import io as stringIO
   import http.cookies as cookie
 import re
-
+import json
 # uWeb modules
 from . import response
+from werkzeug.formparser import parse_form_data
+from werkzeug.datastructures import MultiDict
+
 
 class CookieToBigError(Exception):
   """Error class for cookie when size is bigger than 4096 bytes"""
@@ -47,6 +53,54 @@ class Cookie(cookie.SimpleCookie):
       dict.__setitem__(self, key, morsel)
 
 
+class PostDictionary(MultiDict):
+  """ """
+  #TODO: Add basic uweb functions
+  
+  def getfirst(self, key):
+    """Returns the first item out of the list from the given key
+    
+    Arguments:
+      @key: str
+    
+    Raises:
+      ValueError
+    """
+    items = dict(self.lists())
+    target = items.get(key, None)
+    
+    if not target:
+      raise ValueError("Given key not found")
+    
+    return target[0]
+  # def getfirst(self, key, default=None):
+  #   """ Return the first value received."""
+  #   if key in self:
+  #     value = self[key]
+  #     if isinstance(value, list):
+  #       return value[0]
+  #     else:
+  #       return value
+  #   else:
+  #     return default
+          
+  # def getlist(self, key):
+  #   """ Return list of received values."""
+  #   if key in self:
+  #     value = self[key]
+  #     if isinstance(value, list):
+  #       return [x[0] for x in value]
+  #     else:
+  #       return [value]
+  #   else:
+  #     return []
+          
+  # def iteritems(self):
+  #   return ((key, self.getlist(key)) for key in self)
+    
+  # def items(self):
+  #   return list(self.iteritems())
+
 class Request(object):
   def __init__(self, env, registry):
     self.env = env
@@ -60,13 +114,25 @@ class Request(object):
     # `self.vars` setup, will contain keys 'cookie', 'get' and 'post'
     self.vars = {'cookie': dict((name, value.value) for name, value in
                                 Cookie(self.env.get('HTTP_COOKIE')).items()),
-                 'get': QueryArgsDict(cgi.parse_qs(self.env['QUERY_STRING']))}
+                 'get': QueryArgsDict(cgi.parse_qs(self.env['QUERY_STRING'])),
+                 'post': PostDictionary()}
     self.env['host'] = self.headers.get('Host', '')
-    if self.env['REQUEST_METHOD'] == 'POST':
-      self.vars['post'] = ParseForm(env['wsgi.input'], env)
-    else:
-      self.vars['post'] = IndexedFieldStorage()
-
+    
+    if self.method == 'POST':
+      stream, form, files = parse_form_data(self.env)
+      if self.env['CONTENT_TYPE'] == 'application/json':
+        try:
+          request_body_size = int(self.env.get('CONTENT_LENGTH', 0))
+        except (ValueError):
+          request_body_size = 0
+        request_body = self.env['wsgi.input'].read(request_body_size)
+        data = json.loads(request_body)
+        self.vars['post'] = PostDictionary(MultiDict(data))
+      else:   
+        self.vars['post'] = PostDictionary(form)
+        for f in files:
+          self.vars['post'][f] = files.get(f)
+     
   @property
   def path(self):
     return self.env['PATH_INFO']
@@ -173,14 +239,14 @@ class IndexedFieldStorage(cgi.FieldStorage):
 
   def items(self):
     return list(self.iteritems())
-
+  
   def read_urlencoded(self):
     indexed = {}
     self.list = []
     for field, value in cgi.parse_qsl(self.fp.read(self.length),
                                       self.keep_blank_values,
                                       self.strict_parsing):
-      if self.FIELD_AS_ARRAY.match(field):
+      if self.FIELD_AS_ARRAY.match(str(field)):
         field_group, field_key = self.FIELD_AS_ARRAY.match(field).groups()
         indexed.setdefault(field_group, cgi.MiniFieldStorage(field_group, {}))
         indexed[field_group].value[field_key] = value
@@ -190,7 +256,7 @@ class IndexedFieldStorage(cgi.FieldStorage):
     self.skip_lines()
 
 
-class QueryArgsDict(dict):
+class QueryArgsDict(dict):  
   def getfirst(self, key, default=None):
     """Returns the first value for the requested key, or a fallback value."""
     try:
@@ -209,7 +275,20 @@ class QueryArgsDict(dict):
       return []
 
 
-def ParseForm(file_handle, environ):
+class CustomByteLikeObject(object):
+  def __init__(self, data):
+    self.data = data
+    
+  def read(self, length=None):
+    if length:
+      return self.data[0:length]
+    else:
+      return self.data
+
+  def readline(self, *args):
+    return self.data
+    
+def ParseForm(file_handle, environ, json=False):
   """Returns an IndexedFieldStorage object from the POST data and environment.
 
   This small wrapper is necessary because cgi.FieldStorage assumes that the
@@ -218,7 +297,15 @@ def ParseForm(file_handle, environ):
   stringIO objects first.
   """
   #TODO see if we need to encode in utf8 or is ascii is fine based on the headers
-  data = stringIO.StringIO(file_handle.read(int(environ['CONTENT_LENGTH'])).decode('ascii'))
-  # return IndexedFieldStorage(fp=data, environ=environ, keep_blank_values=1)
-  return IndexedFieldStorage(fp=data, environ=environ)
+  # print(file_handle.read(int(environ['CONTENT_LENGTH'])).decode('ascii'))
+  # data = sys.stdin.read()
+  if json:
+    #We already decoded the JSON and turned into a urlquerystring 
+    environ['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
+    files = CustomByteLikeObject(file_handle.encode())
+  else:
+    files = CustomByteLikeObject(file_handle.read(int(environ['CONTENT_LENGTH'])))
+    
+  return IndexedFieldStorage(fp=files, environ=environ, keep_blank_values=1)
+
   

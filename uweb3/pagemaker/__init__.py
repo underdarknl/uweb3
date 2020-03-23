@@ -167,7 +167,6 @@ class BasePageMaker(object):
         Configuration for the pagemaker, with database connection information
         and other settings. This will be available through `self.options`.
     """
-    
     self.__SetupPaths()
     self.req = req
     self.cookies = req.vars['cookie']
@@ -175,10 +174,16 @@ class BasePageMaker(object):
     self.post = req.vars['post']
     self.options = config or {}
     self.persistent = self.PERSISTENT
-    self.post.form = { item.name: item.value for item in req.vars['post'].value } if bool(req.vars['post'].value) else None
     self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_hash)
     self.user = self._GetLoggedInUser()
-  
+   
+  def _PostRequest(self, response):
+    if issubclass(type(self), SqAlchemyPageMaker):
+      """ """
+      # self.session.close()
+      # self.connection.dispose()
+    return response
+
   def XSRFInvalidToken(self, command):
     """Returns an error message regarding an incorrect XSRF token."""
     page_data = self.parser.Parse('403.html', error=command,
@@ -311,7 +316,7 @@ class BasePageMaker(object):
     rel_path = os.path.abspath(os.path.join(os.path.sep, rel_path))[1:]
     abs_path = os.path.join(self.PUBLIC_DIR, rel_path)
     try:
-      with file(abs_path) as staticfile:
+      with open(abs_path) as staticfile:
         content_type, _encoding = mimetypes.guess_type(abs_path)
         if not content_type:
           content_type = 'text/plain'
@@ -452,10 +457,34 @@ class MongoMixin(object):
     return self.persistent.Get('__mongo')
 
 
+class SqlAlchemyMixin(object):
+  """Adds MysqlAlchemy connection to PageMaker."""
+
+  @property
+  def engine(self):
+    if '__sql_alchemy' not in self.persistent:
+      from sqlalchemy import create_engine
+      mysql_config = self.options['mysql']
+      engine = create_engine('mysql://{username}:{password}@{host}/{database}'.format(
+          username=mysql_config.get('user'), 
+          password=mysql_config.get('password'), 
+          host=mysql_config.get('host', 'localhost'), 
+          database=mysql_config.get('database')))
+      self.persistent.Set('__sql_alchemy', engine)
+    return self.persistent.Get('__sql_alchemy')
+
+  @property
+  def session(self):
+    from sqlalchemy.orm import sessionmaker
+    Session = sessionmaker()
+    Session.configure(bind=self.engine, expire_on_commit=False)
+    return Session()
+    
 class MysqlMixin(object):
   """Adds MySQL support to PageMaker."""
   @property
   def connection(self):
+    raise Exception
     """Returns a MySQL database connection."""
     if '__mysql' not in self.persistent:
       from underdark.libs.sqltalk import mysql
@@ -468,7 +497,6 @@ class MysqlMixin(object):
           charset=mysql_config.get('charset', 'utf8'),
           debug=DebuggerMixin in self.__class__.__mro__))
     return self.persistent.Get('__mysql')
-
 
 class SqliteMixin(object):
   """Adds SQLite support to PageMaker."""
@@ -527,9 +555,11 @@ class SmorgasbordMixin(object):
 # ##############################################################################
 # Classes for public use (wildcard import)
 #
-class PageMaker(MysqlMixin, BasePageMaker):
+class SqAlchemyPageMaker(SqlAlchemyMixin, BasePageMaker):
   """The basic PageMaker class, providing MySQL support."""
 
+class PageMaker(MysqlMixin, BasePageMaker):
+  """The basic PageMaker class, providing MySQL support."""
 
 class DebuggingPageMaker(DebuggerMixin, PageMaker):
   """The same basic PageMaker, with added debugging on HTTP 500."""

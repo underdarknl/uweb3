@@ -16,11 +16,11 @@
   <header>
     <div>
       <div class="logo">
-        <a href="/">Uweb3 test page</a>
+        <a href="/">Uweb3 another test page</a>
         <p>Lorem ipsum dolor sit amet</p>
       </div>
       <button class="toggle">Menu</button>
-    </div>
+    </div> 
   </header>
   <section>
     <div>
@@ -31,6 +31,7 @@
     </nav>
   </div>
   <p>
+   [variable]
    [variable]
   </p>
   <p>
@@ -46,14 +47,11 @@
    [variable|substr(2)]
   </p>
   <p>
-  {{if [variable]}}
-    {{if [variable]}}
-        [variable]
-      {{endif}}
+  {{if [variable|len] > '5'}}
     [variable]
+    [variable2]
   {{endif}}
   </p>
-  {{ for item in [variable] }} [item] {{endfor}}
   </section>
 
   <script src="/static/scripts/ajax.js"></script>
