@@ -16,7 +16,7 @@
   <header>
     <div>
       <div class="logo">
-        <a href="/">Lorem ipsum</a>
+        <a href="/">Uweb3 test page</a>
         <p>Lorem ipsum dolor sit amet</p>
       </div>
       <nav>
@@ -26,12 +26,24 @@
         <ul>
           <li><a href="/sqlalchemy">Sqlalchemy</a></li>
           <li><a href="/test">Tempalteparser</a></li>
-          <li><a href="/login">Login</a></li>
+          <li><a href="/logout">Logout</a></li>
         </ul>
       </nav>
-      <button class="toggle">Toggle</button>
+      <button class="toggle">Menu</button>
     </div>
   </header>
-</body>
+  <section> 
+    Loggedin with secure cookie.
 
-</html>
+    <form method="POST" action="/home/create">
+      <button>Create new secure cookie</button>
+    </form>
+    <form method="POST" action="/home/update">
+      <button>Update secure cookie</button>
+    </form>
+    <form method="POST" action="/home/delete">
+      <button>Delete secure cookie</button>
+    </form>
+  </section>
+</body>
+ </html>

@@ -92,7 +92,6 @@ class Users(model.Record):
     """
     if not isinstance(hashed, bytes):
       hashed = hashed.encode('utf-8')
-      
     password = password + cls.salt
     return bcrypt.checkpw(password.encode('utf-8'), hashed)
   
