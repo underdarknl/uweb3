@@ -5,12 +5,16 @@ import re
 from setuptools import setup, find_packages
 
 REQUIREMENTS = [
-    'decorator',
-    'PyMySQL',
-    'python-magic',
-    'python3-openid',
-    'pytz',
-    'simplejson',
+  'decorator',
+  'PyMySQL',
+  'python-magic',
+  'python3-openid',
+  'pytz',
+  'simplejson',
+  'sqlalchemy',
+  'bcrypt',
+  'werkzeug',
+  'mysqlclient',
 ]
 
 def description():
