@@ -25,14 +25,17 @@ def main():
   routes = [
       ('/', 'Index'),
       ('/login', 'Login'),
+      ('/home', 'Home'), 
+      ('/home/create', 'Create'),
+      ('/home/update', 'Update'),
+      ('/home/delete', 'Delete'),
+      ('/logout', 'Logout'),
+      ('/sqlalchemy', 'Sqlalchemy'),
+      #test routes
       ('/test', 'Test'),
       ('/getrawtemplate.*', 'GetRawTemplate'),
       ('/parsed', 'Parsed'),
-      ('/test/create', 'Create'),
-      ('/test/update', 'Update'),
-      ('/test/delete', 'Delete'),
       ('/test/escaping', 'StringEscaping'),
-      ('/logout', 'Logout'),
       ('/static/(.*)', 'Static'),
       ('/(.*)', 'FourOhFour'),
       ]

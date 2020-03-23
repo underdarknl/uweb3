@@ -16,7 +16,6 @@ class Test(PageMaker):
     """Returns a closure that limits input to a number of chars/elements.""" 
     return lambda string: string[:length]
 
-  # @loggedin
   def Test(self):
     """Returns the index template"""
     self.parser.RegisterFunction('substr', self.Limit)
@@ -50,23 +49,6 @@ class Test(PageMaker):
         template, **kwds)
     self.parser.noparse = False
     return json.dumps(((self.req.headers.get('http_x_requested_with', None), self.parser.noparse, content)))
-  
-  def Create(self):
-    scookie = UserCookie(self.secure_cookie_connection)    
-    scookie.Create("test", {"data": "somedata", "nested dict": {"data": "value"}})
-    return self.req.Redirect('/test')
-
-  
-  def Update(self):
-    scookie = UserCookie(self.secure_cookie_connection)
-    scookie.Update("test", "replaced all data in the test cookie")
-    return self.req.Redirect('/test')
-
-    
-  def Delete(self):
-    scookie = UserCookie(self.secure_cookie_connection)
-    scookie.Delete("test")
-    return self.req.Redirect('/test')
 
   def StringEscaping(self):
     if self.post:

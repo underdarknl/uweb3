@@ -151,18 +151,17 @@ class Page {
       const cached = cacheHandler.read(page_hash);
       if(cached){
         if(cached.content_hash === content_hash){
-          // console.log(`Retrieving page from hash: ${page_hash} with content hash: ${content_hash}`);
+          console.log(`Retrieving page from hash: ${page_hash} with content hash: ${content_hash}`);
           let template = new Template(cached.html, cached.replacements);
           document.querySelector('html').innerHTML = template.template;
         }else{
-          // console.log(`Retrieving page from hash: ${page_hash} with content hash: ${content_hash}`);
+          console.log(`Retrieving page from hash: ${page_hash} with content hash: ${content_hash}`);
           let template = new Template(cached.html, data[2].replacements);
           document.querySelector('html').innerHTML = template.template;
         }
       }else{
         //If there is no cached page...
         cacheHandler.create(new Page(data));
-        // return ud.ajax(`/getrawtemplate?template=${data[2].template}&content_hash=${data[2].content_hash}`,  {success: handlePage, mimeType: 'text/html'});
         return ud.ajax(`/getrawtemplate?${url}&content_hash=${data[2].content_hash}`,  {success: handlePage, mimeType: 'text/html'});
         
       }

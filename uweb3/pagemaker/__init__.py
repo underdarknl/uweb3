@@ -483,7 +483,6 @@ class MysqlMixin(object):
   """Adds MySQL support to PageMaker."""
   @property
   def connection(self):
-    raise Exception
     """Returns a MySQL database connection."""
     if '__mysql' not in self.persistent:
       from underdark.libs.sqltalk import mysql
