@@ -105,7 +105,7 @@ class Page {
           //TODO: delete this when done
           path += `&variable=newContent${i}&variable2=moreContent${i}`;
         }else{
-          path += '&variable=samecontent&variable2=moresamecontent';
+          path += '&variable=test&variable2=moresamecontent';
         }
         fetchPage(path);        
         event.preventDefault();
