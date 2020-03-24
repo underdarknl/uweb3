@@ -19,7 +19,8 @@ import re
 import urllib.parse as urlparse
 from .ext_lib.underdark.libs.safestring import *
 import hashlib
-#TODO: create a ifNotPresent 
+import itertools
+
 class Error(Exception):
   """Superclass used for inheritance and external exception handling."""
 
@@ -331,7 +332,15 @@ class Template(list):
     #Hash the page so that we can compare on the frontend if the html has changed
     htmlsafe.page_hash = hashlib.md5(HTMLsafestring(self).encode()).hexdigest()
     #Hashes the page and the content so we can know if we need to refresh the page on the frontend
-    htmlsafe.tags = {str(tag):tag.Parse(**kwds) for tag in self if isinstance(tag, TemplateTag)}
+    htmlsafe.tags = {}
+    for tag in self:
+      if isinstance(tag, TemplateConditional):
+        for flattend_branch in list(itertools.chain(*tag.branches)):
+          for branch_tag in flattend_branch:
+            if isinstance(branch_tag, TemplateTag):
+              htmlsafe.tags[str(branch_tag)] = branch_tag.Parse(**kwds)
+      if isinstance(tag, TemplateTag):
+        htmlsafe.tags[str(tag)] = tag.Parse(**kwds)
     return htmlsafe
 
   @classmethod
