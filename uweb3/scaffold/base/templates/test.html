@@ -30,27 +30,16 @@
       <a href='/parsed?template=test2.html'>index</a>
     </nav>
   </div>
-  <p>
-   [variable]
-  </p>
-  <p>
-  [variable2]
-  </p>
-  <p>
-  [variable|len]
-  </p>
-  <p>
-    [variable|substr(1)]
-  </p>
-  <p>
-   [variable|substr(2)]
-  </p>
-  <p>
+
   {{if [variable]}}
     {{if [variable]}}
         [variable]
       {{endif}}
+    {{if [variable|len] > '100'}}
     [variable]
+    {{else}}
+    oi
+    {{endif}}
   {{endif}}
   </p>
   {{ for item in [variable] }} [item] {{endfor}}

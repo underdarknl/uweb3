@@ -31,9 +31,11 @@
     </nav>
   </div>
   <p>
-  {{if [variable|len] > '100'}}
+  {{if [variable|len] < '3'}}
     [variable]
     [variable2]
+  {{elif [variable|len] > '8'}}
+    elif
   {{else}}
     oi
   {{endif}}

@@ -21,9 +21,6 @@ class Template {
       this.template = this.template.split(replacement).join(replacements[replacement]);
     }
   }
-
-
- 
   
   returnNeededPlaceholders(str){
     let tagsWithValues = {}
@@ -49,6 +46,7 @@ class Template {
   _EvaluateScope(){
     this.scopes.map((object, index) => {
       let deleteScopes = false;
+      console.log(object.branches);
       for(let branch in object.branches){
         if(!object.branches[branch].istrue){
           //Delete all the scopes from which the condition was not met
@@ -87,10 +85,16 @@ class Template {
     this._StartScope(new TemplateConditional(nodes.join(' '), index));
   }
 
+  _TemplateConstructFor(nodes, index){
+  }
+  _TemplateConstructEndfor(nodes, index){
+  }
+
+  _TemplateConstructElif(nodes, index){
+    this.scopes[this.scopes.length - 1] = this.scopes[this.scopes.length - 1].Elif(index, nodes.join(' '))
+  }
   _TemplateConstructElse(nodes, index){
     //Processing for {{ else }} template syntax.
-    // this._VerifyOpenScope(TemplateConditional);
-    // this.scopes[-1].Else();
     this.scopes[this.scopes.length - 1] = this.scopes[this.scopes.length - 1].Else(index)
   }
 
@@ -112,6 +116,10 @@ class TemplateConditional {
   }
 
   NewBranch(expr, index){
+    let isTrue = this._EvaluateClause(expr);
+    this.branches.push({ index: index, expr: expr, istrue: isTrue});
+  }
+  _EvaluateClause(expr){
     let temp_expr = ""
     let variables = ""
     
@@ -129,7 +137,13 @@ class TemplateConditional {
         }
       });
     }
-    this.branches.push({ index: index, expr: expr, istrue: Function(`${variables} if(${temp_expr}){return true}else{return false}`)() });
+    return Function(`${variables} if(${temp_expr}){return true}else{return false}`)()
+  }
+
+  Elif(index, expr){
+    let isTrue = this._EvaluateClause(expr);
+    this.branches.push({ index: index, expr: expr, istrue: isTrue });
+    return this;
   }
 
   Else(index){
