@@ -9,6 +9,7 @@ class Template {
 
   constructor(template, replacements){
     window.replacements = replacements;
+    this.inForLoop = false;
     this.tmp = {};
     this.scopes = [];
     this.AddString(template);
@@ -21,32 +22,26 @@ class Template {
       this.template = this.template.split(replacement).join(replacements[replacement]);
     }
   }
-  
-  returnNeededPlaceholders(str){
-    let tagsWithValues = {}
-    str.match(this.TAG).map((tag) => {
-      tagsWithValues[tag] = this.replacements[tag];
-    });
-    return tagsWithValues;
-  }
 
   AddString(template) {
     let nodes = template.split(this.FUNCTION);
     nodes.map((node, index) => {
+      let tmp_node = node.split(" ");
+      let func = tmp_node.shift();
+      func = func.charAt(0).toUpperCase() + func.substring(1);
+
       if(index % 2){
-        this._ExtendFunction(node, index);
+        this._ExtendFunction(func, tmp_node, index);
       }else{
         this._ExtendText(node, index)
       }
     });
-
-    console.log("EVALUATING SCOPE");
+    
     this._EvaluateScope();
   }
   _EvaluateScope(){
     this.scopes.map((object, index) => {
       let deleteScopes = false;
-      console.log(object.branches);
       for(let branch in object.branches){
         if(!object.branches[branch].istrue){
           //Delete all the scopes from which the condition was not met
@@ -60,10 +55,7 @@ class Template {
       }
     });
   }
-  _ExtendFunction(nodes, index) {
-    nodes = nodes.split(" ");
-    let func = nodes.shift();
-    func = func.charAt(0).toUpperCase() + func.substring(1);
+  _ExtendFunction(func, nodes, index) {
     this[`_TemplateConstruct${func}`](nodes, index);
   }
 
@@ -86,8 +78,13 @@ class Template {
   }
 
   _TemplateConstructFor(nodes, index){
+    this._StartScope(new TemplateLoop(nodes.join(' '), index));
   }
+
   _TemplateConstructEndfor(nodes, index){
+    this.scopes[this.scopes.length - 1].branches.push({index: index});
+    // console.log(this.scopes[this.scopes.length - 1]);
+    // console.log(this.tmp);
   }
 
   _TemplateConstructElif(nodes, index){
@@ -108,21 +105,23 @@ class TemplateConditional {
   get TAG() {
     return /(\[\w+(?:(?::[\w-]+)+)?(?:(?:\|[\w-]+(?:\([^()]*?\))?)+)?\])/gm;
   }
-
+  
   constructor(expr, index) {
     this.branches = [];
     this.default = null;
     this.NewBranch(expr, index);
   }
-
+  
   NewBranch(expr, index){
     let isTrue = this._EvaluateClause(expr);
     this.branches.push({ index: index, expr: expr, istrue: isTrue});
   }
+
   _EvaluateClause(expr){
+    expr = expr.replace(" and ", " && ");
+    expr = expr.replace(" or ", " || ");
     let temp_expr = ""
     let variables = ""
-    
     if(expr.search(' in ') !== -1){
       throw "NotImplemented"
     }else{
@@ -131,48 +130,35 @@ class TemplateConditional {
         let regex = new RegExp(/(\[\w+?\])/gm);
         if(regex.test(value)){
           variables += `let ${value.substring(1, value.length - 1)} = "${window.replacements[value]}";`;
-          temp_expr = expr.replace(value, value.substring(1, value.length - 1));
+          temp_expr = expr.split(value).join(value.substring(1, value.length - 1));
         }else{
-          temp_expr = expr.replace(value, window.replacements[value]);
+          temp_expr = expr.split(value).join(window.replacements[value]);
         }
       });
     }
     return Function(`${variables} if(${temp_expr}){return true}else{return false}`)()
   }
-
+  
   Elif(index, expr){
     let isTrue = this._EvaluateClause(expr);
     this.branches.push({ index: index, expr: expr, istrue: isTrue });
     return this;
   }
-
+  
   Else(index){
     this.branches.push({ index: index });
     return this;
   }
 }
 
-class TemplateText {
-  constructor(value){
-    this.value = value;
-  }
-}
-
-class TemplateTag {
-  get TAG() {
-    return /(\[\w+(?:(?::[\w-]+)+)?(?:(?:\|[\w-]+(?:\([^()]*?\))?)+)?\])/gm;
-  }
-
-  constructor(tag){
-    this.value = window.global_replacements[tag]    
-  }
-
-  static FromString(tag) {
-    return new TemplateTag(tag);
-  }
-}
-
-
 class TemplateLoop {
+  constructor(expr, index) {
+    this.branches = [];
+    this.default = null;
+    this.NewBranch(expr, index);
+  }
 
+  NewBranch(expr, index){
+    this.branches.push({ index: index, expr: expr});
+  }
 }

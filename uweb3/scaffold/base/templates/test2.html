@@ -26,20 +26,26 @@
     <div>
     <p>Alt + click to generate new content</p>
     <nav>
-      <a href='/parsed?template=test.html'>Generate content</a>
+      <a href='/parsed?template=test2.html'>Generate content</a>
       <a href='/parsed?template=test2.html'>index</a>
     </nav>
   </div>
+  [variable]
   <p>
-  {{if [variable|len] < '3'}}
+  {{if [variable|len] < '3' and [variable|len] > '0'}}
+    [variable|len]
     [variable]
-    [variable2]
   {{elif [variable|len] > '8'}}
     elif
   {{else}}
     oi
   {{endif}}
   </p>
+
+  {{ for item in [variable] }} [item] 
+  {{if [variable]}}test{{endif}}
+  {{endfor}}
+
   </section>
 
   <script src="/static/scripts/ajax.js"></script>

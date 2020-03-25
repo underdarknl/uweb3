@@ -26,7 +26,7 @@
     <div>
     <p>Alt + click to generate new content</p>
     <nav>
-      <a href='/parsed?template=test.html'>Generate content</a>
+      <a href='/parsed?template=test2.html'>Generate content</a>
       <a href='/parsed?template=test2.html'>index</a>
     </nav>
   </div>
@@ -42,7 +42,8 @@
     {{endif}}
   {{endif}}
   </p>
-  {{ for item in [variable] }} [item] {{endfor}}
+  {{ for item in [variable] }} [item] 
+  {{endfor}}
   </section>
 
   <script src="/static/scripts/ajax.js"></script>
