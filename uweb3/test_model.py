@@ -7,7 +7,7 @@
 # Standard modules
 import unittest
 
-# Importing newWeb makes the SQLTalk library available as a side-effect
+# Importing uWeb3 makes the SQLTalk library available as a side-effect
 from uweb3.ext_lib.underdark.libs.sqltalk import mysql
 # Unittest target
 from uweb3 import model
@@ -428,7 +428,7 @@ class CompoundKeyRecordTests(unittest.TestCase):
 
 
 def DatabaseConnection():
-  """Returns an SQLTalk database connection to 'newweb_model_test'."""
+  """Returns an SQLTalk database connection to 'uWeb3_model_test'."""
   return mysql.Connect(
       host='localhost',
       user='stef',

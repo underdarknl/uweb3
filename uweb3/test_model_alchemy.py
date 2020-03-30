@@ -18,8 +18,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import lazyload, relationship
 
 # Custom modules
-# import newweb
-# Importing newWeb makes the SQLTalk library available as a side-effect
+# import uWeb3
+# Importing uWeb3 makes the SQLTalk library available as a side-effect
 import uweb3
 # Unittest target
 from uweb3.ext_lib.underdark.libs.sqltalk import mysql
@@ -197,7 +197,7 @@ class RecordTests(unittest.TestCase):
                       ('author', Author(None, {'ID': 1, 'name': 'D. Koontz'}))])
 
 def DatabaseConnection():
-  """Returns an SQLTalk database connection to 'newweb_model_test'."""
+  """Returns an SQLTalk database connection to 'uWeb3_model_test'."""
   return create_engine('mysql://{user}:{passwd}@{host}/{db}'.format(
     host='localhost',
     user='stef',

@@ -29,7 +29,7 @@ def version():
 
 
 setup(
-    name='uWeb3',
+    name='uWeb3 test',
     version=version(),
     description='uWeb, python3, uswgi compatible micro web platform',
     long_description=description(),

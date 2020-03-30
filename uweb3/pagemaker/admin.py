@@ -1,5 +1,5 @@
 #!/usr/bin/python
-"""newWeb PageMaker Mixins for admin purposes."""
+"""uWeb3 PageMaker Mixins for admin purposes."""
 
 # Standard modules
 import datetime

@@ -1,4 +1,4 @@
-"""A minimal newWeb project scaffold."""
+"""A minimal uWeb3 project scaffold."""
 
 # Standard modules
 import os
@@ -11,7 +11,7 @@ from . import pages
 
 
 def main():
-  """Creates a newWeb application.
+  """Creates a uWeb3 application.
 
   The application is created from the following components:
 
