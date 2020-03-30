@@ -19,16 +19,16 @@ class Test(PageMaker):
   def Create(self):
     scookie = UserCookie(self.secure_cookie_connection)    
     scookie.Create("test", {"data": "somedata", "nested dict": {"data": "value"}})
-    return self.req.Redirect('/Home')
+    return self.req.Redirect('/home')
 
   @loggedin
   def Update(self):
     scookie = UserCookie(self.secure_cookie_connection)
     scookie.Update("test", "replaced all data in the test cookie")
-    return self.req.Redirect('/Home')
+    return self.req.Redirect('/home')
 
   @loggedin
   def Delete(self):
     scookie = UserCookie(self.secure_cookie_connection)
     scookie.Delete("test")
-    return self.req.Redirect('Home')
+    return self.req.Redirect('/home')

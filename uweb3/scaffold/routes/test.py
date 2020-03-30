@@ -52,7 +52,7 @@ class Test(PageMaker):
 
   def StringEscaping(self):
     if self.post:
-      result = SQLSAFE(self.post.getfirst('sql'), 
-              self.post.getfirst('value1'))
-      # print(SQLSAFE("INSERT INTO user (username, password) VALUES ('test', 'test')", unsafe=True))
+      result = SQLSAFE(self.post.getfirst('sql'), self.post.getfirst('value1'), self.post.getfirst('value2'), unsafe=True)
+      t = f"""test = 'tst"''"""
+      print(result + t)
     return self.req.Redirect('/test')

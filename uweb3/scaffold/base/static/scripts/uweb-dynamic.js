@@ -17,6 +17,7 @@ class Page {
 (function () {
   'use strict';
   let i = 0;
+  let getRawTemplateRoute = "getrawtemplate";
   let cacheHandler = {
     previous_key: null,
     create: function(page){
@@ -71,7 +72,6 @@ class Page {
     }
   }
 
-  cacheHandler.delete(0);
   function handleAnchors(){ 
     var anchors = document.getElementsByTagName('a');
     for(var i=0;i<anchors.length;i++){
@@ -102,7 +102,7 @@ class Page {
       var path = localPart(event.target.href);
       if(path.length>0){
         if(event.altKey){
-          //TODO: delete this when done
+          // TODO: delete this when done
           path += `&variable=newContent${i}&variable2=moreContent${i}`;
         }else{
           path += '&variable=test&variable2=moresamecontent';
@@ -131,17 +131,10 @@ class Page {
     i++;
   }
 
-  function handleReplacements(html, replacements){
-    for(let placeholder in replacements){
-      html = html.replace(placeholder, replacements[placeholder]);
-    }
-    return html;
-  }
-
   function handlePage(data, url){
-    //If the page is the same but the content is different we can retrieve the page from the hash and replace the placeholders with new values
-    //If the page is different we need to reload everything and update the cache
-    //Create a new instance of the page object. This only happends on the first call.
+    // If the page is the same but the content is different we can retrieve the page from the hash and replace the placeholders with new values
+    // If the page is different we need to reload everything and update the cache
+    // Create a new instance of the page object. This only happends on the first call.
     if(url.split('?').length >= 2){
       // console.log(url);
       url = url.split('?')[1];
@@ -160,16 +153,15 @@ class Page {
           document.querySelector('html').innerHTML = template.template;
         }
       }else{
-        //If there is no cached page...
+        // If there is no cached page...
         cacheHandler.create(new Page(data));
         // return ud.ajax(`/getrawtemplate?template=${data[2].template}&content_hash=${data[2].content_hash}`,  {success: handlePage, mimeType: 'text/html'});
-        return ud.ajax(`/getrawtemplate?${url}&content_hash=${data[2].content_hash}`,  {success: handlePage, mimeType: 'text/html'});
+        return ud.ajax(`/${getRawTemplateRoute}?${url}&content_hash=${data[2].content_hash}`,  {success: handlePage, mimeType: 'text/html'});
         
       }
     }else if(typeof data === 'string'){
       let html = cacheHandler.insertHTML(data);
       let template = new Template(html.html, html.replacements);
-
       document.querySelector('html').innerHTML = template.template;
     }
     handleAnchors();
