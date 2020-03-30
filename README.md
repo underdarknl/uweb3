@@ -175,8 +175,8 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
-#Notice how we load in the alchemy_model.Record class to gain access to all sorts of functionality
-class User(alchemy_model.Record, Base):
+#Notice how we load in the uweb3.model.AlchemyRecord class to gain access to all sorts of functionality
+class User(uweb3.model.AlchemyRecord, Base):
   __tablename__ = 'users'
 
   id = Column(Integer, primary_key=True)
@@ -206,7 +206,7 @@ from sqlalchemy.orm import sessionmaker, relationship
 
 Base = declarative_base()
 
-class User(alchemy_model.Record, Base):
+class User(uweb3.model.AlchemyRecord, Base):
   __tablename__ = 'users'
 
   id = Column(Integer, primary_key=True)
@@ -218,7 +218,7 @@ class User(alchemy_model.Record, Base):
   def __init__(self, *args, **kwargs):
     super(User, self).__init__(*args, **kwargs)
       
-class UserInfo(alchemy_model.Record, Base):
+class UserInfo(uweb3.model.AlchemyRecord, Base):
   __tablename__ = 'UserInfo'
 
   id = Column(Integer, primary_key=True)
