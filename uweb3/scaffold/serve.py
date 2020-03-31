@@ -2,6 +2,7 @@
 
 # Application
 import base
+import sys
 
 def main():
   app = base.main()

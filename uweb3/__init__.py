@@ -125,7 +125,8 @@ class uWeb(object):
     server = make_server(host, int(port), self)
     print('Running µWeb3 server on http://{}:{}'.format(server.server_address[0],server.server_address[1]))
     try:
-      if hot_reloading:
+      #Needs to check == True. Without it will trigger even when false
+      if self.config['development'].get('dev', False) == 'True':
         HotReload(self.config['development'].get('dev', 'False'))
       server.serve_forever()
     except:

@@ -15,7 +15,7 @@ class Test(PageMaker):
   @checkxsrf
   def Home(self):
     """Returns the index template"""
-    return self.parser.Parse('home.html', variable='test')
+    return self.parser.Parse('home.html', xsrf=self.xsrf, variable='test')
 
   @loggedin
   @checkxsrf
@@ -41,7 +41,9 @@ class Test(PageMaker):
       scookie.Delete("test")
     return self.req.Redirect('/home')
 
+  @loggedin
   def Logout(self):
+    self.req.DeleteCookie('xsrf')
     scookie = UserCookie(self.secure_cookie_connection)
     scookie.Delete('login')
     return self.req.Redirect('/login')

@@ -188,7 +188,6 @@ class BasePageMaker(object):
     """Returns an error message regarding an incorrect XSRF token."""
     page_data = self.parser.Parse('403.html', error=command,
                                   **self.CommonBlocks('Invalid XSRF token'))
-  
     return uweb3.Response(content=page_data, httpcode=403)
   
   def _GetLoggedInUser(self):

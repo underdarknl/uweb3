@@ -27,8 +27,6 @@ class XSRF(object):
         IsValid: boolean
     """ 
     token = self.Generate_xsrf_token(userid)
-    print(self.post.get('xsrf'))
-    print(token)
     if not self.post.get('xsrf'):
       return False
     if self.post.get('xsrf') != token:
@@ -45,10 +43,9 @@ def loggedin(f):
     """Decorator that checks if the user requesting the page is logged in based on set cookie."""
     def wrapper(*args, **kwargs):
       if not args[0].user:
-        return args[0].req.Redirect('/login')
+        return args[0].req.Redirect('/login', http_code=303)
       return f(*args, **kwargs)
     return wrapper
-
 
 def checkxsrf(f):
     """Decorator that checks the user's XSRF.
@@ -61,16 +58,24 @@ def checkxsrf(f):
       xsrf = XSRF(args[0].req.AddCookie, args[0].post)
       if args[0].req.method == "GET":
         if not xsrf_cookie:
+          #If the cookie doesn't exist generate a token and add it in a cookie
           args[0].xsrf = xsrf.Generate_xsrf_token(args[0].user.get('user_id'))
           args[0].req.AddCookie('xsrf', args[0].xsrf)
         else:
-          args[0].xsrf = xsrf_cookie
+          #If the cookie exists but the xsrf is not valid replace the cookie with a valid one
+          if not xsrf.is_valid_xsrf_token(args[0].user.get('user_id')):
+            args[0].xsrf = xsrf.Generate_xsrf_token(args[0].user.get('user_id'))
+            args[0].req.AddCookie('xsrf', args[0].xsrf)
+          else:
+            args[0].xsrf = xsrf_cookie
       else:
+        #On a post request check if there is a cookie with xsrf and if the post contains an xsrf input
         if not xsrf_cookie:
           return args[0].XSRFInvalidToken('XSRF cookie is missing')
         if not args[0].post.get('xsrf'):
           args[0].post = {}
           return args[0].XSRFInvalidToken('XSRF token is missing')
+        #Validate token
         if not xsrf.is_valid_xsrf_token(args[0].user.get('user_id')):
           return args[0].XSRFInvalidToken('XSRF token is not valid')
         args[0].xsrf = xsrf_cookie
