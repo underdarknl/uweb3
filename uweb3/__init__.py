@@ -1,7 +1,7 @@
 #!/usr/bin/python
 """uWeb3 Framework"""
 
-__version__ = '0.4.0-dev'
+__version__ = '0.4.1-dev'
 
 # Standard modules
 try:

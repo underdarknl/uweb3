@@ -151,7 +151,6 @@ class Request(object):
     headers = {'Location': location}
     if self.response.headers.get('Set-Cookie'):
       headers['Set-Cookie'] = self.response.headers.get('Set-Cookie')
-      
     return response.Response(
       content=REDIRECT_PAGE, 
       content_type=self.response.headers.get('Content-Type', 'text/html'), 

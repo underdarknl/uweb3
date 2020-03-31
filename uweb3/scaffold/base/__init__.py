@@ -25,11 +25,11 @@ def main():
   routes = [
       ('/', 'Index'),
       ('/login', 'Login'),
+      ('/logout', 'Logout'),
       ('/home', 'Home'), 
       ('/home/create', 'Create'),
       ('/home/update', 'Update'),
       ('/home/delete', 'Delete'),
-      ('/logout', 'Logout'),
       ('/sqlalchemy', 'Sqlalchemy'),
       #test routes
       ('/test', 'Test'),
@@ -39,5 +39,4 @@ def main():
       ('/static/(.*)', 'Static'),
       ('/(.*)', 'FourOhFour'),
       ]
-  
   return uweb3.uWeb(pages.PageMaker, routes, config=config)

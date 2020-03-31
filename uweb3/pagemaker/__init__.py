@@ -178,10 +178,10 @@ class BasePageMaker(object):
     self.user = self._GetLoggedInUser()
    
   def _PostRequest(self, response):
-    if issubclass(type(self), SqAlchemyPageMaker):
-      """ """
-      # self.session.close()
-      # self.connection.dispose()
+    # if issubclass(type(self), SqAlchemyPageMaker):
+    #   """ """
+    #   self.session.close()
+    #   self.connection.dispose()
     return response
 
   def XSRFInvalidToken(self, command):
@@ -330,6 +330,7 @@ class BasePageMaker(object):
   def _GetXSRF(self):
     if 'xsrf' in self.cookies:
       return self.cookies['xsrf']
+    return None
     
   def CommonBlocks(self, title, page_id=None, scripts=None):
     """Returns a dictionary with the header and footer in it."""

@@ -257,7 +257,6 @@ class SecureCookie(object):
     self.req.DeleteCookie(name)
     if self.cookiejar.get(name):
       self.cookiejar.pop(name)
-
         
   def __CreateCookieHash(self, data):
     hex_string = pickle.dumps(data).hex()
