@@ -329,7 +329,8 @@ class Template(list):
       raw = HTMLsafestring(self)
       raw.content_hash = htmlsafe.content_hash
       return raw
-    if self.parser.noparse:
+
+    if self.parser and self.parser.noparse:
       #Hash the page so that we can compare on the frontend if the html has changed
       htmlsafe.page_hash = hashlib.md5(HTMLsafestring(self).encode()).hexdigest()
       #Hashes the page and the content so we can know if we need to refresh the page on the frontend
