@@ -250,7 +250,7 @@ class HotReload(object):
       for r, d, f in os.walk(self.path):
         for file in f:
           ext = os.path.splitext(file)[1]
-          if ext not in (".pyc", '.ini', '.md', ):
+          if ext not in (".pyc", '.ini', '.md', '.html',):
             watched_files.append(os.path.join(r, file))
       return (len(watched_files), watched_files)   
       

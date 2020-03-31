@@ -72,18 +72,10 @@ dev = True
 ```
 This makes sure that µWeb3 restarts every time you modify something in the core of the framework aswell.
 
-µWeb3 also has an inbuild protection for XSRF. To make use of it enable the following setting in the config: 
-```
-[security]
-xsrf_enabled = True
-```
-Now on every request it checks if there is a XSRF cookie in place. If there is no cookie it will create one.
-Every post request it will validate the first input field with the tag 'xsrf'. 
-If the cookie and the post request match the 'incorrect_xsrf_token' flag will stay on the default(False). 
-If however they do not match this flag will be set to True. 
-To secure your routes make sure to decorate them with the 'checkxsrf' decorator.
-
-To automaticly generate a hidden input with a xsrf token make use of the {{ xsrf [variable_with_xsrf_token]}} function.
+µWeb3 has inbuild XSRF protection. You can import it from uweb3.pagemaker.new_decorators checkxsrf. 
+This is a decorator and it will handle validation and generation of the XSRF.
+The only thing you have to do is add the ```{{ xsrf [xsrf]}}``` tag into a form. 
+The xsrf token is accessible in any pagemaker with self.xsrf.  
 
 # Routing
 The default way to create new routes in µWeb3 is to create a folder called routes. 

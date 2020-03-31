@@ -178,10 +178,6 @@ class BasePageMaker(object):
     self.user = self._GetLoggedInUser()
    
   def _PostRequest(self, response):
-    # if issubclass(type(self), SqAlchemyPageMaker):
-    #   """ """
-    #   self.session.close()
-    #   self.connection.dispose()
     return response
 
   def XSRFInvalidToken(self, command):
