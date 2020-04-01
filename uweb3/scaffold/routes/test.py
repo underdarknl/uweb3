@@ -53,6 +53,6 @@ class Test(PageMaker):
   def StringEscaping(self):
     if self.post:
       result = SQLSAFE(self.post.getfirst('sql'), self.post.getfirst('value1'), self.post.getfirst('value2'), unsafe=True)
-      t = f"""test = 'tst"''"""
+      t = f"""t = 't"''"""
       print(result + t)
     return self.req.Redirect('/test')

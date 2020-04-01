@@ -109,16 +109,9 @@ class SQLSAFE(Basesafestring):
         return other
       elif isinstance(other, Basesafestring): # lets unescape the other 'safe' type,
         otherdata = other.unescape(other) # its escaping is not needed for his context
-        return self.escape(otherdata) # escape it using our context
+        return self.sanitize(otherdata) # escape it using our context
       else:
-        index = 0
-        escaped = ""
-        print(self.sanitize(other))
-        # for m in self.QUOTES_REGEX.finditer(other):
-        #   escaped += other[index:m.span()[0]] + self.sanitize(m.group()[1:-1])
-        #   index = m.span()[1]
-        # escaped += other[index:]
-        return escaped
+        return self.sanitize(other)
 
   @classmethod
   def sanitize(cls, value):
@@ -129,7 +122,6 @@ class SQLSAFE(Basesafestring):
         return f"'{value}'"
       return value
     for m in cls.CHARS_ESCAPE_REGEX.finditer(value):
-      print(value[index:m.span()[0]])
       escaped += value[index:m.span()[0]] + cls.CHARS_ESCAPE_DICT[m.group()]
       index = m.span()[1]
     escaped += value[index:]

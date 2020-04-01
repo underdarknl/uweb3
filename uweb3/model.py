@@ -138,9 +138,10 @@ class SecureCookie(object):
   def __GetSessionCookies(self):
     cookiejar = {}
     for key, value in self.cookies.items():
-      isValid, value = self.__ValidateCookieHash(value)
-      if isValid:
-        cookiejar[key] = value
+      if value: 
+        isValid, value = self.__ValidateCookieHash(value)
+        if isValid:
+          cookiejar[key] = value
     return cookiejar
   
   def Create(self, name, data, **attrs):
