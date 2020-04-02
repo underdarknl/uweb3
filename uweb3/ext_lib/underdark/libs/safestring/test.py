@@ -7,7 +7,7 @@ __version__ = 0.1
 import unittest
 
 #custom modules
-from . import *
+from uweb3.ext_lib.underdark.libs.safestring import URLsafestring, SQLSAFE, HTMLsafestring, URLqueryargumentsafestring, JSONsafestring, EmailAddresssafestring, Basesafestring
 
 class BasesafestringMethods(unittest.TestCase):
   def test_creation_str(self):
@@ -98,6 +98,21 @@ class TestEmailAddresssafestringMethods(unittest.TestCase):
     """See if we correctly clean up header injection attemps"""
     testdata = EmailAddresssafestring('jan@underdark.nl\nbcc: victim@otherhost.com', unsafe=True)
     self.assertEqual(testdata, 'jan@underdark.nl')
+
+class TestSQLSAFEMethods(unittest.TestCase):
+  def test_escaping(self):
+    testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", "username'", unsafe=True)
+    self.assertEqual(testdata, "SELECT * FROM users WHERE username = 'username\\''")
+    testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", 'username"', unsafe=True)
+    self.assertEqual(testdata, "SELECT * FROM users WHERE username = 'username\\\"'")
+
+  def test_concatenation(self):
+    testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", "username'", unsafe=True)
+    other = "AND firstname='test'"
+    self.assertEqual(testdata + other, "SELECT * FROM users WHERE username = 'username\\'' AND firstname=\\'test\\'")
+    testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", 'username"', unsafe=True)
+    other = "AND firstname='test'"
+    self.assertEqual(testdata + other, "SELECT * FROM users WHERE username = 'username\\\"' AND firstname=\\'test\\'")
 
 if __name__ == '__main__':
     unittest.main()

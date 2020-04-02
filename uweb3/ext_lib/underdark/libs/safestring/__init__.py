@@ -94,6 +94,7 @@ class SQLSAFE(Basesafestring):
     '\''   : '\\\'',
     '\\'   : '\\\\'
   }
+  
   CHARS_ESCAPE_REGEX = re.compile(r"""[\0\b\t\n\r\x1a\"\'\\]""")
   PLACEHOLDERS_REGEX = re.compile(r"""\?+""")
   QUOTES_REGEX = re.compile(r"""([\"'])(?:(?=(\\?))\2.)*?\1""", re.DOTALL)
@@ -111,22 +112,27 @@ class SQLSAFE(Basesafestring):
         otherdata = other.unescape(other) # its escaping is not needed for his context
         return self.sanitize(otherdata) # escape it using our context
       else:
-        return self.sanitize(other)
+        other = " " + other
+        return self.sanitize(other, qoutes=False)
 
   @classmethod
-  def sanitize(cls, value):
+  def sanitize(cls, value, qoutes=True):
     index = 0
     escaped = ""
     if len(cls.CHARS_ESCAPE_REGEX.findall(value)) == 0:
       if not str.isdigit(value):
-        return f"'{value}'"
+        if qoutes:
+          return f"'{value}'"
+        return value
       return value
     for m in cls.CHARS_ESCAPE_REGEX.finditer(value):
       escaped += value[index:m.span()[0]] + cls.CHARS_ESCAPE_DICT[m.group()]
       index = m.span()[1]
     escaped += value[index:]
     if not str.isdigit(escaped):
-      return f"'{escaped}'"
+      if qoutes:
+        return f"'{escaped}'"
+      return escaped
     return escaped
 
   def escape(cls, sql, values):
