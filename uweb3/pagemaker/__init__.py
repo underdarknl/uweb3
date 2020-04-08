@@ -202,12 +202,11 @@ class BasePageMaker(object):
     
   @classmethod
   def loadModules(self, default_routes='routes', excluded_files=('__init__', '.pyc')):
-    """Loops over all .py(except __init__) files in target directory
-    Looks for classes with the base PageMaker in position 0
+    """Loops over all .py files apart from some exceptions in target directory
+    Looks for classes that contain pagemaker
     """
     import pyclbr
     bases = []
-
     routes = os.path.join(os.getcwd(), default_routes)
     for path, dirnames, filenames in os.walk(routes):
       for filename in filenames:

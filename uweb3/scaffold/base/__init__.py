@@ -23,7 +23,7 @@ def main():
   config_file = os.path.join(os.path.dirname(__file__), 'config.ini')
   config = uweb3.read_config(config_file)
   routes = [
-      ('/', 'Index'),
+      ('/', 'Index', ('GET', 'POST'), '127.0.0.1'),
       ('/login', 'Login'),
       ('/logout', 'Logout'),
       ('/home', 'Home'), 
@@ -36,6 +36,7 @@ def main():
       ('/getrawtemplate.*', 'GetRawTemplate'),
       ('/parsed', 'Parsed'),
       ('/test/escaping', 'StringEscaping'),
+      ('/manager', 'Manager'),
       ('/static/(.*)', 'Static'),
       ('/(.*)', 'FourOhFour'),
       ]

@@ -124,11 +124,7 @@ class SettingsManager(object):
       self.config.write(configfile)
     self.Read()
     
-class SecureCookie(object):
-  """ """
-  #TODO: ini class in the model which makes a file based on the class name with
-  #settings in it 
-  
+class SecureCookie(object):  
   def __init__(self, connection):
     self.req = connection[0]
     self.cookies = connection[1]

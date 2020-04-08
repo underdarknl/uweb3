@@ -30,21 +30,16 @@
       <a href='/parsed?template=test2.html'>index</a>
     </nav>
   </div>
-  [variable]
-  <p>
-  {{if [variable|len] < '3' and [variable|len] > '0'}}
-    [variable|len]
-    [variable]
-  {{elif [variable|len] > '8'}}
-    elif
-  {{else}}
-    oi
-  {{endif}}
-  </p>
 
-  {{ for item in [variable] }} [item] 
-  {{if [variable]}}test{{endif}}
+  {{ for item in [variable] }} 
+    [item] 
+    {{if [variable]}}test{{endif}}
+    {{for item in [variable2] }}
+      {{if [variable]}}test{{endif}}
+      test
+    {{endfor}}
   {{endfor}}
+
 
   </section>
 

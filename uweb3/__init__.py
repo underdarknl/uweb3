@@ -1,7 +1,7 @@
 #!/usr/bin/python
 """uWeb3 Framework"""
 
-__version__ = '0.4.1-dev'
+__version__ = '0.4.3-dev'
 
 # Standard modules
 try:
@@ -73,12 +73,20 @@ class uWeb(object):
   """
   def __init__(self, page_class, routes, config):
     self.page_class = page_class
-    self.page_class.loadModules()
     self.registry = Registry()
     self.registry.logger = logging.getLogger('root')
     self.router = router(routes)
     self.config = config if config is not None else {}
     self.secure_cookie_hash = str(os.urandom(32))
+
+    default_route = "routes"
+    automatic_detection = True
+    if self.config.get('routing'):
+      default_route = self.config['routing'].get('default_routing', default_route)
+      automatic_detection = self.config['routing'].get('disable_automatic_route_detection', 'False') != 'True'
+    if automatic_detection:
+      self.page_class.loadModules(default_routes=default_route)
+
 
   def __call__(self, env, start_response):
     """WSGI request handler.
@@ -91,7 +99,7 @@ class uWeb(object):
     response = self.get_response(page_maker,
         req.path,
         req.env['REQUEST_METHOD'],
-        req.env['host'])
+        req.env['HTTP_HOST'].split(':')[0])
     if not isinstance(response, Response):
       req.response.text = response
       response = req.response
@@ -192,15 +200,16 @@ def router(routes):
     Returns:
       2-tuple: handler method (unbound), and tuple of pattern matches.
     """
+    
     for pattern, handler, routemethod, hostpattern in req_routes:
-      if routemethod != 'ALL' and routemethod != method:
+      if routemethod != 'ALL' and method not in routemethod:
         # clearly not the route we where looking for
         continue
 
       hostmatch = None
       if hostpattern != '*':
         # see if we can match this host and extact any info from it.
-        hostmatch = routehost.match(host)
+        hostmatch = re.compile(f"^{host}$").match(hostpattern)
         if not hostmatch:
           # clearly not the host we where looking for
           continue

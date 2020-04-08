@@ -1,4 +1,6 @@
 class Template {  
+  openScopes = [];
+
   get FUNCTION() {
     return /\{\{\s*(.*?)\s*\}\}/mg;
   }
@@ -36,23 +38,25 @@ class Template {
         this._ExtendText(node, index)
       }
     });
-    
+    console.log(this.scopes);
+    console.log(this.tmp);
     this._EvaluateScope();
   }
   _EvaluateScope(){
     this.scopes.map((object, index) => {
-      let deleteScopes = false;
-      for(let branch in object.branches){
-        if(!object.branches[branch].istrue){
-          //Delete all the scopes from which the condition was not met
-          if(object.branches[branch].istrue !== undefined || deleteScopes){
-            //If the branch returns undefined its the last clause in the if statement so it will always be true
-            delete this.tmp[object.branches[branch].index + 1];
-          }
-        }else{
-          deleteScopes = true;
-        }
-      }
+      console.log(object);
+      // let deleteScopes = false;
+      // for(let branch in object.branches){
+      //   if(!object.branches[branch].istrue){
+      //     //Delete all the scopes from which the condition was not met
+      //     if(object.branches[branch].istrue !== undefined || deleteScopes){
+      //       //If the branch returns undefined its the last clause in the if statement so it will always be true
+      //       delete this.tmp[object.branches[branch].index + 1];
+      //     }
+      //   }else{
+      //     deleteScopes = true;
+      //   }
+      // }
     });
   }
   _ExtendFunction(func, nodes, index) {
@@ -64,8 +68,11 @@ class Template {
   }
 
   _StartScope(scope){
-    // this._AddToOpenScope(scope);
-    this.scopes.push(scope);
+    if(this.openScopes.length > 0){
+      this.openScopes[this.openScopes.length - 1].branches.push(scope);
+    }else{
+      this.scopes.push(scope);
+    }
   }
 
   _ExtendText(nodes, index){
@@ -78,13 +85,19 @@ class Template {
   }
 
   _TemplateConstructFor(nodes, index){
-    this._StartScope(new TemplateLoop(nodes.join(' '), index));
+    let template = new TemplateLoop(nodes.join(' '), index);
+    if(this.openScopes.length > 0){
+      this.openScopes.push(template);
+    }else{
+      // this.scopes.push(template);
+      this.openScopes.push(template);
+    }
   }
 
   _TemplateConstructEndfor(nodes, index){
-    this.scopes[this.scopes.length - 1].branches.push({index: index});
-    // console.log(this.scopes[this.scopes.length - 1]);
-    // console.log(this.tmp);
+    // this.openScopes[this.openScopes.length - 1].branches.push({index: index});
+    this.scopes.push(this.openScopes[this.openScopes.length - 1]);
+    this.openScopes.pop();
   }
 
   _TemplateConstructElif(nodes, index){
@@ -108,13 +121,12 @@ class TemplateConditional {
   
   constructor(expr, index) {
     this.branches = [];
-    this.default = null;
     this.NewBranch(expr, index);
   }
   
   NewBranch(expr, index){
     let isTrue = this._EvaluateClause(expr);
-    this.branches.push({ index: index, expr: expr, istrue: isTrue});
+    this.branches.push({ index: index, expr: expr });
   }
 
   _EvaluateClause(expr){
@@ -154,7 +166,6 @@ class TemplateConditional {
 class TemplateLoop {
   constructor(expr, index) {
     this.branches = [];
-    this.default = null;
     this.NewBranch(expr, index);
   }
 
