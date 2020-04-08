@@ -99,9 +99,9 @@ class SQLSAFE(Basesafestring):
   PLACEHOLDERS_REGEX = re.compile(r"""\?+""")
   QUOTES_REGEX = re.compile(r"""([\"'])(?:(?=(\\?))\2.)*?\1""", re.DOTALL)
 
-  def __new__(cls, data, *args, **kwargs):
+  def __new__(cls, data, values=(), *args, **kwargs):
     return super().__new__(cls,
-        cls.escape(cls, str(data), args) if 'unsafe' in kwargs else data)
+        cls.escape(cls, str(data), values) if 'unsafe' in kwargs else data)
 
   def __upgrade__(self, other):
       """Upgrade a given object to be as safe, and in the same safety context as

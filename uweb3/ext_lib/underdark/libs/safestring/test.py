@@ -101,16 +101,18 @@ class TestEmailAddresssafestringMethods(unittest.TestCase):
 
 class TestSQLSAFEMethods(unittest.TestCase):
   def test_escaping(self):
-    testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", "username'", unsafe=True)
+    testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=("username'",), unsafe=True)
     self.assertEqual(testdata, "SELECT * FROM users WHERE username = 'username\\''")
-    testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", 'username"', unsafe=True)
+    testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=('username"',), unsafe=True)
     self.assertEqual(testdata, "SELECT * FROM users WHERE username = 'username\\\"'")
+    testdata = SQLSAFE("""SELECT * FROM users WHERE username = ? AND ? """, values=('username"', "password"), unsafe=True)
+
 
   def test_concatenation(self):
-    testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", "username'", unsafe=True)
+    testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=("username'",), unsafe=True)
     other = "AND firstname='test'"
     self.assertEqual(testdata + other, "SELECT * FROM users WHERE username = 'username\\'' AND firstname=\\'test\\'")
-    testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", 'username"', unsafe=True)
+    testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=('username"',), unsafe=True)
     other = "AND firstname='test'"
     self.assertEqual(testdata + other, "SELECT * FROM users WHERE username = 'username\\\"' AND firstname=\\'test\\'")
 
