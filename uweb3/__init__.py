@@ -202,9 +202,13 @@ def router(routes):
     """
     
     for pattern, handler, routemethod, hostpattern in req_routes:
-      if routemethod != 'ALL' and method not in routemethod:
+      if routemethod != 'ALL':
         # clearly not the route we where looking for
-        continue
+        if isinstance(routemethod, tuple):
+          if method not in routemethod:
+            continue
+        if method != routemethod:
+          continue
 
       hostmatch = None
       if hostpattern != '*':
