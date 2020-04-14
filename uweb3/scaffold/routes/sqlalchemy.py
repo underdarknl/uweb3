@@ -2,7 +2,6 @@
 """Request handlers for the uWeb3 project scaffold"""
 
 import uweb3
-from uweb3 import alchemy_model
 from uweb3 import SqAlchemyPageMaker
 from uweb3.pagemaker.new_login import Users, UserCookie, Test
 from uweb3.pagemaker.new_decorators import checkxsrf
@@ -13,7 +12,7 @@ from sqlalchemy.orm import sessionmaker, relationship, lazyload
 
 Base = declarative_base()
 
-class User(alchemy_model.Record, Base):
+class User(uweb3.model.AlchemyRecord, Base):
   __tablename__ = 'alchemy_users'
 
   id = Column(Integer, primary_key=True)
@@ -26,7 +25,7 @@ class User(alchemy_model.Record, Base):
   def __init__(self, *args, **kwargs):
     super(User, self).__init__(*args, **kwargs)
       
-class Author(alchemy_model.Record, Base):
+class Author(uweb3.model.AlchemyRecord, Base):
   __tablename__ = 'author'
 
   id = Column(Integer, primary_key=True)
@@ -35,7 +34,7 @@ class Author(alchemy_model.Record, Base):
   children = relationship("Persons",  lazy="select")
   
   
-class Persons(alchemy_model.Record, Base):
+class Persons(uweb3.model.AlchemyRecord, Base):
   __tablename__ = 'persons'
   
   id = Column(Integer)
@@ -80,12 +79,14 @@ class UserPageMaker(SqAlchemyPageMaker):
     if not 'alchemy_users' in tables or not 'author' in tables or not 'persons' in tables:
       buildTables(self.engine, self.session)
 
-    user = User.FromPrimary(self.session, 1)
-    print("Returns user with primary key 1: ", user)
-    print("Will only load the children when we ask for them: ", user.children)
-    print("Conditional list, lists users with id < 10: ", list(User.List(self.session, conditions=[User.id <= 10])))
-    print("List item 0: ",  list(User.List(self.session, conditions=[User.id <= 10]))[0])
-    print("List item 0.children: ",  list(User.List(self.session, conditions=[User.id <= 10]))[0].children)
+    # user = User.FromPrimary(self.session, 1)
+    # print(User.Create(self.session, {'username': 'hello', 'password': 'test', 'authorid': 1}))
+
+    # print("Returns user with primary key 1: ", user)
+    # print("Will only load the children when we ask for them: ", user.children)
+    # print("Conditional list, lists users with id < 10: ", list(User.List(self.session, conditions=[User.id <= 10])))
+    # print("List item 0: ",  list(User.List(self.session, conditions=[User.id <= 10]))[0])
+    # print("List item 0.children: ",  list(User.List(self.session, conditions=[User.id <= 10]))[0].children)
 
     # User.Update(self.session, [User.id > 2, User.id < 100], {User.username: 'username', User.password: 'password'})
     # print("User from primary key", user)

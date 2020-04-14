@@ -6,10 +6,10 @@
   <meta charset="UTF-8">
   <title>Uweb</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="//css.underdark.nl/0.2/base.css" rel="stylesheet" />
-  <link href="//css.underdark.nl/0.2/layout.css" rel="stylesheet" />
-  <link href="//css.underdark.nl/0.2/module.css" rel="stylesheet" />
-  <link href="//css.underdark.nl/0.2/theme.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/layout.css">
+  <link rel="stylesheet" href="/static/css/module.css">
+  <link rel="stylesheet" href="/static/css/theme.css">
 </head>
 
 <body id="header" class="layout">
@@ -26,34 +26,24 @@
     <div>
     <p>Alt + click to generate new content</p>
     <nav>
-      <a href='/parsed?template=test.html'>Generate content</a>
+      <a href='/parsed?template=test2.html'>Generate content</a>
       <a href='/parsed?template=test2.html'>index</a>
     </nav>
   </div>
-  <p>
-   [variable]
-  </p>
-  <p>
-  [variable2]
-  </p>
-  <p>
-  [variable|len]
-  </p>
-  <p>
-    [variable|substr(1)]
-  </p>
-  <p>
-   [variable|substr(2)]
-  </p>
-  <p>
+
   {{if [variable]}}
     {{if [variable]}}
         [variable]
       {{endif}}
+    {{if [variable|len] > '100'}}
     [variable]
+    {{else}}
+    oi
+    {{endif}}
   {{endif}}
   </p>
-  {{ for item in [variable] }} [item] {{endfor}}
+  {{ for item in [variable] }} [item] 
+  {{endfor}}
   </section>
 
   <script src="/static/scripts/ajax.js"></script>

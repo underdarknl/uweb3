@@ -1,7 +1,7 @@
 #!/usr/bin/python
 """uWeb3 Framework"""
 
-__version__ = '0.4.0-dev'
+__version__ = '0.4.4-dev'
 
 # Standard modules
 try:
@@ -73,16 +73,15 @@ class uWeb(object):
   """
   def __init__(self, page_class, routes, config):
     self.page_class = page_class
-    self.page_class.loadModules()
     self.registry = Registry()
     self.registry.logger = logging.getLogger('root')
     self.router = router(routes)
     self.config = config if config is not None else {}
     self.secure_cookie_hash = str(os.urandom(32))
-
+    self.setup_routing()
+    
   def __call__(self, env, start_response):
     """WSGI request handler.
-
     Accpepts the WSGI `environment` dictionary and a function to start the
     response and returns a response iterator.
     """
@@ -125,12 +124,28 @@ class uWeb(object):
     server = make_server(host, int(port), self)
     print('Running µWeb3 server on http://{}:{}'.format(server.server_address[0],server.server_address[1]))
     try:
-      if hot_reloading:
+      #Needs to check == True. Without it will trigger even when false
+      if self.config['development'].get('dev', False) == 'True':
         HotReload(self.config['development'].get('dev', 'False'))
       server.serve_forever()
     except:
       server.shutdown()
 
+  def setup_routing(self):
+    routes = []
+    for route in self.page_class[1:]:
+      routes.append(route)
+    self.page_class[0].AddRoutes(tuple(routes))
+    self.page_class = self.page_class[0]
+    
+    default_route = "routes"
+    automatic_detection = True
+    if self.config.get('routing'):
+      default_route = self.config['routing'].get('default_routing', default_route)
+      automatic_detection = self.config['routing'].get('disable_automatic_route_detection', 'False') != 'True'
+
+    if automatic_detection:
+      self.page_class.LoadModules(default_routes=default_route)
 
 def read_config(config_file):
   """Parses the given `config_file` and returns it as a nested dictionary."""
@@ -191,15 +206,20 @@ def router(routes):
     Returns:
       2-tuple: handler method (unbound), and tuple of pattern matches.
     """
+    
     for pattern, handler, routemethod, hostpattern in req_routes:
-      if routemethod != 'ALL' and routemethod != method:
+      if routemethod != 'ALL':
         # clearly not the route we where looking for
-        continue
+        if isinstance(routemethod, tuple):
+          if method not in routemethod:
+            continue
+        if method != routemethod:
+          continue
 
       hostmatch = None
       if hostpattern != '*':
         # see if we can match this host and extact any info from it.
-        hostmatch = routehost.match(host)
+        hostmatch = re.compile(f"^{host}$").match(hostpattern)
         if not hostmatch:
           # clearly not the host we where looking for
           continue
@@ -249,7 +269,7 @@ class HotReload(object):
       for r, d, f in os.walk(self.path):
         for file in f:
           ext = os.path.splitext(file)[1]
-          if ext not in (".pyc", '.ini', '.md', ):
+          if ext not in (".pyc", '.ini', '.md', '.html',):
             watched_files.append(os.path.join(r, file))
       return (len(watched_files), watched_files)   
       

@@ -6,7 +6,7 @@ import hashlib
 class XSRF(object):
   # secret = str(os.urandom(64))
   secret = "test"
-  def __init__(self, req, post):
+  def __init__(self, AddCookie, post):
     """Checks if cookie with xsrf key is present. 
     
     If not generates xsrf token and places it in a cookie.
@@ -14,30 +14,24 @@ class XSRF(object):
     True when they do not match and False when they do match for the 'incorrect_xsrf_token' flag.
     """
     self.unix_timestamp = time.mktime(datetime.datetime.now().date().timetuple())
-    self.req = req
+    self.AddCookie = AddCookie
     self.post = post
     
-  def validate_token(self, userid):
+  def is_valid_xsrf_token(self, userid):
     """Validate given xsrf token based on userid
     
     Arguments:
       @ userid: str/int
       
     Returns:
-        IsValid: bool
+        IsValid: boolean
     """ 
     token = self.Generate_xsrf_token(userid)
-    #Check if the post request is not empty
-    if self.post:
-      #Check if the xsrf token is in the request and ensure that its valid
-      if not self.post.get('xsrf'):
-        return True
-      if self.post.get('xsrf') != token:
-        self.req.AddCookie('xsrf', token)
-        return True
-    else:
-      return True
-    return token != self.post.get('xsrf')
+    if not self.post.get('xsrf'):
+      return False
+    if self.post.get('xsrf') != token:
+      return False
+    return True
 
   def Generate_xsrf_token(self, userid):    
       hashed = (str(self.unix_timestamp) + self.secret + userid).encode('utf-8')
@@ -49,7 +43,7 @@ def loggedin(f):
     """Decorator that checks if the user requesting the page is logged in based on set cookie."""
     def wrapper(*args, **kwargs):
       if not args[0].user:
-        return args[0].req.Redirect('/login')
+        return args[0].req.Redirect('/login', http_code=303)
       return f(*args, **kwargs)
     return wrapper
 
@@ -60,21 +54,30 @@ def checkxsrf(f):
     (post) request. Make sure to have xsrf_enabled = True in the config.ini
     """
     def wrapper(*args, **kwargs):
-      xsrf = XSRF(args[0].req, args[0].post)
-      if not args[0].cookies.get('xsrf'):
-        if args[0].user:
-          args[0].req.AddCookie('xsrf', xsrf.Generate_xsrf_token(args[0].user.get('user_id')))
-      if args[0].req.method == "POST":
-        post_xsrf_token = args[0].post.get('xsrf')
-        if not post_xsrf_token:
-          return args[0].XSRFInvalidToken(
-                    'Your XSRF token was incorrect, please try again.'
-                    )
-        if args[0].options.get('security').get('xsrf_enabled'):
-          isInvalid = xsrf.validate_token(args[0].user.get('user_id'))
-          if isInvalid:
-            return args[0].XSRFInvalidToken(
-                    'Your XSRF token was incorrect, please try again.'
-                    )
+      xsrf_cookie = args[0].cookies.get('xsrf')
+      xsrf = XSRF(args[0].req.AddCookie, args[0].post)
+      if args[0].req.method == "GET":
+        if not xsrf_cookie:
+          #If the cookie doesn't exist generate a token and add it in a cookie
+          args[0].xsrf = xsrf.Generate_xsrf_token(args[0].user.get('user_id'))
+          args[0].req.AddCookie('xsrf', args[0].xsrf)
+        else:
+          #If the cookie exists but the xsrf is not valid replace the cookie with a valid one
+          if not xsrf.is_valid_xsrf_token(args[0].user.get('user_id')):
+            args[0].xsrf = xsrf.Generate_xsrf_token(args[0].user.get('user_id'))
+            args[0].req.AddCookie('xsrf', args[0].xsrf)
+          else:
+            args[0].xsrf = xsrf_cookie
+      else:
+        #On a post request check if there is a cookie with xsrf and if the post contains an xsrf input
+        if not xsrf_cookie:
+          return args[0].XSRFInvalidToken('XSRF cookie is missing')
+        if not args[0].post.get('xsrf'):
+          args[0].post = {}
+          return args[0].XSRFInvalidToken('XSRF token is missing')
+        #Validate token
+        if not xsrf.is_valid_xsrf_token(args[0].user.get('user_id')):
+          return args[0].XSRFInvalidToken('XSRF token is not valid')
+        args[0].xsrf = xsrf_cookie
       return f(*args, **kwargs)
     return wrapper

@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""module to support OpenID login in newWeb"""
+"""module to support OpenID login in uWeb3"""
 
 # Standard modules
 import base64

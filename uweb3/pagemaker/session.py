@@ -1,5 +1,5 @@
 #!/usr/bin/python
-"""newWeb PageMaker Mixins for session management purposes."""
+"""uWeb3 PageMaker Mixins for session management purposes."""
 
 # Standard modules
 import binascii
@@ -26,7 +26,7 @@ class Session(model.Record):
 # Pagemaker Mixin class for session management
 #
 class SessionMixin(object):
-  """Provides session management for newWeb"""
+  """Provides session management for uWeb3"""
 
   class NoSessionError(Exception):
     """Custom exception for user not having a (unexpired) session cookie."""

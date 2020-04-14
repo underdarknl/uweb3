@@ -7,6 +7,7 @@ from uweb3 import PageMaker
 from uweb3.pagemaker.new_login import UserCookie
 from uweb3.pagemaker.new_decorators import loggedin, checkxsrf
 from uweb3.ext_lib.underdark.libs.safestring import SQLSAFE, HTMLsafestring
+from uweb3.model import SettingsManager
 
 class Test(PageMaker):
   """Holds all the request handlers for the application"""
@@ -44,15 +45,17 @@ class Test(PageMaker):
     del self.get['template']
     for item in self.get:
       kwds[item] = self.get.getfirst(item)
-    self.parser.noparse = True
-    content = self.parser.Parse(
-        template, **kwds)
-    self.parser.noparse = False
+    try:
+      self.parser.noparse = True
+      content = self.parser.Parse(
+          template, **kwds)
+    finally:
+      self.parser.noparse = False
     return json.dumps(((self.req.headers.get('http_x_requested_with', None), self.parser.noparse, content)))
 
   def StringEscaping(self):
     if self.post:
-      result = SQLSAFE(self.post.getfirst('sql'), 
-              self.post.getfirst('value1'))
-      # print(SQLSAFE("INSERT INTO user (username, password) VALUES ('test', 'test')", unsafe=True))
+      result = SQLSAFE(self.post.getfirst('sql'), self.post.getfirst('value1'), self.post.getfirst('value2'), unsafe=True)
+      t = f"""t = 't"''"""
+      print(result + t)
     return self.req.Redirect('/test')

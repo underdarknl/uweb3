@@ -71,46 +71,18 @@ class PostDictionary(MultiDict):
     
     if not target:
       raise ValueError("Given key not found")
-    
     return target[0]
-  # def getfirst(self, key, default=None):
-  #   """ Return the first value received."""
-  #   if key in self:
-  #     value = self[key]
-  #     if isinstance(value, list):
-  #       return value[0]
-  #     else:
-  #       return value
-  #   else:
-  #     return default
-          
-  # def getlist(self, key):
-  #   """ Return list of received values."""
-  #   if key in self:
-  #     value = self[key]
-  #     if isinstance(value, list):
-  #       return [x[0] for x in value]
-  #     else:
-  #       return [value]
-  #   else:
-  #     return []
-          
-  # def iteritems(self):
-  #   return ((key, self.getlist(key)) for key in self)
-    
-  # def items(self):
-  #   return list(self.iteritems())
 
 class Request(object):
   def __init__(self, env, registry):
     self.env = env
-    self.headers = dict(self.headers_from_env(env))
+    self.headers = dict(self.headers_from_env(env))   
     self.registry = registry
     self._out_headers = []
     self._out_status = 200
     self._response = None
     self.method = self.env['REQUEST_METHOD']
-
+    
     # `self.vars` setup, will contain keys 'cookie', 'get' and 'post'
     self.vars = {'cookie': dict((name, value.value) for name, value in
                                 Cookie(self.env.get('HTTP_COOKIE')).items()),
@@ -151,7 +123,6 @@ class Request(object):
     headers = {'Location': location}
     if self.response.headers.get('Set-Cookie'):
       headers['Set-Cookie'] = self.response.headers.get('Set-Cookie')
-      
     return response.Response(
       content=REDIRECT_PAGE, 
       content_type=self.response.headers.get('Content-Type', 'text/html'), 

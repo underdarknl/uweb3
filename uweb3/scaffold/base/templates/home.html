@@ -6,10 +6,10 @@
   <meta charset="UTF-8">
   <title>Uweb</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="//css.underdark.nl/0.2/base.css" rel="stylesheet" />
-  <link href="//css.underdark.nl/0.2/layout.css" rel="stylesheet" />
-  <link href="//css.underdark.nl/0.2/module.css" rel="stylesheet" />
-  <link href="//css.underdark.nl/0.2/theme.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/layout.css">
+  <link rel="stylesheet" href="/static/css/module.css">
+  <link rel="stylesheet" href="/static/css/theme.css">
 </head>
 
 <body id="header" class="layout">
@@ -26,7 +26,7 @@
         <ul>
           <li><a href="/sqlalchemy">Sqlalchemy</a></li>
           <li><a href="/test">Tempalteparser</a></li>
-          <li><a href="/logout">Logout</a></li>
+          <li><a href="/logout">logout</a></li>
         </ul>
       </nav>
       <button class="toggle">Menu</button>
@@ -34,14 +34,16 @@
   </header>
   <section> 
     Loggedin with secure cookie.
-
     <form method="POST" action="/home/create">
+      {{ xsrf [xsrf]}}
       <button>Create new secure cookie</button>
     </form>
     <form method="POST" action="/home/update">
+      {{ xsrf [xsrf]}}
       <button>Update secure cookie</button>
     </form>
     <form method="POST" action="/home/delete">
+      {{ xsrf [xsrf]}}
       <button>Delete secure cookie</button>
     </form>
   </section>

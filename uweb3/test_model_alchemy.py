@@ -18,11 +18,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import lazyload, relationship
 
 # Custom modules
-# import newweb
-# Importing newWeb makes the SQLTalk library available as a side-effect
+# import uWeb3
+# Importing uWeb3 makes the SQLTalk library available as a side-effect
 import uweb3
 # Unittest target
-from uweb3 import alchemy_model as model
 from uweb3.ext_lib.underdark.libs.sqltalk import mysql
 
 # ##############################################################################
@@ -30,24 +29,24 @@ from uweb3.ext_lib.underdark.libs.sqltalk import mysql
 #
 Base = declarative_base()
 
-class BasicTestRecord(uweb3.alchemy_model.Record, Base):
+class BasicTestRecord(uweb3.model.AlchemyRecord, Base):
   """Test record for offline tests."""
   __tablename__ = 'basicTestRecord'
   ID = Column(Integer, primary_key=True)
   name = Column(String(32), nullable=False)
   x = Column(String(32))
   
-class Author(uweb3.alchemy_model.Record, Base):
+class Author(uweb3.model.AlchemyRecord, Base):
   __tablename__ = 'author'
   ID = Column(Integer, primary_key=True)
   name = Column(String(32), nullable=False)
   
-class Writers(uweb3.alchemy_model.Record, Base):
+class Writers(uweb3.model.AlchemyRecord, Base):
   __tablename__ = 'writers'
   ID = Column(Integer, primary_key=True)
   name = Column(String(32), nullable=False)
   
-class Book(uweb3.alchemy_model.Record, Base):
+class Book(uweb3.model.AlchemyRecord, Base):
   """Book class for testing purposes."""
   __tablename__ = 'book'
   ID = Column(Integer, primary_key=True)
@@ -155,7 +154,7 @@ class RecordTests(unittest.TestCase):
     self.assertEqual(author.key, 1)
     author.ID = 101
     author.Save()
-    self.assertRaises(model.NotExistError, Author.FromPrimary,
+    self.assertRaises(uweb3.model.NotExistError, Author.FromPrimary,
                       self.session, 1)
     same_author = Author.FromPrimary(self.session, 101)
     self.assertEqual(same_author, author)
@@ -198,7 +197,7 @@ class RecordTests(unittest.TestCase):
                       ('author', Author(None, {'ID': 1, 'name': 'D. Koontz'}))])
 
 def DatabaseConnection():
-  """Returns an SQLTalk database connection to 'newweb_model_test'."""
+  """Returns an SQLTalk database connection to 'uWeb3_model_test'."""
   return create_engine('mysql://{user}:{passwd}@{host}/{db}'.format(
     host='localhost',
     user='stef',

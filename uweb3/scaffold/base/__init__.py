@@ -1,4 +1,4 @@
-"""A minimal newWeb project scaffold."""
+"""A minimal uWeb3 project scaffold."""
 
 # Standard modules
 import os
@@ -8,10 +8,11 @@ import uweb3
 
 # Application
 from . import pages
-
+from uweb3.scaffold.routes import login
+from uweb3.scaffold.routes import home
 
 def main():
-  """Creates a newWeb application.
+  """Creates a uWeb3 application.
 
   The application is created from the following components:
 
@@ -25,19 +26,19 @@ def main():
   routes = [
       ('/', 'Index'),
       ('/login', 'Login'),
+      ('/logout', 'Logout'),
       ('/home', 'Home'), 
       ('/home/create', 'Create'),
       ('/home/update', 'Update'),
       ('/home/delete', 'Delete'),
-      ('/logout', 'Logout'),
       ('/sqlalchemy', 'Sqlalchemy'),
       #test routes
       ('/test', 'Test'),
       ('/getrawtemplate.*', 'GetRawTemplate'),
       ('/parsed', 'Parsed'),
       ('/test/escaping', 'StringEscaping'),
+      ('/manager', 'Manager'),
       ('/static/(.*)', 'Static'),
       ('/(.*)', 'FourOhFour'),
       ]
-  
-  return uweb3.uWeb(pages.PageMaker, routes, config=config)
+  return uweb3.uWeb([pages.PageMaker], routes, config=config)

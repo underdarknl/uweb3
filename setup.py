@@ -29,10 +29,11 @@ def version():
 
 
 setup(
-    name='uWeb3',
+    name='uWeb3 test',
     version=version(),
     description='uWeb, python3, uswgi compatible micro web platform',
     long_description=description(),
+    long_description_content_type='text/markdown',
     license='ISC',
     classifiers=[
         'Development Status :: 3 - Alpha',

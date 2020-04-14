@@ -153,6 +153,7 @@ class BasePageMaker(object):
   # classmethods that set up paths specific for that pagemaker.
   PUBLIC_DIR = 'static'
   TEMPLATE_DIR = 'templates'
+  _registery = []
 
   # Default Static() handler cache durations, per MIMEtype, in days
   CACHE_DURATION = MimeTypeDict({'text': 7, 'image': 30, 'application': 7})
@@ -178,17 +179,12 @@ class BasePageMaker(object):
     self.user = self._GetLoggedInUser()
    
   def _PostRequest(self, response):
-    if issubclass(type(self), SqAlchemyPageMaker):
-      """ """
-      # self.session.close()
-      # self.connection.dispose()
     return response
 
   def XSRFInvalidToken(self, command):
     """Returns an error message regarding an incorrect XSRF token."""
     page_data = self.parser.Parse('403.html', error=command,
                                   **self.CommonBlocks('Invalid XSRF token'))
-  
     return uweb3.Response(content=page_data, httpcode=403)
   
   def _GetLoggedInUser(self):
@@ -206,34 +202,33 @@ class BasePageMaker(object):
     return Users(None, user)
     
   @classmethod
-  def loadModules(self, default_routes='routes', excluded_files=('__init__', '.pyc')):
-    """Loops over all .py(except __init__) files in target directory
-    Looks for classes with the base PageMaker in position 0
+  def LoadModules(cls, default_routes='routes', excluded_files=('__init__', '.pyc')):
+    """Loops over all .py files apart from some exceptions in target directory
+    Looks for classes that contain pagemaker
     """
     import pyclbr
     bases = []
-
     routes = os.path.join(os.getcwd(), default_routes)
     for path, dirnames, filenames in os.walk(routes):
       for filename in filenames:
         name, ext = os.path.splitext(filename)
         if name not in excluded_files and ext not in excluded_files:
-          #TODO: fix the uweb3 prefix
-          f = 'uweb3/{}/{}/{}'.format(
-                                      os.path.basename(os.getcwd()), 
-                                      default_routes, 
-                                      filename[:-3]
-                                      ).replace('/', '.')
+          f = os.path.relpath(os.path.join(os.getcwd(), default_routes, filename[:-3])).replace('/', '.')
           example_data = pyclbr.readmodule_ex(f)
           for name, data in example_data.items():
             if hasattr(data, 'super'):
               if 'PageMaker' in data.super[0]:
                 module = __import__(f, fromlist=[name])
                 bases.append(getattr(module, name))
+    cls.AddRoutes(tuple(bases))
 
-    if len(bases) > 0:
-      self.__bases__ = tuple(bases) 
-      
+  @classmethod
+  def AddRoutes(cls, routes):
+    if not isinstance(routes, tuple):
+      raise ValueError("Routes should be of type tuple")
+    if len(routes) > 0:
+      cls.__bases__ = tuple(routes) 
+
   def _PostInit(self):
     """Method that gets called for derived classes of BasePageMaker."""
 
@@ -335,6 +330,7 @@ class BasePageMaker(object):
   def _GetXSRF(self):
     if 'xsrf' in self.cookies:
       return self.cookies['xsrf']
+    return None
     
   def CommonBlocks(self, title, page_id=None, scripts=None):
     """Returns a dictionary with the header and footer in it."""

@@ -83,145 +83,72 @@ class Basesafestring(str):
 
 
 class SQLSAFE(Basesafestring):
-  def __new__(cls, sql, *args, **kwargs):
-    """Since the data should be in a tuple we dont need to parse it to a string"""
-    #This is triggered if only a string is send to the method
-    if 'unsafe' in kwargs:
-      del kwargs['unsafe']
-      #If the value is an unsafe string with no kwargs or data supplied
-      if not kwargs and not args:
-        #Put the string through this method to try and secure the query
-        query, values = cls._find_vulnerabilities(cls, sql)
-        return super().__new__(cls, 
-                              cls.escape(cls, query, values))
-      #If there is value and/or data then we use the scape function to put it in place
-      #and escape the contents
-      
-      return super().__new__(cls, 
-                             cls.escape(cls, sql, *args, **kwargs))
-      
-    if not kwargs and not args:
-      if type(sql) == SQLSAFE:
-        return sql
-      #If only a string is supplied try and escure the query
-      query, values = cls._find_vulnerabilities(cls, sql)
-      return super().__new__(cls, 
-                              cls.escape(cls, query, values)
-                            )
+  CHARS_ESCAPE_DICT = {
+    '\0'   : '\\0',
+    '\b'   : '\\b',
+    '\t'   : '\\t',
+    '\n'   : '\\n',
+    '\r'   : '\\r',
+    '\x1a' : '\\Z',
+    '"'    : '\\"',
+    '\''   : '\\\'',
+    '\\'   : '\\\\'
+  }
+  
+  CHARS_ESCAPE_REGEX = re.compile(r"""[\0\b\t\n\r\x1a\"\'\\]""")
+  PLACEHOLDERS_REGEX = re.compile(r"""\?+""")
+  QUOTES_REGEX = re.compile(r"""([\"'])(?:(?=(\\?))\2.)*?\1""", re.DOTALL)
+
+  def __new__(cls, data, values=(), *args, **kwargs):
     return super().__new__(cls,
-                            cls.escape(cls, sql, *args, **kwargs)
-                          )
+        cls.escape(cls, str(data), values) if 'unsafe' in kwargs else data)
 
   def __upgrade__(self, other):
-    """Upgrade a given object to be as safe, and in the same safety context as
-    the current object"""
-    if isinstance(other, Basesafestring): # lets unescape the other 'safe' type,
-      otherdata = other.unescape(other)
-      return otherdata
-    else:
-      return other
-    
+      """Upgrade a given object to be as safe, and in the same safety context as
+      the current object"""
+      if type(other) == self.__class__: #same type, easy, lets add
+        return other
+      elif isinstance(other, Basesafestring): # lets unescape the other 'safe' type,
+        otherdata = other.unescape(other) # its escaping is not needed for his context
+        return self.sanitize(otherdata) # escape it using our context
+      else:
+        other = " " + other
+        return self.sanitize(other, qoutes=False)
 
-  def __add__(self, other):
-    """Adds a second string to this string, upgrading it in the process"""
-    other = self.__upgrade__(other)
-    return self.__class__("{}{}".format(self, other))
+  @classmethod
+  def sanitize(cls, value, qoutes=True):
+    index = 0
+    escaped = ""
+    if len(cls.CHARS_ESCAPE_REGEX.findall(value)) == 0:
+      if not str.isdigit(value):
+        if qoutes:
+          return f"'{value}'"
+        return value
+      return value
+    for m in cls.CHARS_ESCAPE_REGEX.finditer(value):
+      escaped += value[index:m.span()[0]] + cls.CHARS_ESCAPE_DICT[m.group()]
+      index = m.span()[1]
+    escaped += value[index:]
+    if not str.isdigit(escaped):
+      if qoutes:
+        return f"'{escaped}'"
+      return escaped
+    return escaped
 
+  def escape(cls, sql, values):
+    x = 0
+    escaped = ""
+    if not isinstance(values, tuple):
+      raise ValueError("Values should be a tuple")
+    if len(cls.PLACEHOLDERS_REGEX.findall(sql)) != len(values):
+      raise ValueError("Number of values does not match number of replacements")
+    for index, m in enumerate(cls.PLACEHOLDERS_REGEX.finditer(sql)):
+      escaped += sql[x:m.span()[0]] + cls.sanitize(values[index])
+      x = m.span()[1]
+    escaped += sql[x:]
+    return SQLSAFE(escaped)
     
-  def _find_vulnerabilities(self, query):
-    """Method filters query and replaces all key=value values with escaped values
-    Also check if the query is an insert. If so looks for the VALUES (val,val,val)
-    and replaces all values with escaped values
-    """
-    placeholder_count = 0
-    values = tuple()
     
-    query = query.strip()
-    #Looking for potential targets in the query. Splits everything with the name values
-    targets = [(m.start(0), m.end(0)) for m in re.finditer("values", query.lower())]
-    
-    potential_payload = None
-    for item in targets:
-      string = None
-      #Check if its either values( or values (
-      if query[item[1]:len(query)][0] == "(":
-        string = query[item[1]:len(query)]
-      elif query[item[1] + 1:len(query)][0] == "(":
-        string = query[item[1] + 1:len(query)]
-      if string:
-        if string[-1] == ")":
-          potential_payload = string[1:-1]
-          break
-        match = re.search('\) ', string[1:])
-        if match:
-          potential_payload = string[1:match.span()[0] + 1]
-          break
-  
-    if potential_payload:
-      split_payload = potential_payload.split(',')
-      placeholders = ''
-      for i in range(len(split_payload)):
-        placeholders += '{%s}' % placeholder_count
-        if i < len(split_payload) - 1:
-          placeholders += ','
-        placeholder_count += 1
-      query = query.replace(potential_payload, placeholders)
-      for item in split_payload:
-        item = item.strip()
-        if item[0] == "'" or item[0] == '"':
-          if item[-1] == "'" or item[-1] == '"':
-            item = item[1:-1]
-        values += (item,)
-        
-    results = re.findall("(\w+\s=\s\S+)|(\w+=\s\S+)|(\w+=\S+)", query)
-    
-    for item in results:
-      value = None
-      for match in item:
-        if match is not "":
-          value = match
-      if value:
-        placeholder = '{%s}' % placeholder_count
-        key, v = value.split('=')
-        values += (v.strip(), )
-        new_value = "{key} = {value}".format(key=key.strip(), value=placeholder)
-        query = query.replace(value, new_value)
-        placeholder_count += 1
-        
-    return query, values
-
-    
-  def escape(self, sql, *args, **kwds):
-    """Escapes the values part of the SQL string and makes sure it is impossible to 
-    break out of the string. 
-    
-    Acts like python str.format() function. Accepts {0} and {key} like operators
-    
-    Example usage and output: 
-    sql = SELECT * FROM users WHERE firstname={0} AND lastname={lastname}
-    values = ("stef",)
-    
-    escape(sql, values, lastname="van Houten'); DROP TABLE users--;"); -->
-    SELECT * FROM users 
-    WHERE firstname='stef' 
-    AND lastname="van Houten'); DROP TABLE users--;"
-    
-    Arguments:
-      @ sql: string 
-        SQL string with {index} as placeholder for the 'unsafe' values.
-        Using muliple {index} with same index will replace all those with the same value
-    """
-    escaped = ()
-    for value in args:
-      escaped += (repr(value),)
-      
-    for key, value in kwds.items():
-      kwds[key] = repr(value)
-      
-    return sql.format(*escaped, **kwds)
-
-
-
 # what follows are the actual useable classes that are safe in specific contexts
 class HTMLsafestring(Basesafestring):
   """This class signals that the content is HTML safe"""
