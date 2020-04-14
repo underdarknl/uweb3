@@ -43,11 +43,17 @@ class PermissionError(Error):
   """The entity has insufficient rights to access the resource."""
 
 class SettingsManager(object):
-  def __init__(self):
-    """Creates a ini file with the childs class name"""
+  def __init__(self, filename=None):
+    """Creates a ini file with the childs class name
+
+    Arguments:
+      % filename: str
+      Name of the file without the extension
+    """
     self.options = None
-    #TODO: Filename first letter lowercase
-    self.FILENAME = "{}.ini".format(self.__class__.__name__)
+    self.FILENAME = f"{self.__class__.__name__[:1].lower() + self.__class__.__name__[1:]}.ini"
+    if filename:
+      self.FILENAME = f"{filename[:1].lower() + filename[1:]}.ini"
     self.FILE_LOCATION = os.path.join(os.getcwd(), "base", self.FILENAME)
     if not os.path.isfile(self.FILE_LOCATION):
       os.mknod(self.FILE_LOCATION)

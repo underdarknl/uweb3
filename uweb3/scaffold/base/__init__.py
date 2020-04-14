@@ -41,4 +41,4 @@ def main():
       ('/static/(.*)', 'Static'),
       ('/(.*)', 'FourOhFour'),
       ]
-  return uweb3.uWeb([pages.PageMaker], routes, config=config)
+  return uweb3.uWeb(pages.PageMaker, routes, config=config)

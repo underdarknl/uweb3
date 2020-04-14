@@ -158,7 +158,7 @@ class BasePageMaker(object):
   # Default Static() handler cache durations, per MIMEtype, in days
   CACHE_DURATION = MimeTypeDict({'text': 7, 'image': 30, 'application': 7})
 
-  def __init__(self, req, config=None, secure_cookie_hash=None):
+  def __init__(self, req, config=None, secure_cookie_secret=None):
     """sets up the template parser and database connections
 
     Arguments:
@@ -175,7 +175,7 @@ class BasePageMaker(object):
     self.post = req.vars['post']
     self.options = config or {}
     self.persistent = self.PERSISTENT
-    self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_hash)
+    self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_secret)
     self.user = self._GetLoggedInUser()
    
   def _PostRequest(self, response):

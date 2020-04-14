@@ -2,6 +2,7 @@
 """Request handlers for the uWeb3 project scaffold"""
 
 import uweb3
+from uweb3.model import SettingsManager
 
 class PageMaker(uweb3.DebuggingPageMaker):
   """Holds all the request handlers for the application"""

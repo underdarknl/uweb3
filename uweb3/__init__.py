@@ -30,7 +30,7 @@ from .response import Redirect
 from .pagemaker import PageMaker
 from .pagemaker import DebuggingPageMaker
 from .pagemaker import SqAlchemyPageMaker
-
+from uweb3.model import SettingsManager
 
 class Error(Exception):
   """Superclass used for inheritance and external excepion handling."""
@@ -76,8 +76,9 @@ class uWeb(object):
     self.registry = Registry()
     self.registry.logger = logging.getLogger('root')
     self.router = router(routes)
-    self.config = config if config is not None else {}
-    self.secure_cookie_hash = str(os.urandom(32))
+    self.config = SettingsManager(filename='config')
+    # self.config = config if config is not None else {}
+    self.secure_cookie_secret = str(os.urandom(32))
     self.setup_routing()
     
   def __call__(self, env, start_response):
@@ -86,7 +87,7 @@ class uWeb(object):
     response and returns a response iterator.
     """
     req = request.Request(env, self.registry)
-    page_maker = self.page_class(req, config=self.config, secure_cookie_hash=self.secure_cookie_hash)
+    page_maker = self.page_class(req, config=self.config.options, secure_cookie_secret=self.secure_cookie_secret)
     response = self.get_response(page_maker,
         req.path,
         req.env['REQUEST_METHOD'],
@@ -119,30 +120,31 @@ class uWeb(object):
 
   def serve(self, hot_reloading=True):
     """Sets up and starts WSGI development server for the current app."""
-    host = self.config['development'].get('host', 'localhost')
-    port = self.config['development'].get('port', 8001)
+    host = self.config.options['development'].get('host', 'localhost')
+    port = self.config.options['development'].get('port', 8001)
     server = make_server(host, int(port), self)
     print('Running µWeb3 server on http://{}:{}'.format(server.server_address[0],server.server_address[1]))
     try:
       #Needs to check == True. Without it will trigger even when false
-      if self.config['development'].get('dev', False) == 'True':
-        HotReload(self.config['development'].get('dev', 'False'))
+      if self.config.options['development'].get('dev', False) == 'True':
+        HotReload(self.config.options['development'].get('dev', 'False'))
       server.serve_forever()
     except:
       server.shutdown()
 
   def setup_routing(self):
-    routes = []
-    for route in self.page_class[1:]:
-      routes.append(route)
-    self.page_class[0].AddRoutes(tuple(routes))
-    self.page_class = self.page_class[0]
-    
+    if isinstance(self.page_class, list):
+      routes = []
+      for route in self.page_class[1:]:
+        routes.append(route)
+      self.page_class[0].AddRoutes(tuple(routes))
+      self.page_class = self.page_class[0]
+
     default_route = "routes"
     automatic_detection = True
-    if self.config.get('routing'):
-      default_route = self.config['routing'].get('default_routing', default_route)
-      automatic_detection = self.config['routing'].get('disable_automatic_route_detection', 'False') != 'True'
+    if self.config.options.get('routing'):
+      default_route = self.config.options['routing'].get('default_routing', default_route)
+      automatic_detection = self.config.options['routing'].get('disable_automatic_route_detection', 'False') != 'True'
 
     if automatic_detection:
       self.page_class.LoadModules(default_routes=default_route)
