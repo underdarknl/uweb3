@@ -1,7 +1,7 @@
 #!/usr/bin/python
 """uWeb3 Framework"""
 
-__version__ = '0.4.3-dev'
+__version__ = '0.4.4-dev'
 
 # Standard modules
 try:
@@ -78,19 +78,10 @@ class uWeb(object):
     self.router = router(routes)
     self.config = config if config is not None else {}
     self.secure_cookie_hash = str(os.urandom(32))
-
-    default_route = "routes"
-    automatic_detection = True
-    if self.config.get('routing'):
-      default_route = self.config['routing'].get('default_routing', default_route)
-      automatic_detection = self.config['routing'].get('disable_automatic_route_detection', 'False') != 'True'
-    if automatic_detection:
-      self.page_class.loadModules(default_routes=default_route)
-
-
+    self.setup_routing()
+    
   def __call__(self, env, start_response):
     """WSGI request handler.
-
     Accpepts the WSGI `environment` dictionary and a function to start the
     response and returns a response iterator.
     """
@@ -99,7 +90,7 @@ class uWeb(object):
     response = self.get_response(page_maker,
         req.path,
         req.env['REQUEST_METHOD'],
-        req.env['HTTP_HOST'].split(':')[0])
+        req.env['host'])
     if not isinstance(response, Response):
       req.response.text = response
       response = req.response
@@ -140,6 +131,21 @@ class uWeb(object):
     except:
       server.shutdown()
 
+  def setup_routing(self):
+    routes = []
+    for route in self.page_class[1:]:
+      routes.append(route)
+    self.page_class[0].AddRoutes(tuple(routes))
+    self.page_class = self.page_class[0]
+    
+    default_route = "routes"
+    automatic_detection = True
+    if self.config.get('routing'):
+      default_route = self.config['routing'].get('default_routing', default_route)
+      automatic_detection = self.config['routing'].get('disable_automatic_route_detection', 'False') != 'True'
+
+    if automatic_detection:
+      self.page_class.LoadModules(default_routes=default_route)
 
 def read_config(config_file):
   """Parses the given `config_file` and returns it as a nested dictionary."""

@@ -8,7 +8,8 @@ import uweb3
 
 # Application
 from . import pages
-
+from uweb3.scaffold.routes import login
+from uweb3.scaffold.routes import home
 
 def main():
   """Creates a uWeb3 application.
@@ -23,7 +24,7 @@ def main():
   config_file = os.path.join(os.path.dirname(__file__), 'config.ini')
   config = uweb3.read_config(config_file)
   routes = [
-      ('/', 'Index', ('POST'), '127.0.0.1'),
+      ('/', 'Index'),
       ('/login', 'Login'),
       ('/logout', 'Logout'),
       ('/home', 'Home'), 
@@ -40,4 +41,4 @@ def main():
       ('/static/(.*)', 'Static'),
       ('/(.*)', 'FourOhFour'),
       ]
-  return uweb3.uWeb(pages.PageMaker, routes, config=config)
+  return uweb3.uWeb([pages.PageMaker], routes, config=config)

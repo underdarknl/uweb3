@@ -46,6 +46,7 @@ class SettingsManager(object):
   def __init__(self):
     """Creates a ini file with the childs class name"""
     self.options = None
+    #TODO: Filename first letter lowercase
     self.FILENAME = "{}.ini".format(self.__class__.__name__)
     self.FILE_LOCATION = os.path.join(os.getcwd(), "base", self.FILENAME)
     if not os.path.isfile(self.FILE_LOCATION):

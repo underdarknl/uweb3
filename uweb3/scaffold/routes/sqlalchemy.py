@@ -79,12 +79,14 @@ class UserPageMaker(SqAlchemyPageMaker):
     if not 'alchemy_users' in tables or not 'author' in tables or not 'persons' in tables:
       buildTables(self.engine, self.session)
 
-    user = User.FromPrimary(self.session, 1)
-    print("Returns user with primary key 1: ", user)
-    print("Will only load the children when we ask for them: ", user.children)
-    print("Conditional list, lists users with id < 10: ", list(User.List(self.session, conditions=[User.id <= 10])))
-    print("List item 0: ",  list(User.List(self.session, conditions=[User.id <= 10]))[0])
-    print("List item 0.children: ",  list(User.List(self.session, conditions=[User.id <= 10]))[0].children)
+    # user = User.FromPrimary(self.session, 1)
+    # print(User.Create(self.session, {'username': 'hello', 'password': 'test', 'authorid': 1}))
+
+    # print("Returns user with primary key 1: ", user)
+    # print("Will only load the children when we ask for them: ", user.children)
+    # print("Conditional list, lists users with id < 10: ", list(User.List(self.session, conditions=[User.id <= 10])))
+    # print("List item 0: ",  list(User.List(self.session, conditions=[User.id <= 10]))[0])
+    # print("List item 0.children: ",  list(User.List(self.session, conditions=[User.id <= 10]))[0].children)
 
     # User.Update(self.session, [User.id > 2, User.id < 100], {User.username: 'username', User.password: 'password'})
     # print("User from primary key", user)

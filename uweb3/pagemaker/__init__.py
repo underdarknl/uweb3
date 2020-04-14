@@ -153,6 +153,7 @@ class BasePageMaker(object):
   # classmethods that set up paths specific for that pagemaker.
   PUBLIC_DIR = 'static'
   TEMPLATE_DIR = 'templates'
+  _registery = []
 
   # Default Static() handler cache durations, per MIMEtype, in days
   CACHE_DURATION = MimeTypeDict({'text': 7, 'image': 30, 'application': 7})
@@ -201,7 +202,7 @@ class BasePageMaker(object):
     return Users(None, user)
     
   @classmethod
-  def loadModules(self, default_routes='routes', excluded_files=('__init__', '.pyc')):
+  def LoadModules(cls, default_routes='routes', excluded_files=('__init__', '.pyc')):
     """Loops over all .py files apart from some exceptions in target directory
     Looks for classes that contain pagemaker
     """
@@ -219,10 +220,15 @@ class BasePageMaker(object):
               if 'PageMaker' in data.super[0]:
                 module = __import__(f, fromlist=[name])
                 bases.append(getattr(module, name))
+    cls.AddRoutes(tuple(bases))
 
-    if len(bases) > 0:
-      self.__bases__ = tuple(bases) 
-      
+  @classmethod
+  def AddRoutes(cls, routes):
+    if not isinstance(routes, tuple):
+      raise ValueError("Routes should be of type tuple")
+    if len(routes) > 0:
+      cls.__bases__ = tuple(routes) 
+
   def _PostInit(self):
     """Method that gets called for derived classes of BasePageMaker."""
 
