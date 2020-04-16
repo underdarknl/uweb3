@@ -55,11 +55,20 @@ class SettingsManager(object):
     if filename:
       self.FILENAME = f"{filename[:1].lower() + filename[1:]}.ini"
     self.FILE_LOCATION = os.path.join(os.getcwd(), "base", self.FILENAME)
+
+    self.__CheckPremissions()
     if not os.path.isfile(self.FILE_LOCATION):
       os.mknod(self.FILE_LOCATION)
     self.config = configparser.ConfigParser()
     self.Read()
     
+  def __CheckPremissions(self):
+    """Checks if SettingsManger can read/write to file."""
+    if not os.access(self.FILE_LOCATION, os.R_OK):
+      raise PermissionError(f"SettingsManager missing premissions to read file: {self.FILE_LOCATION}")
+    if not os.access(self.FILE_LOCATION, os.W_OK):
+      raise PermissionError(f"SettingsManager missing premissions to write to file: {self.FILE_LOCATION}")
+
   def Create(self, section, key, value):
     """Creates a section or/and key = value
     
@@ -130,6 +139,7 @@ class SettingsManager(object):
     with open(self.FILE_LOCATION, 'w') as configfile:
       self.config.write(configfile)
     self.Read()
+  
     
 class SecureCookie(object):  
   def __init__(self, connection):

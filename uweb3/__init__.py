@@ -77,7 +77,6 @@ class uWeb(object):
     self.registry.logger = logging.getLogger('root')
     self.router = router(routes)
     self.config = SettingsManager(filename='config')
-    # self.config = config if config is not None else {}
     self.secure_cookie_secret = str(os.urandom(32))
     self.setup_routing()
     
@@ -86,6 +85,8 @@ class uWeb(object):
     Accpepts the WSGI `environment` dictionary and a function to start the
     response and returns a response iterator.
     """
+    import io
+
     req = request.Request(env, self.registry)
     page_maker = self.page_class(req, config=self.config.options, secure_cookie_secret=self.secure_cookie_secret)
     response = self.get_response(page_maker,
@@ -100,7 +101,12 @@ class uWeb(object):
       response = page_maker._PostRequest(response)
       
     start_response(response.status, response.headerlist)
-    yield response.content.encode(response.charset)
+
+    if isinstance(response.content, io.IOBase):
+      # yield req.env['wsgi.file_wrapper'](response.content, 4096)
+      return req.env['wsgi.file_wrapper'](response.content, 4096)
+    else:
+      yield response.content.encode(response.charset)
     
   def get_response(self, page_maker, path, method, host):
     try:
