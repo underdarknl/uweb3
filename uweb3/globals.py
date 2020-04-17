@@ -8,10 +8,11 @@ class Event(object):
     else:
       self.handlers.get(event_name)['handler'].append(handler)
   
-  def remove(self, handler, event_name):
+  def remove(self, event_name, handler):
     event = self.handlers.get(event_name)
     if not event:
       return
+    self.handlers[event_name] = event['handler'][:] = [item for item in event['handler'] if not item.__name__ == handler]
   
   def __call__(self, event_name, *args, **kwds):
     handlers = self.handlers.get(event_name)
