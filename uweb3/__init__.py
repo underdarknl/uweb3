@@ -31,6 +31,7 @@ from .pagemaker import PageMaker
 from .pagemaker import DebuggingPageMaker
 from .pagemaker import SqAlchemyPageMaker
 from uweb3.model import SettingsManager
+from . import globals
 
 class Error(Exception):
   """Superclass used for inheritance and external excepion handling."""
@@ -47,6 +48,11 @@ class NoRouteError(Error):
 class Registry(object):
   """Something to hook stuff to"""
 
+
+
+  
+def TEST(*args, **kwds):
+  print('hello world', args, kwds)
 
 class uWeb(object):
   """Returns a configured closure for handling page requests.
@@ -72,6 +78,8 @@ class uWeb(object):
     RequestHandler: Configured closure that is ready to process requests.
   """
   def __init__(self, page_class, routes, config):
+    globals.init()
+    globals.event_listener.add('test_event', TEST)
     self.page_class = page_class
     self.registry = Registry()
     self.registry.logger = logging.getLogger('root')
@@ -86,7 +94,6 @@ class uWeb(object):
     response and returns a response iterator.
     """
     import io
-
     req = request.Request(env, self.registry)
     page_maker = self.page_class(req, config=self.config.options, secure_cookie_secret=self.secure_cookie_secret)
     response = self.get_response(page_maker,

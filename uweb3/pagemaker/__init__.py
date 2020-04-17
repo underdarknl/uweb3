@@ -16,6 +16,7 @@ from .. import response
 from .. import templateparser
 from .new_login import Users
 from uweb3.model import SecureCookie
+import logging
 
 RFC_1123_DATE = '%a, %d %b %Y %T GMT'
 
@@ -177,7 +178,6 @@ class BasePageMaker(object):
     self.persistent = self.PERSISTENT
     self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_secret)
     self.user = self._GetLoggedInUser()
-   
   def _PostRequest(self, response):
     return response
 
@@ -432,7 +432,6 @@ class DebuggerMixin(object):
                                'traceback': self._ParseStackFrames(traceback)}
       return response.Response(
           self.ERROR_TEMPLATE.Parse(**exception_data), httpcode=500)
-
 
 class MongoMixin(object):
   """Adds MongoDB support to PageMaker."""

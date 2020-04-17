@@ -52,13 +52,16 @@ class SettingsManager(object):
     """
     self.options = None
     self.FILENAME = f"{self.__class__.__name__[:1].lower() + self.__class__.__name__[1:]}.ini"
+
     if filename:
       self.FILENAME = f"{filename[:1].lower() + filename[1:]}.ini"
-    self.FILE_LOCATION = os.path.join(os.getcwd(), "base", self.FILENAME)
 
+    self.FILE_LOCATION = os.path.join(os.getcwd(), "base", self.FILENAME)
     self.__CheckPremissions()
+    
     if not os.path.isfile(self.FILE_LOCATION):
       os.mknod(self.FILE_LOCATION)
+
     self.config = configparser.ConfigParser()
     self.Read()
     

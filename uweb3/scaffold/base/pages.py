@@ -12,11 +12,7 @@ class PageMaker(uweb3.DebuggingPageMaker):
 
   def Index(self):
     """Returns the index template"""
-    file = open('/home/stef/devel/uweb3/uweb3/scaffold/uweb3_template.zip', 'rb')
-    fsize = os.path.getsize('/home/stef/devel/uweb3/uweb3/scaffold/uweb3_template.zip')
-    res = response.Response(content=file, content_type="application/zip", headers={'Content-Disposition': 'attachment; filename=uweb3_template.zip', 'Content-Length': fsize})
-    return res
-    # return self.parser.Parse('index.html')
+    return self.parser.Parse('index.html')
 
   def TestRoute(self):
     """Returns the index template"""

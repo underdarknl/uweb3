@@ -5,6 +5,7 @@ import uweb3
 from uweb3 import SqAlchemyPageMaker, PageMaker
 from uweb3.pagemaker.new_login import Users, UserCookie, Test
 from uweb3.pagemaker.new_decorators import checkxsrf
+from uweb3 import globals
 
 class UserPageMaker(PageMaker):
   """Holds all the request handlers for the application"""
