@@ -38,7 +38,6 @@ def main():
       ('/parsed', 'Parsed'),
       ('/test/escaping', 'StringEscaping'),
       ('/manager', 'Manager'),
-      ('/static/(.*)', 'Static'),
       ('/(.*)', 'FourOhFour'),
       ]
   return uweb3.uWeb(pages.PageMaker, routes, config=config)

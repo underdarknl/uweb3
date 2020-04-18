@@ -15,6 +15,8 @@ import sys
 import time
 import threading
 from wsgiref.simple_server import make_server
+from wsgi_static_middleware import StaticMiddleware
+
 
 # Add the ext_lib directory to the path
 sys.path.append(
@@ -132,7 +134,11 @@ class uWeb(object):
     """Sets up and starts WSGI development server for the current app."""
     host = self.config.options['development'].get('host', 'localhost')
     port = self.config.options['development'].get('port', 8001)
-    server = make_server(host, int(port), self)
+
+    static_directory = [os.path.join(sys.path[0], 'base/static')]
+    app = StaticMiddleware(self, static_root='static', static_dirs=static_directory)
+    server = make_server(host, int(port), app)
+
     print('Running µWeb3 server on http://{}:{}'.format(server.server_address[0],server.server_address[1]))
     try:
       #Needs to check == True. Without it will trigger even when false

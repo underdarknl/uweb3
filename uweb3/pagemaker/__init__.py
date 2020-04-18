@@ -289,44 +289,6 @@ class BasePageMaker(object):
   def Reload():
     """Raises `ReloadModules`, telling the Handler() to reload its pageclass."""
     raise ReloadModules('Reloading ... ')
-
-  def Static(self, rel_path):
-    """Provides a handler for static content.
-
-    The requested `path` is truncated against a root (removing any uplevels),
-    and then added to the working dir + PUBLIC_DIR. If the request file exists,
-    then the requested file is retrieved, its mimetype guessed, and returned
-    to the client performing the request.
-
-    Should the requested file not exist, a 404 page is returned instead.
-
-    Arguments:
-      @ rel_path: str
-        The filename relative to the working directory of the webserver.
-
-    Returns:
-      Page: contains the content and mimetype of the requested file, or a 404
-            page if the file was not available on the local path.
-    """
-    rel_path = os.path.abspath(os.path.join(os.path.sep, rel_path))[1:]
-    abs_path = os.path.join(self.PUBLIC_DIR, rel_path)
-    try:
-      with open(abs_path) as staticfile:
-        content_type, _encoding = mimetypes.guess_type(abs_path)
-        if not content_type:
-          content_type = 'text/plain'
-        cache_days = self.CACHE_DURATION.get(content_type, 0)
-        expires = datetime.datetime.utcnow() + datetime.timedelta(cache_days)
-        return response.Response(content=staticfile.read(),
-                        content_type=content_type,
-                        headers={'Expires': expires.strftime(RFC_1123_DATE)})
-    except IOError:
-      return self._StaticNotFound(rel_path)
-
-  def _StaticNotFound(self, _path):
-    message = 'This is not the path you\'re looking for. No such file %r' % (
-      self.req.path)
-    return response.Response(message, content_type='text/plain', httpcode=404)
   
   def _GetXSRF(self):
     if 'xsrf' in self.cookies:
