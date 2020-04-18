@@ -178,6 +178,7 @@ class BasePageMaker(object):
     self.persistent = self.PERSISTENT
     self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_secret)
     self.user = self._GetLoggedInUser()
+    
   def _PostRequest(self, response):
     return response
 

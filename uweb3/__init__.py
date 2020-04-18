@@ -47,9 +47,6 @@ class NoRouteError(Error):
 
 class Registry(object):
   """Something to hook stuff to"""
-
-
-
   
 def TEST(*args, **kwds):
   print('hello world', args, kwds)
@@ -261,10 +258,14 @@ class HotReload(object):
     def run(self):
       """ Method runs forever and watches all files in the project folder.
       
-      Ignores the following file types:
-      @ .pyc
-      @ .ini
-      @ .md
+      Does not trigger a reload when the following files change:
+      - .pyc
+      - .ini
+      - .md
+      - .html
+
+      Changes in the HTML are noticed by the TemplateParser,
+      which then reloads the HTML file into the object and displays the updated version.  
       """
       self.WATCHED_FILES = self.getListOfFiles()[1]
       WATCHED_FILES_MTIMES = [(f, os.path.getmtime(f)) for f in self.WATCHED_FILES]
@@ -280,6 +281,9 @@ class HotReload(object):
         time.sleep(self.interval)
           
     def getListOfFiles(self):
+      """Returns all files inside the working directory of uweb3. 
+      Also returns a count so that we can restart on file add/remove. 
+      """
       watched_files = [__file__]
       for r, d, f in os.walk(self.path):
         for file in f:
@@ -289,5 +293,6 @@ class HotReload(object):
       return (len(watched_files), watched_files)   
       
     def restart(self):
+      """Restart uweb3 with all provided system arguments."""
       self.running.clear()
       os.execl(sys.executable, sys.executable, * sys.argv)   
