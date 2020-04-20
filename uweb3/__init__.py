@@ -80,7 +80,6 @@ class uWeb(object):
   def __init__(self, page_class, routes, config):
     self.config = SettingsManager(filename='config')
     self.logger = self.setup_logger()
-    # self.check_premissions()
     self.page_class = page_class
     self.registry = Registry()
     self.registry.logger = logging.getLogger('root')
@@ -134,22 +133,6 @@ class uWeb(object):
     status = response.httpcode
     protocol = req.env.get('SERVER_PROTOCOL')
     self.logger.info(f"""{host} - - [{date}] \"{method} {path} {status} {protocol}\"""")
-
-
-  def check_premissions(self):
-    if 'restart' in sys.argv:
-      print('restart')
-      return
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    port = self.config.options.get('development').get('port', 8000)
-    host = self.config.options.get('development').get('host', '127.0.0.1')
-    try:
-      s.bind((host, int(port)))
-    except socket.error as e:
-      if e.errno == errno.EADDRINUSE:
-        exit(f"µWeb3 could not start because port: {port} is already in use")
-    finally:
-      s.close()
 
   def get_response(self, page_maker, path, method, host):
     try:

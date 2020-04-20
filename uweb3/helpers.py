@@ -84,7 +84,7 @@ def static_file_view(env, start_response, filename, block_size, charset, CACHE_D
 
     cache_days = CACHE_DURATION.get(mimetype, 0)
     expires = datetime.datetime.utcnow() + datetime.timedelta(cache_days)
-    headers.add_header('Expires', expires.strftime(RFC_1123_DATE))
+    headers.add_header('Cache-Control', f'max-age={expires.strftime(RFC_1123_DATE)}')
     headers.add_header('Content-Length', get_content_length(filename))
     headers.add_header('Last-Modified', generate_last_modified())
     headers.add_header("Accept-Ranges", "bytes")
