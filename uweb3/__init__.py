@@ -16,6 +16,7 @@ import time
 import threading
 from wsgiref.simple_server import make_server
 import socket, errno
+import datetime
 
 
 # Add the ext_lib directory to the path
@@ -78,6 +79,7 @@ class uWeb(object):
   """
   def __init__(self, page_class, routes, config):
     self.config = SettingsManager(filename='config')
+    self.logger = self.setup_logger()
     # self.check_premissions()
     self.page_class = page_class
     self.registry = Registry()
@@ -97,17 +99,47 @@ class uWeb(object):
         req.path,
         req.env['REQUEST_METHOD'],
         req.env['host'])
+
     if not isinstance(response, Response):
       req.response.text = response
       response = req.response
       
     if hasattr(page_maker, '_PostRequest'):
       response = page_maker._PostRequest(response)
-      
+    
+    self._logging(req, response)
     start_response(response.status, response.headerlist)
     yield response.content.encode(response.charset)
   
+  def setup_logger(self):
+    logger = logging.getLogger('uweb3_logger')
+    logger.setLevel(logging.INFO)
+    fh = logging.FileHandler(os.path.join(os.getcwd(), 'access_logging.log'))
+    fh.setLevel(logging.INFO)
+    logger.addHandler(fh)
+    return logger
+
+  def _logging(self, req, response):
+    """Logs incoming requests to a logfile.
+    This is enabled by default, even if its missing in the config file.
+    """
+    if self.config.options.get('development', None):
+      if self.config.options['development'].get('access_logging', True) == 'False':
+        return
+
+    host = req.env['HTTP_HOST'].split(':')[0]
+    date = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+    method = req.method
+    path = req.path
+    status = response.httpcode
+    protocol = req.env.get('SERVER_PROTOCOL')
+    self.logger.info(f"""{host} - - [{date}] \"{method} {path} {status} {protocol}\"""")
+
+
   def check_premissions(self):
+    if 'restart' in sys.argv:
+      print('restart')
+      return
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     port = self.config.options.get('development').get('port', 8000)
     host = self.config.options.get('development').get('host', '127.0.0.1')
@@ -299,7 +331,7 @@ class HotReload(object):
       for r, d, f in os.walk(self.path):
         for file in f:
           ext = os.path.splitext(file)[1]
-          if ext not in (".pyc", '.ini', '.md', '.html',):
+          if ext not in (".pyc", '.ini', '.md', '.html', '.log'):
             watched_files.append(os.path.join(r, file))
       return (len(watched_files), watched_files)   
       
