@@ -15,6 +15,7 @@ import sys
 import time
 import threading
 from wsgiref.simple_server import make_server
+import socket, errno
 
 
 # Add the ext_lib directory to the path
@@ -33,6 +34,7 @@ from .pagemaker import DebuggingPageMaker
 from .pagemaker import SqAlchemyPageMaker
 from .helpers import StaticMiddleware
 from uweb3.model import SettingsManager
+
 class Error(Exception):
   """Superclass used for inheritance and external excepion handling."""
 
@@ -75,11 +77,12 @@ class uWeb(object):
     RequestHandler: Configured closure that is ready to process requests.
   """
   def __init__(self, page_class, routes, config):
+    self.config = SettingsManager(filename='config')
+    self.check_premissions()
     self.page_class = page_class
     self.registry = Registry()
     self.registry.logger = logging.getLogger('root')
     self.router = router(routes)
-    self.config = SettingsManager(filename='config')
     self.secure_cookie_secret = str(os.urandom(32))
     self.setup_routing()
     
@@ -103,7 +106,18 @@ class uWeb(object):
       
     start_response(response.status, response.headerlist)
     yield response.content.encode(response.charset)
-    
+  
+  def check_premissions(self):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    port = self.config.options.get('development').get('port', 8000)
+    host = self.config.options.get('development').get('host', '127.0.0.1')
+    try:
+      s.bind((host, int(port)))
+    except socket.error as e:
+      if e.errno == errno.EADDRINUSE:
+        exit(f"uWeb3 could not start because port: {port} is already in use")
+    s.close()
+
   def get_response(self, page_maker, path, method, host):
     try:
       # We're specifically calling _PostInit here as promised in documentation.
