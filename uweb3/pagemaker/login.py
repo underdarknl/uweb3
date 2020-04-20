@@ -1,5 +1,5 @@
 #!/usr/bin/python
-"""newWeb PageMaker Mixins for login/authentication purposes.
+"""uWeb3 PageMaker Mixins for login/authentication purposes.
 
 Contains both the Underdark Login Framework and OpenID implementations
 """
@@ -101,7 +101,7 @@ class User(model.Record):
 # Actual Pagemaker mixin class
 #
 class LoginMixin(object):
-  """Provides the Login Framework for newWeb."""
+  """Provides the Login Framework for uWeb3."""
   ULF_CHALLENGE = Challenge
   ULF_USER = User
 

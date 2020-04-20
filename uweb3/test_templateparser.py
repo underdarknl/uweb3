@@ -11,8 +11,7 @@ import time
 import unittest
 
 # Unittest target
-from . import templateparser
-
+from uweb3 import templateparser
 
 class Parser(unittest.TestCase):
   """Basic tests for the Parser class and equality of Template objects."""

@@ -53,6 +53,16 @@ class Users(model.Record):
       NotExistError: raised when no user with given username found
       Users: Users object with the connection and all relevant user data
     """
+    from sqlalchemy import Table, MetaData, Column, Integer, String, text
+    meta = MetaData()
+    users_table = Table('users', meta,
+                        Column('id', Integer, primary_key=True),
+                        Column('username', String(255)),
+                        Column('password', String(255)),
+                        )
+    # result = connection.execute(users_table.select())
+    # statement = text("SELECT * FROM users WHERE username = :name")
+    # user = connection.execute(statement, {'name': username}).fetchone()
     with connection as cursor:
       safe_name = connection.EscapeValues(username)
       user = cursor.Select(
@@ -82,7 +92,6 @@ class Users(model.Record):
     """
     if not isinstance(hashed, bytes):
       hashed = hashed.encode('utf-8')
-      
     password = password + cls.salt
     return bcrypt.checkpw(password.encode('utf-8'), hashed)
   

@@ -16,6 +16,7 @@ from .. import response
 from .. import templateparser
 from .new_login import Users
 from uweb3.model import SecureCookie
+import logging
 
 RFC_1123_DATE = '%a, %d %b %Y %T GMT'
 
@@ -153,11 +154,12 @@ class BasePageMaker(object):
   # classmethods that set up paths specific for that pagemaker.
   PUBLIC_DIR = 'static'
   TEMPLATE_DIR = 'templates'
+  _registery = []
 
   # Default Static() handler cache durations, per MIMEtype, in days
   CACHE_DURATION = MimeTypeDict({'text': 7, 'image': 30, 'application': 7})
 
-  def __init__(self, req, config=None, secure_cookie_hash=None):
+  def __init__(self, req, config=None, secure_cookie_secret=None):
     """sets up the template parser and database connections
 
     Arguments:
@@ -167,7 +169,6 @@ class BasePageMaker(object):
         Configuration for the pagemaker, with database connection information
         and other settings. This will be available through `self.options`.
     """
-    
     self.__SetupPaths()
     self.req = req
     self.cookies = req.vars['cookie']
@@ -175,15 +176,16 @@ class BasePageMaker(object):
     self.post = req.vars['post']
     self.options = config or {}
     self.persistent = self.PERSISTENT
-    self.post.form = { item.name: item.value for item in req.vars['post'].value } if bool(req.vars['post'].value) else None
-    self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_hash)
+    self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_secret)
     self.user = self._GetLoggedInUser()
-  
+    
+  def _PostRequest(self, response):
+    return response
+
   def XSRFInvalidToken(self, command):
     """Returns an error message regarding an incorrect XSRF token."""
     page_data = self.parser.Parse('403.html', error=command,
                                   **self.CommonBlocks('Invalid XSRF token'))
-  
     return uweb3.Response(content=page_data, httpcode=403)
   
   def _GetLoggedInUser(self):
@@ -201,35 +203,33 @@ class BasePageMaker(object):
     return Users(None, user)
     
   @classmethod
-  def loadModules(self, default_routes='routes', excluded_files=('__init__', '.pyc')):
-    """Loops over all .py(except __init__) files in target directory
-    Looks for classes with the base PageMaker in position 0
+  def LoadModules(cls, default_routes='routes', excluded_files=('__init__', '.pyc')):
+    """Loops over all .py files apart from some exceptions in target directory
+    Looks for classes that contain pagemaker
     """
     import pyclbr
     bases = []
-
     routes = os.path.join(os.getcwd(), default_routes)
     for path, dirnames, filenames in os.walk(routes):
       for filename in filenames:
         name, ext = os.path.splitext(filename)
         if name not in excluded_files and ext not in excluded_files:
-          #TODO: fix the uweb3 prefix
-          f = 'uweb3.{}/{}/{}'.format(
-                                      os.path.basename(os.getcwd()), 
-                                      default_routes, 
-                                      filename[:-3]
-                                      ).replace('/', '.')
-          
+          f = os.path.relpath(os.path.join(os.getcwd(), default_routes, filename[:-3])).replace('/', '.')
           example_data = pyclbr.readmodule_ex(f)
           for name, data in example_data.items():
             if hasattr(data, 'super'):
               if 'PageMaker' in data.super[0]:
                 module = __import__(f, fromlist=[name])
                 bases.append(getattr(module, name))
+    cls.AddRoutes(tuple(bases))
 
-    if len(bases) > 0:
-      self.__bases__ = tuple(bases) 
-      
+  @classmethod
+  def AddRoutes(cls, routes):
+    if not isinstance(routes, tuple):
+      raise ValueError("Routes should be of type tuple")
+    if len(routes) > 0:
+      cls.__bases__ = tuple(routes) 
+
   def _PostInit(self):
     """Method that gets called for derived classes of BasePageMaker."""
 
@@ -289,48 +289,11 @@ class BasePageMaker(object):
   def Reload():
     """Raises `ReloadModules`, telling the Handler() to reload its pageclass."""
     raise ReloadModules('Reloading ... ')
-
-  def Static(self, rel_path):
-    """Provides a handler for static content.
-
-    The requested `path` is truncated against a root (removing any uplevels),
-    and then added to the working dir + PUBLIC_DIR. If the request file exists,
-    then the requested file is retrieved, its mimetype guessed, and returned
-    to the client performing the request.
-
-    Should the requested file not exist, a 404 page is returned instead.
-
-    Arguments:
-      @ rel_path: str
-        The filename relative to the working directory of the webserver.
-
-    Returns:
-      Page: contains the content and mimetype of the requested file, or a 404
-            page if the file was not available on the local path.
-    """
-    rel_path = os.path.abspath(os.path.join(os.path.sep, rel_path))[1:]
-    abs_path = os.path.join(self.PUBLIC_DIR, rel_path)
-    try:
-      with file(abs_path) as staticfile:
-        content_type, _encoding = mimetypes.guess_type(abs_path)
-        if not content_type:
-          content_type = 'text/plain'
-        cache_days = self.CACHE_DURATION.get(content_type, 0)
-        expires = datetime.datetime.utcnow() + datetime.timedelta(cache_days)
-        return response.Response(content=staticfile.read(),
-                        content_type=content_type,
-                        headers={'Expires': expires.strftime(RFC_1123_DATE)})
-    except IOError:
-      return self._StaticNotFound(rel_path)
-
-  def _StaticNotFound(self, _path):
-    message = 'This is not the path you\'re looking for. No such file %r' % (
-      self.req.path)
-    return response.Response(message, content_type='text/plain', httpcode=404)
   
   def _GetXSRF(self):
     if 'xsrf' in self.cookies:
       return self.cookies['xsrf']
+    return None
     
   def CommonBlocks(self, title, page_id=None, scripts=None):
     """Returns a dictionary with the header and footer in it."""
@@ -433,7 +396,6 @@ class DebuggerMixin(object):
       return response.Response(
           self.ERROR_TEMPLATE.Parse(**exception_data), httpcode=500)
 
-
 class MongoMixin(object):
   """Adds MongoDB support to PageMaker."""
   @property
@@ -452,6 +414,29 @@ class MongoMixin(object):
     return self.persistent.Get('__mongo')
 
 
+class SqlAlchemyMixin(object):
+  """Adds MysqlAlchemy connection to PageMaker."""
+
+  @property
+  def engine(self):
+    if '__sql_alchemy' not in self.persistent:
+      from sqlalchemy import create_engine
+      mysql_config = self.options['mysql']
+      engine = create_engine('mysql://{username}:{password}@{host}/{database}'.format(
+          username=mysql_config.get('user'), 
+          password=mysql_config.get('password'), 
+          host=mysql_config.get('host', 'localhost'), 
+          database=mysql_config.get('database')))
+      self.persistent.Set('__sql_alchemy', engine)
+    return self.persistent.Get('__sql_alchemy')
+
+  @property
+  def session(self):
+    from sqlalchemy.orm import sessionmaker
+    Session = sessionmaker()
+    Session.configure(bind=self.engine, expire_on_commit=False)
+    return Session()
+    
 class MysqlMixin(object):
   """Adds MySQL support to PageMaker."""
   @property
@@ -468,7 +453,6 @@ class MysqlMixin(object):
           charset=mysql_config.get('charset', 'utf8'),
           debug=DebuggerMixin in self.__class__.__mro__))
     return self.persistent.Get('__mysql')
-
 
 class SqliteMixin(object):
   """Adds SQLite support to PageMaker."""
@@ -527,9 +511,11 @@ class SmorgasbordMixin(object):
 # ##############################################################################
 # Classes for public use (wildcard import)
 #
-class PageMaker(MysqlMixin, BasePageMaker):
+class SqAlchemyPageMaker(SqlAlchemyMixin, BasePageMaker):
   """The basic PageMaker class, providing MySQL support."""
 
+class PageMaker(MysqlMixin, BasePageMaker):
+  """The basic PageMaker class, providing MySQL support."""
 
 class DebuggingPageMaker(DebuggerMixin, PageMaker):
   """The same basic PageMaker, with added debugging on HTTP 500."""

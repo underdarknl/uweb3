@@ -6,7 +6,6 @@ import _mysql_exceptions
 def loggedin(f):
     """Decorator that checks if the user requesting the page is logged in."""
     def wrapper(*args, **kwargs):
-      print(args[0])
       try:
         args[0].user = args[0]._CurrentUser()
       except (uweb.model.NotExistError, args[0].NoSessionError):

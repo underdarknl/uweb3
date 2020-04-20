@@ -7,14 +7,11 @@
 # Standard modules
 import unittest
 
-# Custom modules
-import newweb
-# Importing newWeb makes the SQLTalk library available as a side-effect
-from underdark.libs.sqltalk import mysql
-
+# Importing uWeb3 makes the SQLTalk library available as a side-effect
+from uweb3.ext_lib.underdark.libs.sqltalk import mysql
 # Unittest target
-from . import model
-
+from uweb3 import model
+from pymysql.err import InternalError
 
 # ##############################################################################
 # Record classes for testing
@@ -144,7 +141,7 @@ class RecordTests(unittest.TestCase):
 
   def testCreateRecordWithBadField(self):
     """Database record creation fails if there are unknown fields present"""
-    self.assertRaises(model.BadFieldError, Author.Create, self.connection,
+    self.assertRaises(InternalError, Author.Create, self.connection,
                       {'name': 'L. Tolstoy', 'email': 'leo@tolstoy.ru'})
 
   def testUpdateRecord(self):
@@ -160,7 +157,7 @@ class RecordTests(unittest.TestCase):
     """Database record updating fails if there are unknown fields present"""
     author = Author.Create(self.connection, {'name': 'A. Pushkin'})
     author['specialty'] = 'poetry'
-    self.assertRaises(model.BadFieldError, author.Save)
+    self.assertRaises(InternalError, author.Save)
 
   def testUpdatePrimaryKey(self):
     """Saving with an updated primary key properly saved the record"""
@@ -431,8 +428,14 @@ class CompoundKeyRecordTests(unittest.TestCase):
 
 
 def DatabaseConnection():
-  """Returns an SQLTalk database connection to 'newweb_model_test'."""
-  return mysql.Connect('newweb_model_test', 'newweb_model_test')
+  """Returns an SQLTalk database connection to 'uWeb3_model_test'."""
+  return mysql.Connect(
+      host='localhost',
+      user='stef',
+      passwd='24192419',
+      db='uweb_test',
+      charset='utf8')
+  
 
 
 if __name__ == '__main__':

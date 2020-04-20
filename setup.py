@@ -5,12 +5,16 @@ import re
 from setuptools import setup, find_packages
 
 REQUIREMENTS = [
-    'decorator',
-    'PyMySQL',
-    'python-magic',
-    'python3-openid',
-    'pytz',
-    'simplejson',
+  'decorator',
+  'PyMySQL',
+  'python-magic',
+  'python3-openid',
+  'pytz',
+  'simplejson',
+  'sqlalchemy',
+  'bcrypt',
+  'werkzeug',
+  'mysqlclient',
 ]
 
 def description():
@@ -25,10 +29,11 @@ def version():
 
 
 setup(
-    name='uWeb3',
+    name='uWeb3 test',
     version=version(),
     description='uWeb, python3, uswgi compatible micro web platform',
     long_description=description(),
+    long_description_content_type='text/markdown',
     license='ISC',
     classifiers=[
         'Development Status :: 3 - Alpha',

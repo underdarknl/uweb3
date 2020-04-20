@@ -320,7 +320,7 @@ class Cursor(pymysql.cursors.DictCursor):
 
     return self._Execute('UPDATE %s SET %s WHERE %s %s %s' % (
         self._StringTable(table, field_escape),
-        ', '.join('`%s`=%s' % value for value in values.iteritems()),
+        ', '.join('`%s`=%s' % value for value in values.items()),
         self._StringConditions(conditions, field_escape),
         self._StringOrder(order, field_escape),
         self._StringLimit(limit, offset)))

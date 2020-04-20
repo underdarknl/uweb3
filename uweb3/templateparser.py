@@ -18,6 +18,8 @@ import os
 import re
 import urllib.parse as urlparse
 from .ext_lib.underdark.libs.safestring import *
+import hashlib
+import itertools
 
 class Error(Exception):
   """Superclass used for inheritance and external exception handling."""
@@ -316,13 +318,32 @@ class Template(list):
         raise TemplateSyntaxError('Closed %d scopes too many' % abs(scope_diff))
       raise TemplateSyntaxError('Template left %d open scopes.' % scope_diff)
 
-  def Parse(self, **kwds):
+  def Parse(self, returnRawTemplate=False, **kwds):
     """Returns the parsed template as SafeString.
 
     The template is parsed by parsing each of its members and combining that.
     """
-    
-    return HTMLsafestring(''.join(tag.Parse(**kwds) for tag in self))
+    htmlsafe = HTMLsafestring(''.join(tag.Parse(**kwds) for tag in self))
+    htmlsafe.content_hash = hashlib.md5(htmlsafe.encode()).hexdigest()
+    if returnRawTemplate:
+      raw = HTMLsafestring(self)
+      raw.content_hash = htmlsafe.content_hash
+      return raw
+
+    if self.parser and self.parser.noparse:
+      #Hash the page so that we can compare on the frontend if the html has changed
+      htmlsafe.page_hash = hashlib.md5(HTMLsafestring(self).encode()).hexdigest()
+      #Hashes the page and the content so we can know if we need to refresh the page on the frontend
+      htmlsafe.tags = {}
+      for tag in self:
+        if isinstance(tag, TemplateConditional):
+          for flattend_branch in list(itertools.chain(*tag.branches)):
+            for branch_tag in flattend_branch:
+              if isinstance(branch_tag, TemplateTag):
+                htmlsafe.tags[str(branch_tag)] = branch_tag.Parse(**kwds)
+        if isinstance(tag, TemplateTag):
+          htmlsafe.tags[str(tag)] = tag.Parse(**kwds)
+    return htmlsafe
 
   @classmethod
   def TagSplit(cls, template):
@@ -382,6 +403,10 @@ class Template(list):
   def _TemplateConstructIfpresent(self, *nodes):
     """Processing for {{ ifpresent }} template syntax."""
     self._StartScope(TemplateConditionalPresence(' '.join(nodes)))
+
+  def _TemplateConstructIfnotpresent(self, *nodes):
+    """Processing for {{ ifnotpresent }} template syntax."""
+    self._StartScope(TemplateConditionalPresence(' '.join(nodes), checking_presence=True))
 
   def _TemplateConstructElif(self, *nodes):
     """Processing for {{ elif }} template syntax."""
@@ -458,11 +483,14 @@ class FileTemplate(Template):
     The template is parsed by parsing each of its members and combining that.
     """
     self.ReloadIfModified()
+    result = super(FileTemplate, self).Parse(**kwds)
     if self.parser and self.parser.noparse:
-      return {'template': self._template_path,
-              'replacements': kwds}
-
-    return super(FileTemplate, self).Parse(**kwds)
+      return {'template': self._file_name.rsplit('/')[-1],
+              'replacements': result.tags,
+              'content_hash':result.content_hash,
+              'page_hash': result.page_hash
+              }
+    return result
 
   def ReloadIfModified(self):
     """Reloads the template file if it was modified on disk.
@@ -490,7 +518,8 @@ class FileTemplate(Template):
 
 class TemplateConditional(object):
   """A template construct to control flow based on the value of a tag."""
-  def __init__(self, expr):
+  def __init__(self, expr, checking_presence=True):
+    self.checking_presence = checking_presence
     self.branches = []
     self.default = None
     self.NewBranch(expr)
@@ -582,30 +611,37 @@ class TemplateConditional(object):
     `else` branch exists '' is returned.
     """
     for expr, branch in self.branches:
+      if type(self) == TemplateConditionalPresence:
+        kwds['checking_presence'] = True
       if self.Expression(expr, **kwds):
         return ''.join(part.Parse(**kwds) for part in branch)
     if self.default:
       return ''.join(part.Parse(**kwds) for part in self.default)
     return ''
 
+  
 
 class TemplateConditionalPresence(TemplateConditional):
   """A template construct to safely check for the presence of tags."""
+
   @staticmethod
   def Expression(tags, **kwds):
     """Checks the presence of all tags named on the branch."""
     try:
       for tag in tags:
         tag.GetValue(kwds)
-      return True
-    except (TemplateKeyError, TemplateNameError):
+      if kwds.get('checking_presence'):
+        return True
       return False
+    except (TemplateKeyError, TemplateNameError):
+      if kwds.get('checking_presence'):
+        return False
+      return True
 
   def NewBranch(self, tags):
     """Begins a new branch based on the given tags."""
     self.branches.append((map(TemplateTag.FromString, tags.split()), []))
-
-
+    
 class TemplateLoop(list):
   """Template loops are used to repeat a portion of template multiple times.
 

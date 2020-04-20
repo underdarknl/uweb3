@@ -1,7 +1,7 @@
 #!/usr/bin/python
 """uWeb3 Framework"""
 
-__version__ = '0.4.0-dev'
+__version__ = '0.4.4-dev'
 
 # Standard modules
 try:
@@ -15,6 +15,9 @@ import sys
 import time
 import threading
 from wsgiref.simple_server import make_server
+import socket, errno
+import datetime
+
 
 # Add the ext_lib directory to the path
 sys.path.append(
@@ -29,7 +32,9 @@ from .response import Response
 from .response import Redirect
 from .pagemaker import PageMaker
 from .pagemaker import DebuggingPageMaker
-
+from .pagemaker import SqAlchemyPageMaker
+from .helpers import StaticMiddleware
+from uweb3.model import SettingsManager
 
 class Error(Exception):
   """Superclass used for inheritance and external excepion handling."""
@@ -45,7 +50,9 @@ class NoRouteError(Error):
 
 class Registry(object):
   """Something to hook stuff to"""
-
+  
+def TEST(*args, **kwds):
+  print('hello world', args, kwds)
 
 class uWeb(object):
   """Returns a configured closure for handling page requests.
@@ -71,31 +78,61 @@ class uWeb(object):
     RequestHandler: Configured closure that is ready to process requests.
   """
   def __init__(self, page_class, routes, config):
+    self.config = SettingsManager(filename='config')
+    self.logger = self.setup_logger()
     self.page_class = page_class
-    self.page_class.loadModules()
     self.registry = Registry()
     self.registry.logger = logging.getLogger('root')
     self.router = router(routes)
-    self.config = config if config is not None else {}
-    self.secure_cookie_hash = str(os.urandom(32))
-
+    self.secure_cookie_secret = str(os.urandom(32))
+    self.setup_routing()
+    
   def __call__(self, env, start_response):
     """WSGI request handler.
-
     Accpepts the WSGI `environment` dictionary and a function to start the
     response and returns a response iterator.
     """
     req = request.Request(env, self.registry)
-    page_maker = self.page_class(req, config=self.config, secure_cookie_hash=self.secure_cookie_hash)
+    page_maker = self.page_class(req, config=self.config.options, secure_cookie_secret=self.secure_cookie_secret)
     response = self.get_response(page_maker,
         req.path,
         req.env['REQUEST_METHOD'],
         req.env['host'])
+
     if not isinstance(response, Response):
       req.response.text = response
       response = req.response
+      
+    if hasattr(page_maker, '_PostRequest'):
+      response = page_maker._PostRequest(response)
+    
+    self._logging(req, response)
     start_response(response.status, response.headerlist)
     yield response.content.encode(response.charset)
+  
+  def setup_logger(self):
+    logger = logging.getLogger('uweb3_logger')
+    logger.setLevel(logging.INFO)
+    fh = logging.FileHandler(os.path.join(os.getcwd(), 'access_logging.log'))
+    fh.setLevel(logging.INFO)
+    logger.addHandler(fh)
+    return logger
+
+  def _logging(self, req, response):
+    """Logs incoming requests to a logfile.
+    This is enabled by default, even if its missing in the config file.
+    """
+    if self.config.options.get('development', None):
+      if self.config.options['development'].get('access_logging', True) == 'False':
+        return
+
+    host = req.env['HTTP_HOST'].split(':')[0]
+    date = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+    method = req.method
+    path = req.path
+    status = response.httpcode
+    protocol = req.env.get('SERVER_PROTOCOL')
+    self.logger.info(f"""{host} - - [{date}] \"{method} {path} {status} {protocol}\"""")
 
   def get_response(self, page_maker, path, method, host):
     try:
@@ -115,17 +152,38 @@ class uWeb(object):
 
   def serve(self, hot_reloading=True):
     """Sets up and starts WSGI development server for the current app."""
-    host = self.config['development'].get('host', 'localhost')
-    port = self.config['development'].get('port', 8001)
-    server = make_server(host, int(port), self)
+    host = self.config.options['development'].get('host', 'localhost')
+    port = self.config.options['development'].get('port', 8001)
+
+    static_directory = [os.path.join(sys.path[0], 'base/static')]
+    app = StaticMiddleware(self, static_root='static', static_dirs=static_directory)
+    server = make_server(host, int(port), app)
+
     print('Running µWeb3 server on http://{}:{}'.format(server.server_address[0],server.server_address[1]))
     try:
-      if hot_reloading:
-        HotReload(self.config['development'].get('dev', 'False'))
+      #Needs to check == True. Without it will trigger even when false
+      if self.config.options['development'].get('dev', False) == 'True':
+        HotReload(self.config.options['development'].get('dev', 'False'))
       server.serve_forever()
     except:
       server.shutdown()
 
+  def setup_routing(self):
+    if isinstance(self.page_class, list):
+      routes = []
+      for route in self.page_class[1:]:
+        routes.append(route)
+      self.page_class[0].AddRoutes(tuple(routes))
+      self.page_class = self.page_class[0]
+
+    default_route = "routes"
+    automatic_detection = True
+    if self.config.options.get('routing'):
+      default_route = self.config.options['routing'].get('default_routing', default_route)
+      automatic_detection = self.config.options['routing'].get('disable_automatic_route_detection', 'False') != 'True'
+
+    if automatic_detection:
+      self.page_class.LoadModules(default_routes=default_route)
 
 def read_config(config_file):
   """Parses the given `config_file` and returns it as a nested dictionary."""
@@ -186,15 +244,20 @@ def router(routes):
     Returns:
       2-tuple: handler method (unbound), and tuple of pattern matches.
     """
+    
     for pattern, handler, routemethod, hostpattern in req_routes:
-      if routemethod != 'ALL' and routemethod != method:
+      if routemethod != 'ALL':
         # clearly not the route we where looking for
-        continue
+        if isinstance(routemethod, tuple):
+          if method not in routemethod:
+            continue
+        if method != routemethod:
+          continue
 
       hostmatch = None
       if hostpattern != '*':
         # see if we can match this host and extact any info from it.
-        hostmatch = routehost.match(host)
+        hostmatch = re.compile(f"^{host}$").match(hostpattern)
         if not hostmatch:
           # clearly not the host we where looking for
           continue
@@ -221,10 +284,14 @@ class HotReload(object):
     def run(self):
       """ Method runs forever and watches all files in the project folder.
       
-      Ignores the following file types:
-      @ .pyc
-      @ .ini
-      @ .md
+      Does not trigger a reload when the following files change:
+      - .pyc
+      - .ini
+      - .md
+      - .html
+
+      Changes in the HTML are noticed by the TemplateParser,
+      which then reloads the HTML file into the object and displays the updated version.  
       """
       self.WATCHED_FILES = self.getListOfFiles()[1]
       WATCHED_FILES_MTIMES = [(f, os.path.getmtime(f)) for f in self.WATCHED_FILES]
@@ -240,14 +307,18 @@ class HotReload(object):
         time.sleep(self.interval)
           
     def getListOfFiles(self):
+      """Returns all files inside the working directory of uweb3. 
+      Also returns a count so that we can restart on file add/remove. 
+      """
       watched_files = [__file__]
       for r, d, f in os.walk(self.path):
         for file in f:
           ext = os.path.splitext(file)[1]
-          if ext not in (".pyc", '.ini', '.md', ):
+          if ext not in (".pyc", '.ini', '.md', '.html', '.log'):
             watched_files.append(os.path.join(r, file))
       return (len(watched_files), watched_files)   
       
     def restart(self):
+      """Restart uweb3 with all provided system arguments."""
       self.running.clear()
       os.execl(sys.executable, sys.executable, * sys.argv)   

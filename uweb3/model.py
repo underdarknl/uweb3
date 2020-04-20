@@ -11,6 +11,14 @@ import pickle
 import secrets
 import configparser
 
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base, declared_attr
+from sqlalchemy.orm import sessionmaker, reconstructor
+from sqlalchemy.orm.session import object_session
+from sqlalchemy.inspection import inspect
+from contextlib import contextmanager
+
+from itertools import chain
 
 class Error(Exception):
   """Superclass used for inheritance and external exception handling."""
@@ -35,16 +43,35 @@ class PermissionError(Error):
   """The entity has insufficient rights to access the resource."""
 
 class SettingsManager(object):
-  def __init__(self):
-    """Creates a ini file with the childs class name"""
+  def __init__(self, filename=None):
+    """Creates a ini file with the childs class name
+
+    Arguments:
+      % filename: str
+      Name of the file without the extension
+    """
     self.options = None
-    self.FILENAME = "{}.ini".format(self.__class__.__name__)
+    self.FILENAME = f"{self.__class__.__name__[:1].lower() + self.__class__.__name__[1:]}.ini"
+
+    if filename:
+      self.FILENAME = f"{filename[:1].lower() + filename[1:]}.ini"
+
     self.FILE_LOCATION = os.path.join(os.getcwd(), "base", self.FILENAME)
+    self.__CheckPremissions()
+    
     if not os.path.isfile(self.FILE_LOCATION):
       os.mknod(self.FILE_LOCATION)
+
     self.config = configparser.ConfigParser()
     self.Read()
     
+  def __CheckPremissions(self):
+    """Checks if SettingsManger can read/write to file."""
+    if not os.access(self.FILE_LOCATION, os.R_OK):
+      raise PermissionError(f"SettingsManager missing premissions to read file: {self.FILE_LOCATION}")
+    if not os.access(self.FILE_LOCATION, os.W_OK):
+      raise PermissionError(f"SettingsManager missing premissions to write to file: {self.FILE_LOCATION}")
+
   def Create(self, section, key, value):
     """Creates a section or/and key = value
     
@@ -115,12 +142,9 @@ class SettingsManager(object):
     with open(self.FILE_LOCATION, 'w') as configfile:
       self.config.write(configfile)
     self.Read()
-    
-class SecureCookie(object):
-  """ """
-  #TODO: ini class in the model which makes a file based on the class name with
-  #settings in it 
   
+    
+class SecureCookie(object):  
   def __init__(self, connection):
     self.req = connection[0]
     self.cookies = connection[1]
@@ -130,9 +154,10 @@ class SecureCookie(object):
   def __GetSessionCookies(self):
     cookiejar = {}
     for key, value in self.cookies.items():
-      isValid, value = self.__ValidateCookieHash(value)
-      if isValid:
-        cookiejar[key] = value
+      if value: 
+        isValid, value = self.__ValidateCookieHash(value)
+        if isValid:
+          cookiejar[key] = value
     return cookiejar
   
   def Create(self, name, data, **attrs):
@@ -249,7 +274,6 @@ class SecureCookie(object):
     self.req.DeleteCookie(name)
     if self.cookiejar.get(name):
       self.cookiejar.pop(name)
-
         
   def __CreateCookieHash(self, data):
     hex_string = pickle.dumps(data).hex()
@@ -568,14 +592,14 @@ class BaseRecord(dict):
   def _Changes(self):
     """Returns the differences of the current state vs the last stored state."""
     sql_record = self._DataRecord()
+    changes = {}
     for key, value in sql_record.items():
-      if self._record.get(key) == value:
-        del sql_record[key]
-    return sql_record
+      if self._record.get(key) != value:
+        changes[key] = value
+    return changes
 
   def _DataRecord(self):
     """Returns a dictionary of the record's database values
-
     For any Record object present, its primary key value (`Record.key`) is used.
     """
     sql_record = {}
@@ -889,7 +913,7 @@ class Record(BaseRecord):
             'Compound keys should be loaded using a tuple of key values.')
       if len(value) != len(cls._PRIMARY_KEY):
         raise ValueError('Not enough values (%d) for compound key.', len(value))
-      values = map(cls._ValueOrPrimary, value)
+      values = tuple(map(cls._ValueOrPrimary, value))
       return ' AND '.join('`%s` = %s' % (field, value) for field, value
                    in zip(cls._PRIMARY_KEY, connection.EscapeValues(values)))
     else:
@@ -1171,7 +1195,7 @@ class VersionedRecord(Record):
     last_key = cursor.Select(table=cls.TableName(), fields=cls.RecordKey(),
                              order=[(cls.RecordKey(), True)], limit=1)
     if last_key:
-      return last_key[0][0]
+      return last_key[0][cls.RecordKey()]
 
   def _PreCreate(self, cursor):
     """Attaches a RecordKey to the Record if it doens't have one already.
@@ -1272,6 +1296,343 @@ class MongoRecord(BaseRecord):
     self.key = self.Collection(self.connection).save(self._DataRecord())
 
 
+class AlchemyBaseRecord(object):  
+  def __init__(self, session, record):
+    self.session = session
+    self._BuildClassFromRecord(record)
+    
+  def _BuildClassFromRecord(self, record):
+    if isinstance(record, dict):
+      for key, value in record.items():
+        if not key in self.__table__.columns.keys():
+          raise AttributeError(f"Key '{key}' not specified in class '{self.__class__.__name__}'")
+        setattr(self, key, value)
+      if self.session:
+        try:
+          self.session.add(self)
+        except:
+          self.session.rollback()
+          raise
+        else:
+          self.session.commit()
+    
+  def __hash__(self):
+    """Returns the hashed value of the key."""
+    return hash(self.key)
+                   
+  def __repr__(self):
+    s = {}
+    for key in self.__table__.columns.keys():
+      value = getattr(self, key)
+      if value:
+        s[key] = value
+    return f'{type(self).__name__}({s})'
+  
+  def __eq__(self, other):
+    if type(self) != type(other):
+      return False  # Types must be the same.
+    elif not (self.key == other.key is not None):
+      return False  # Records should have the same non-None primary key value.
+    elif len(self) != len(other):
+      return False  # Records must contain the same number of objects.
+    for key in self.__table__.columns.keys():
+      value = getattr(self, key)
+      other_value = getattr(other, key)
+      if isinstance(self, AlchemyBaseRecord) != isinstance(other, AlchemyBaseRecord):
+        # Only one of the two is a BaseRecord instance
+        if (isinstance(self, AlchemyBaseRecord) and value.key != other_value or
+            isinstance(other, AlchemyBaseRecord) and other_value.key != value):
+          return False
+      elif value != other_value:
+        return False
+    return True
+  
+  def __ne__(self, other):
+    """Returns the proper inverse of __eq__."""
+    # Without this, the non-equal checks used in __eq__ will not work,
+    # and the  `!=` operator would not be the logical inverse of `==`.
+    return not self == other
+  
+  def __len__(self):
+    return len(dict((col, getattr(self, col)) for col in self.__table__.columns.keys() if getattr(self, col)))
+    
+  def __int__(self):
+    """Returns the integer key value of the Record.
+
+    For record objects where the primary key value is not (always) an integer,
+    this function will raise an error in the situations where it is not.
+    """
+    key_val = self.key
+    if not isinstance(key_val, (int)):
+      # We should not truncate floating point numbers.
+      # Nor turn strings of numbers into an integer.
+      raise ValueError('The primary key is not an integral number.')
+    return key_val
+  
+  def copy(self):
+    """Returns a shallow copy of the Record that is a new functional Record."""
+    import copy
+    return copy.copy(self)
+  
+  def deepcopy(self):
+    import copy
+    return copy.deepcopy(self)
+   
+  def __gt__(self, other):
+    """Index of this record is greater than the other record's.
+
+    This requires both records to be of the same record class.
+    """
+    if type(self) == type(other):
+      return self.key > other.key
+    return NotImplemented
+
+  def __ge__(self, other):
+    """Index of this record is greater than, or equal to, the other record's.
+
+    This requires both records to be of the same record class.
+    """
+    if type(self) == type(other):
+      return self.key >= other.key
+    return NotImplemented
+
+  def __lt__(self, other):
+    """Index of this record is smaller than the other record's.
+
+    This requires both records to be of the same record class.
+    """
+    if type(self) == type(other):
+      return self.key < other.key
+    return NotImplemented
+
+  def __le__(self, other):
+    """Index of this record is smaller than, or equal to, the other record's.
+    
+    This requires both records to be of the same record class.
+    """
+    if type(self) == type(other):
+      return self.key <= other.key
+    return NotImplemented 
+  
+  def __getitem__(self, field):
+    return getattr(self, field)
+  
+  def iteritems(self):
+    """Yields all field+value pairs in the Record.
+    
+    This automaticly loads in relationships.
+    """
+    return chain(((key, getattr(self, key)) for key in self.__table__.columns.keys()),  
+    ((child[0], getattr(self, child[0])) for child in inspect(type(self)).relationships.items()))
+
+  def itervalues(self):
+    """Yields all values in the Record, loads relationships"""
+    return chain((getattr(self, key) for key in self.__table__.columns.keys()), 
+                 (getattr(self, child[0]) for child in inspect(type(self)).relationships.items()))
+
+  def items(self):
+    """Returns a list of field+value pairs in the Record.
+    
+    This automaticly loads in relationships.
+    """
+    return list(self.iteritems())
+
+  def values(self):
+    """Returns a list of values in the Record, loading foreign references."""
+    return list(self.itervalues())
+    
+  @property
+  def key(self):
+    return getattr(self, inspect(type(self)).primary_key[0].name)
+  
+  @classmethod
+  def TableName(cls):
+    """Returns the database table name for the Record class."""
+    return cls.__tablename__
+  
+  @classmethod
+  def _AlchemyRecordToDict(cls, record):
+    """Turns the values of a given class into a dictionary. Doesn't trigger
+    automatic loading of child classes.
+    
+    Arguments:
+      @ record: cls
+        AlchemyBaseRecord class that is retrieved from a database query
+    Returns
+      dict: dictionary with all table columns and values
+      None: when record is empty
+    """
+    if not isinstance(record, type(None)):
+      return dict((col, getattr(record, col)) for col in record.__table__.columns.keys())
+    return None
+  
+  @reconstructor
+  def reconstruct(self):
+    """This is called instead of __init__ when the result comes from the database"""
+    self.session = object_session(self)
+  
+  @classmethod    
+  def _PrimaryKeyCondition(cls, target):
+    """Returns the name of the primary key of given class
+    
+    Arguments:
+      @ target: cls
+        Class that you want to know the primary key name from
+    """
+    return getattr(cls, inspect(cls).primary_key[0].name)
+    
+class AlchemyRecord(AlchemyBaseRecord):
+  """ """
+  @classmethod
+  def FromPrimary(cls, session, p_key):
+    """Finds record based on given class and supplied primary key.
+    
+    Arguments:
+      @ session: sqlalchemy session object
+        Available in the pagemaker with self.session
+      @ p_key: integer
+        primary_key of the object to delete
+    Returns
+      cls
+      None
+    """
+    try:
+      record = session.query(cls).filter(cls._PrimaryKeyCondition(cls) == p_key).first()
+    except:
+      session.rollback()
+      raise
+    else:
+      if not record:
+        raise NotExistError(f"Record with primary key {p_key} does not exist")
+      return record
+  
+  @classmethod
+  def DeletePrimary(cls, session, p_key):
+    """Deletes record base on primary key from given class.
+    
+    Arguments:
+      @ session: sqlalchemy session object
+        Available in the pagemaker with self.session
+      @ p_key: integer
+        primary_key of the object to delete
+        
+    Returns:
+      isdeleted: boolean  
+    """
+    try:
+      isdeleted = session.query(cls).filter(cls._PrimaryKeyCondition(cls) == p_key).delete()
+    except:
+      session.rollback()
+      raise
+    else:
+      session.commit()
+      return isdeleted
+  
+  @classmethod  
+  def Create(cls, session, record):
+    """Creates a new instance and commits it to the database
+    
+    Arguments:
+      @ session: sqlalchemy session object
+        Available in the pagemaker with self.session
+      @ record: dict
+        Dictionary with all key:value pairs that are required for the db record
+    Returns:
+      cls
+    """
+    return cls(session, record)
+    
+  @classmethod
+  def List(cls, session, conditions=None, limit=None, offset=None,
+           order=None, yield_unlimited_total_first=False):
+    """Yields a Record object for every table entry.
+
+    Arguments:
+      @ session: sqlalchemy session object
+        Available in the pagemaker with self.session
+      % conditions: list
+        Optional query portion that will be used to limit the list of results.
+        If multiple conditions are provided, they are joined on an 'AND' string.
+        For example: conditions=[User.id <= 10, User.id >=]
+      % limit: int ~~ None
+        Specifies a maximum number of items to be yielded. The limit happens on
+        the database side, limiting the query results.
+      % offset: int ~~ None
+        Specifies the offset at which the yielded items should start. Combined
+        with limit this enables proper pagination.
+      % order: tuple of operants
+        For example the User class has 3 fields; id, username, password. We can pass
+        the field we want to order on to the tuple like so; 
+        (User.id.asc(), User.username.desc())
+      % yield_unlimited_total_first: bool ~~ False
+        Instead of yielding only Record objects, the first item returned is the
+        number of results from the query if it had been executed without limit.
+        
+    Returns: 
+      integer: integer with length of results.
+      list: List of classes from request type
+    """
+    try:
+      query = session.query(cls)
+      if conditions:
+        for condition in conditions:
+          query = query.filter(condition)
+      if order:
+        for item in order:
+          query = query.order_by(item)
+      if limit:
+        query = query.limit(limit)
+      if offset:
+        query = query.offset(offset)
+      result = query.all()
+    except:
+      session.rollback()
+      raise
+    else:
+      if yield_unlimited_total_first:
+        return len(result)
+      return result
+    
+  @classmethod
+  def Update(cls, session, conditions, values):
+    """Update table based on conditions.
+    
+    Arguments:
+      @ session: sqlalchemy session object
+          Available in the pagemaker with self.session
+      @ conditions: list|tuple
+        for example: [User.id > 2, User.id < 100]
+      @ values: dict
+        for example: {User.username: 'value'}
+    """
+    try:
+      query = session.query(cls)
+      for condition in conditions:
+        query = query.filter(condition)
+      query = query.update(values)
+    except:
+      session.rollback()
+      raise
+    else:
+      session.commit()
+
+  def Delete(self):
+    """Delete current instance from the database"""
+    try:
+      isdeleted = self.session.query(type(self)).filter(self._PrimaryKeyCondition(self) == self.key).delete()
+    except:
+      self.session.rollback()
+      raise
+    else:
+      self.session.commit()
+      return isdeleted
+  
+  def Save(self):
+    """Saves any changes made in the current record. Sqlalchemy automaticly detects 
+    these changes and only updates the changed values. If no values are present
+    no query will be commited."""
+    self.session.commit()
+
 class Smorgasbord(object):
   """A connection tracker for uWeb3 Record classes.
 
@@ -1279,7 +1640,7 @@ class Smorgasbord(object):
   connection types (Mongo and relational), and have the smorgasbord provide the
   correct connection for the caller's needs. MongoReceord would be given the
   MongoDB connection as expected, and all other users will be given a relational
-  datbaase connection.
+  database connection.
 
   This is highly beta and debugging is going to be at the very least interesting
   because of __getattribute__ overriding that is necessary for this type of

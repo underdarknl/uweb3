@@ -60,7 +60,7 @@ class Response(object):
 
   @text.setter
   def text(self, content):
-     self.content = str(content)
+    self.content = str(content)
 
   # Retrieve a header list
   @property
@@ -71,6 +71,8 @@ class Response(object):
         for cookie in val:
           tuple_list.append((key, cookie.encode('ascii', 'ignore').decode('ascii')))
         continue
+      if not isinstance(val, str):
+        val = str(val)
       tuple_list.append((key, val.encode('ascii', 'ignore').decode('ascii')))
     return tuple_list
   

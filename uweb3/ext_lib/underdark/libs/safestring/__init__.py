@@ -20,6 +20,9 @@ Additions of unsafe types to a safe type automatically escape up to the safe
 type. Handy escape() functions are present to do manual escaping if required.
 """
 
+#TODO: logger geen enters
+#bash injection 
+#mysql escaping
 __author__ = 'Jan Klopper (jan@underdark.nl)'
 __version__ = 0.1
 
@@ -27,6 +30,8 @@ import html
 import json
 import urllib.parse as urlparse
 import re
+from ast import literal_eval
+from sqlalchemy import text
 
 class Basesafestring(str):
   """Base safe string class
@@ -77,10 +82,78 @@ class Basesafestring(str):
     raise NotImplementedError
 
 
+class SQLSAFE(Basesafestring):
+  CHARS_ESCAPE_DICT = {
+    '\0'   : '\\0',
+    '\b'   : '\\b',
+    '\t'   : '\\t',
+    '\n'   : '\\n',
+    '\r'   : '\\r',
+    '\x1a' : '\\Z',
+    '"'    : '\\"',
+    '\''   : '\\\'',
+    '\\'   : '\\\\'
+  }
+  
+  CHARS_ESCAPE_REGEX = re.compile(r"""[\0\b\t\n\r\x1a\"\'\\]""")
+  PLACEHOLDERS_REGEX = re.compile(r"""\?+""")
+  QUOTES_REGEX = re.compile(r"""([\"'])(?:(?=(\\?))\2.)*?\1""", re.DOTALL)
+
+  def __new__(cls, data, values=(), *args, **kwargs):
+    return super().__new__(cls,
+        cls.escape(cls, str(data), values) if 'unsafe' in kwargs else data)
+
+  def __upgrade__(self, other):
+      """Upgrade a given object to be as safe, and in the same safety context as
+      the current object"""
+      if type(other) == self.__class__: #same type, easy, lets add
+        return other
+      elif isinstance(other, Basesafestring): # lets unescape the other 'safe' type,
+        otherdata = other.unescape(other) # its escaping is not needed for his context
+        return self.sanitize(otherdata) # escape it using our context
+      else:
+        other = " " + other
+        return self.sanitize(other, qoutes=False)
+
+  @classmethod
+  def sanitize(cls, value, qoutes=True):
+    index = 0
+    escaped = ""
+    if len(cls.CHARS_ESCAPE_REGEX.findall(value)) == 0:
+      if not str.isdigit(value):
+        if qoutes:
+          return f"'{value}'"
+        return value
+      return value
+    for m in cls.CHARS_ESCAPE_REGEX.finditer(value):
+      escaped += value[index:m.span()[0]] + cls.CHARS_ESCAPE_DICT[m.group()]
+      index = m.span()[1]
+    escaped += value[index:]
+    if not str.isdigit(escaped):
+      if qoutes:
+        return f"'{escaped}'"
+      return escaped
+    return escaped
+
+  def escape(cls, sql, values):
+    x = 0
+    escaped = ""
+    if not isinstance(values, tuple):
+      raise ValueError("Values should be a tuple")
+    if len(cls.PLACEHOLDERS_REGEX.findall(sql)) != len(values):
+      raise ValueError("Number of values does not match number of replacements")
+    for index, m in enumerate(cls.PLACEHOLDERS_REGEX.finditer(sql)):
+      escaped += sql[x:m.span()[0]] + cls.sanitize(values[index])
+      x = m.span()[1]
+    escaped += sql[x:]
+    return SQLSAFE(escaped)
+    
+    
 # what follows are the actual useable classes that are safe in specific contexts
 class HTMLsafestring(Basesafestring):
   """This class signals that the content is HTML safe"""
-
+ 
+    
   def escape(self, data):
     return html.escape(data)
 
@@ -101,9 +174,9 @@ class JSONsafestring(Basesafestring):
     return json.dumps(data)
 
   def unescape(self, data):
-    data = json.loads(data)
     if not isinstance(data, str):
       raise TypeError
+    data = json.loads(data)
     return data
 
 
