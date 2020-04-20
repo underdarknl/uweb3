@@ -33,8 +33,6 @@ from .pagemaker import DebuggingPageMaker
 from .pagemaker import SqAlchemyPageMaker
 from .helpers import StaticMiddleware
 from uweb3.model import SettingsManager
-from . import globals
-
 class Error(Exception):
   """Superclass used for inheritance and external excepion handling."""
 
@@ -77,8 +75,6 @@ class uWeb(object):
     RequestHandler: Configured closure that is ready to process requests.
   """
   def __init__(self, page_class, routes, config):
-    globals.init()
-    globals.event_listener.add('test_event', TEST)
     self.page_class = page_class
     self.registry = Registry()
     self.registry.logger = logging.getLogger('root')
