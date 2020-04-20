@@ -60,11 +60,7 @@ class Response(object):
 
   @text.setter
   def text(self, content):
-    import io
-    if isinstance(content, io.IOBase):  
-      self.content = content
-    else:
-      self.content = str(content)
+    self.content = str(content)
 
   # Retrieve a header list
   @property

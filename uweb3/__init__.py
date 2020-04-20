@@ -15,7 +15,6 @@ import sys
 import time
 import threading
 from wsgiref.simple_server import make_server
-from wsgi_static_middleware import StaticMiddleware
 
 
 # Add the ext_lib directory to the path
@@ -32,6 +31,7 @@ from .response import Redirect
 from .pagemaker import PageMaker
 from .pagemaker import DebuggingPageMaker
 from .pagemaker import SqAlchemyPageMaker
+from .helpers import StaticMiddleware
 from uweb3.model import SettingsManager
 from . import globals
 
@@ -92,7 +92,6 @@ class uWeb(object):
     Accpepts the WSGI `environment` dictionary and a function to start the
     response and returns a response iterator.
     """
-    import io
     req = request.Request(env, self.registry)
     page_maker = self.page_class(req, config=self.config.options, secure_cookie_secret=self.secure_cookie_secret)
     response = self.get_response(page_maker,
@@ -107,12 +106,7 @@ class uWeb(object):
       response = page_maker._PostRequest(response)
       
     start_response(response.status, response.headerlist)
-
-    if isinstance(response.content, io.IOBase):
-      # yield req.env['wsgi.file_wrapper'](response.content, 4096)
-      return req.env['wsgi.file_wrapper'](response.content, 4096)
-    else:
-      yield response.content.encode(response.charset)
+    yield response.content.encode(response.charset)
     
   def get_response(self, page_maker, path, method, host):
     try:
