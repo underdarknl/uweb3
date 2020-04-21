@@ -83,9 +83,10 @@ def static_file_view(env, start_response, filename, block_size, charset, CACHE_D
     expires = datetime.datetime.utcnow() + datetime.timedelta(cache_days)
     headers.add_header('Cache-control', f'public, max-age={expires.strftime(RFC_1123_DATE)}')
     headers.add_header('Expires', expires.strftime(RFC_1123_DATE))
-    if env.get('HTTP_IF_MODIFIED_SINCE') >= generate_last_modified(filename):
-      start_response('304 ok', headers.items())
-      return [b'304']
+    if env.get('HTTP_IF_MODIFIED_SINCE'):
+      if env.get('HTTP_IF_MODIFIED_SINCE') >= generate_last_modified(filename):
+        start_response('304 ok', headers.items())
+        return [b'304']
     headers.add_header('Content-Encodings', encoding)
     if mimetype:
         headers.add_header('Content-Type', get_content_type(mimetype, charset))
