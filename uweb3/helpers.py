@@ -19,29 +19,30 @@ def is_accessible(abs_file_path):
 
 def search_file(relative_file_path, dirs):
   for d in dirs:
-      if not os.path.isabs(d):
-          d = os.path.abspath(d) + os.sep
+    if not os.path.isabs(d):
+      d = os.path.abspath(d) + os.sep
 
-      file = os.path.join(d, relative_file_path)
-      if is_accessible(file):
-          return file
+    file = os.path.join(d, relative_file_path)
+    if is_accessible(file):
+      return file
 
 
 # Header utils
 def get_content_length(filename):
-    stats = os.stat(filename)
-    return str(stats.st_size)
+  stats = os.stat(filename)
+  return str(stats.st_size)
 
 
-def generate_last_modified():
-    last_modified = time.strftime("%a, %d %b %Y %H:%M:%sS GMT", time.gmtime())
-    return last_modified
+def generate_last_modified(filename):
+  stats = os.stat(filename)
+  last_modified = time.strftime("%a, %d %b %Y %H:%M:%sS GMT", time.gmtime(stats.st_mtime))
+  return last_modified
 
 
 def get_content_type(mimetype, charset):
-    if mimetype.startswith('text/') or mimetype == 'application/javascript':
-        mimetype += '; charset={}'.format(charset)
-    return mimetype
+  if mimetype.startswith('text/') or mimetype == 'application/javascript':
+      mimetype += '; charset={}'.format(charset)
+  return mimetype
 
 
 # Response body iterator
@@ -75,28 +76,30 @@ def static_file_view(env, start_response, filename, block_size, charset, CACHE_D
         start_response('405 METHOD NOT ALLOWED',
                        [('Content-Type', 'text/plain; UTF-8')])
         return [b'']
-
     mimetype, encoding = mimetypes.guess_type(filename)
     headers = Headers([])
-    headers.add_header('Content-Encodings', encoding)
-    if mimetype:
-        headers.add_header('Content-Type', get_content_type(mimetype, charset))
 
     cache_days = CACHE_DURATION.get(mimetype, 0)
     expires = datetime.datetime.utcnow() + datetime.timedelta(cache_days)
     headers.add_header('Cache-control', f'public, max-age={expires.strftime(RFC_1123_DATE)}')
     headers.add_header('Expires', expires.strftime(RFC_1123_DATE))
+    if env.get('HTTP_IF_MODIFIED_SINCE') == generate_last_modified(filename):
+      start_response('304 ok', headers.items())
+      return [b'304']
+    headers.add_header('Content-Encodings', encoding)
+    if mimetype:
+        headers.add_header('Content-Type', get_content_type(mimetype, charset))
     headers.add_header('Content-Length', get_content_length(filename))
-    headers.add_header('Last-Modified', generate_last_modified())
+    headers.add_header('Last-Modified', generate_last_modified(filename))
     headers.add_header("Accept-Ranges", "bytes")
     start_response('200 OK', headers.items())
     return _get_body(filename, method, block_size, charset)
 
 
 def http404(env, start_response):
-    start_response('404 Not Found',
-                   [('Content-type', 'text/plain; charset=utf-8')])
-    return [b'404 Not Found']
+  start_response('404 Not Found',
+                  [('Content-type', 'text/plain; charset=utf-8')])
+  return [b'404 Not Found']
 
 
 class StaticMiddleware:
@@ -125,9 +128,10 @@ class StaticMiddleware:
     def handle(self, env, start_response, filename):
       abs_file_path = search_file(filename, self.static_dirs)
       if abs_file_path:
-          return static_file_view(env, start_response, abs_file_path,
-                                  self.block_size, self.charset, self.CACHE_DURATION)
+        res = static_file_view(env, start_response, abs_file_path,
+                                self.block_size, self.charset, self.CACHE_DURATION)
+        return res
       else:
-          return http404(env, start_response)
+        return http404(env, start_response)
 
             
