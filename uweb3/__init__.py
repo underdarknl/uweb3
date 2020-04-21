@@ -51,9 +51,6 @@ class NoRouteError(Error):
 class Registry(object):
   """Something to hook stuff to"""
   
-def TEST(*args, **kwds):
-  print('hello world', args, kwds)
-
 class uWeb(object):
   """Returns a configured closure for handling page requests.
 
@@ -86,7 +83,7 @@ class uWeb(object):
     self.router = router(routes)
     self.secure_cookie_secret = str(os.urandom(32))
     self.setup_routing()
-    
+      
   def __call__(self, env, start_response):
     """WSGI request handler.
     Accpepts the WSGI `environment` dictionary and a function to start the
@@ -148,6 +145,10 @@ class uWeb(object):
     except ImmediateResponse as err:
       return err[0]
     except (NoRouteError, Exception):
+      logger = logging.getLogger('uweb3_exception_logger')
+      fh = logging.FileHandler(os.path.join(os.getcwd(), 'uweb3_uncaught_exceptions.log'))
+      logger.addHandler(fh)
+      logger.exception("ERROR: ")
       return page_maker.InternalServerError(*sys.exc_info())
 
   def serve(self, hot_reloading=True):
@@ -289,6 +290,7 @@ class HotReload(object):
       - .ini
       - .md
       - .html
+      - .log
 
       Changes in the HTML are noticed by the TemplateParser,
       which then reloads the HTML file into the object and displays the updated version.  
