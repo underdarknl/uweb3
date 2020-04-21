@@ -18,13 +18,13 @@ def is_accessible(abs_file_path):
 
 
 def search_file(relative_file_path, dirs):
-    for d in dirs:
-        if not os.path.isabs(d):
-            d = os.path.abspath(d) + os.sep
+  for d in dirs:
+      if not os.path.isabs(d):
+          d = os.path.abspath(d) + os.sep
 
-        file = os.path.join(d, relative_file_path)
-        if is_accessible(file):
-            return file
+      file = os.path.join(d, relative_file_path)
+      if is_accessible(file):
+          return file
 
 
 # Header utils
@@ -85,7 +85,7 @@ def static_file_view(env, start_response, filename, block_size, charset, CACHE_D
     cache_days = CACHE_DURATION.get(mimetype, 0)
     expires = datetime.datetime.utcnow() + datetime.timedelta(cache_days)
     headers.add_header('Cache-control', f'public, max-age={expires.strftime(RFC_1123_DATE)}')
-    headers.add_header('Expires', expires.strftime(RFC_1123_DATE))
+    # headers.add_header('Expires', expires.strftime(RFC_1123_DATE))
     headers.add_header('Content-Length', get_content_length(filename))
     headers.add_header('Last-Modified', generate_last_modified())
     headers.add_header("Accept-Ranges", "bytes")
@@ -116,10 +116,10 @@ class StaticMiddleware:
     def __call__(self, env, start_response):
       path = env['PATH_INFO'].lstrip('/')
       if path.startswith(self.static_root):
-        if os.path.commonprefix((os.path.realpath(path), self.static_dirs[0])) != self.static_dirs[0]:
-          return http404(env, start_response)
-          
         relative_file_path = '/'.join(path.split('/')[1:])
+        p = os.path.join(self.static_dirs[0], relative_file_path)
+        if os.path.commonprefix((os.path.realpath(p), self.static_dirs[0])) != self.static_dirs[0]:
+          return http404(env, start_response)
         return self.handle(env, start_response, relative_file_path)
       return self.app(env, start_response)
 
