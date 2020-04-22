@@ -83,6 +83,7 @@ class uWeb(object):
     self.router = router(routes)
     self.secure_cookie_secret = str(os.urandom(32))
     self.setup_routing()
+
       
   def __call__(self, env, start_response):
     """WSGI request handler.
