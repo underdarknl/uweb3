@@ -4,14 +4,14 @@ import sys
 import socketio
 import eventlet
 
-from uweb3 import uWeb
+from uweb3 import uWeb, HotReload
 from uweb3.helpers import StaticMiddleware
 
 
 class SocketMiddleWare(socketio.WSGIApp):
   def __init__(self, socketio_server, uweb3_server, socketio_path='socket.io'):
     super(SocketMiddleWare, self).__init__(socketio_server, 
-                                           uweb3_server,
+                                           uweb3_server, 
                                            socketio_path=socketio_path
                                            )
 
@@ -22,6 +22,8 @@ class Uweb3SocketIO(object):
 
     self.host = app.config.options['development'].get('host', '127.0.0.1')
     self.port = app.config.options['development'].get('port', 8000)
+    if app.config.options['development'].get('dev', False) == 'True':
+      HotReload(app.config.options['development'].get('dev', 'False'))
     self.setup_app(app, sio, static_dir)
   
 

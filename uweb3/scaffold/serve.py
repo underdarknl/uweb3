@@ -5,8 +5,6 @@ import os
 import base
 import sys
 import socketio
-import eventlet
-from uweb3.helpers import StaticMiddleware
 from uweb3.sockets import Uweb3SocketIO
 
 def websocket_routes(sio):
