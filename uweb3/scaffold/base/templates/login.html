@@ -38,7 +38,7 @@
   <script type="text/javascript" charset="utf-8">
       var socket = io("127.0.0.1:8000");
       socket.on('connect', function() {
-          socket.emit('test', {data: 'I\'m connected!'});
+          socket.emit('EVENT', {data: 'I\'m connected!'});
       });
   </script>
 </body>

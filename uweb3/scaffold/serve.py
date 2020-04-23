@@ -8,7 +8,7 @@ import socketio
 from uweb3.sockets import Uweb3SocketIO
 
 def websocket_routes(sio):
-  @sio.on("test")
+  @sio.on("EVENT")
   def test(id, msg):
     print("WEBSOCKET ROUTE CALLED: ", id, msg)
 
