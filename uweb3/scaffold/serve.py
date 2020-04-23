@@ -3,7 +3,6 @@
 # Application
 import os
 import base
-import sys
 import socketio
 from uweb3.sockets import Uweb3SocketIO
 
@@ -20,3 +19,14 @@ def main():
 if __name__ == '__main__':
   sio = main()
   Uweb3SocketIO(base.main(), sio)
+
+
+# # Application
+# import base
+
+# def main():
+#   app = base.main()
+#   app.serve()
+
+# if __name__ == '__main__':
+#   main()
