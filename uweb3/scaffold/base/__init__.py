@@ -11,7 +11,7 @@ from . import pages
 from uweb3.scaffold.routes import login
 from uweb3.scaffold.routes import home
 
-def main():
+def main(sio=None):
   """Creates a uWeb3 application.
 
   The application is created from the following components:
@@ -38,7 +38,8 @@ def main():
       ('/parsed', 'Parsed'),
       ('/test/escaping', 'StringEscaping'),
       ('/manager', 'Manager'),
+      ('socketio.on("event")', 'EventHandler'),
       ('/(.*)', 'FourOhFour'),
       ]
       
-  return uweb3.uWeb(pages.PageMaker, routes, config=config)
+  return uweb3.uWeb(pages.PageMaker, routes, config=config, sio=sio)

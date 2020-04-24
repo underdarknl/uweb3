@@ -74,10 +74,11 @@ class uWeb(object):
   Returns:
     RequestHandler: Configured closure that is ready to process requests.
   """
-  def __init__(self, page_class, routes, config):
+  def __init__(self, page_class, routes, config, sio=None):
     self.config = SettingsManager(filename='config')
     self.logger = self.setup_logger()
     self.page_class = page_class
+    self.page_class.sio = sio
     self.registry = Registry()
     self.registry.logger = logging.getLogger('root')
     self.router = router(routes)

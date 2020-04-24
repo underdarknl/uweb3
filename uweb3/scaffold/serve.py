@@ -1,7 +1,6 @@
 """Starts a simple application development server."""
 
 # Application
-import os
 import base
 import socketio
 from uweb3.sockets import Uweb3SocketIO
@@ -18,7 +17,7 @@ def main():
 
 if __name__ == '__main__':
   sio = main()
-  Uweb3SocketIO(base.main(), sio)
+  Uweb3SocketIO(base.main(sio), sio)
 
 
 # # Application
