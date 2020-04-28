@@ -6,13 +6,13 @@ import socketio
 from uweb3.sockets import Uweb3SocketIO
 
 def websocket_routes(sio):
-  @sio.on("EVENT")
-  def test(id, msg):
-    print("WEBSOCKET ROUTE CALLED: ", id, msg)
+  @sio.on("connect")
+  def test(sid, env):
+    print("WEBSOCKET ROUTE CALLED: ", sid, env)
 
 def main():
   sio = socketio.Server()
-  websocket_routes(sio)
+  # websocket_routes(sio)
   return sio
 
 if __name__ == '__main__':

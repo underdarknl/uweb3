@@ -180,10 +180,10 @@ class BasePageMaker(object):
     self.user = self._GetLoggedInUser()
     
   def _PostRequest(self, response):
-    # self.connection.close()
     if response.status == '500 Internal Server Error':
-      if self.connection.open:
-        self.connection.close()
+      if hasattr(self, 'connection'):
+        if self.connection.open:
+          self.connection.close()
     return response
 
   def XSRFInvalidToken(self, command):
@@ -431,7 +431,7 @@ class SqlAlchemyMixin(object):
           username=mysql_config.get('user'), 
           password=mysql_config.get('password'), 
           host=mysql_config.get('host', 'localhost'), 
-          database=mysql_config.get('database')))
+          database=mysql_config.get('database')), pool_size=5, max_overflow=0)
       self.persistent.Set('__sql_alchemy', engine)
     return self.persistent.Get('__sql_alchemy')
 

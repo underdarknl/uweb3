@@ -37,7 +37,8 @@ def main(sio=None):
       ('/getrawtemplate.*', 'GetRawTemplate'),
       ('/parsed', 'Parsed'),
       ('/test/escaping', 'StringEscaping'),
-      ('socketio.on("event")', 'EventHandler'),
+      (sio.on('test', namespace="/namespace"), 'EventHandler'),
+      (sio.on('connect'), 'Connect'),
       ('/(.*)', 'FourOhFour'),
       ]
       

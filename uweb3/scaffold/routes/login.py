@@ -10,7 +10,6 @@ class UserPageMaker(PageMaker):
   """Holds all the request handlers for the application"""
   def __init__(self, *args, **kwds):
     super(UserPageMaker, self).__init__(*args, **kwds)
-    print('hello world')
     
   def Login(self):
     """Returns the index template"""

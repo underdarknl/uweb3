@@ -21,7 +21,6 @@ class CountCalls:
 class PageMaker(uweb3.DebuggingPageMaker):
   """Holds all the request handlers for the application"""
 
-
   def Index(self):
     """Returns the index template"""
     return self.parser.Parse('index.html')

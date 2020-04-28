@@ -79,7 +79,7 @@ class UserPageMaker(SqAlchemyPageMaker):
     if not 'alchemy_users' in tables or not 'author' in tables or not 'persons' in tables:
       buildTables(self.engine, self.session)
 
-    # user = User.FromPrimary(self.session, 1)
+    user = User.FromPrimary(self.session, 1)
     # print(User.Create(self.session, {'username': 'hello', 'password': 'test', 'authorid': 1}))
 
     # print("Returns user with primary key 1: ", user)

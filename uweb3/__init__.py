@@ -53,10 +53,10 @@ class Registry(object):
 
 
 class Router(object):
-  def __init__(self, page_class):
-    """ """
+  def __init__(self, page_class, sio):
     self.pagemakers = page_class.LoadModules()
     self.pagemakers.append(page_class)
+    self.sio = sio
 
   def router(self, routes):
     """Returns the first request handler that matches the request URL.
@@ -81,6 +81,10 @@ class Router(object):
         if hasattr(pagemaker, details[0]):
           pagehandler = pagemaker
           break
+      if callable(pattern):
+        #TODO: Pass environment to a custom pagemaker for websockets?
+        pattern(getattr(pagehandler, details[0]))
+        continue
       req_routes.append((re.compile(pattern + '$', re.UNICODE),
                         details[0], #handler,
                         details[1] if len(details) > 1 else 'ALL', #request types
@@ -166,7 +170,7 @@ class uWeb(object):
     self.page_class = page_class
     self.registry = Registry()
     self.registry.logger = logging.getLogger('root')
-    self.router = Router(page_class).router(routes)
+    self.router = Router(page_class, sio).router(routes)
     self.secure_cookie_secret = str(os.urandom(32))
     self.setup_routing()
 

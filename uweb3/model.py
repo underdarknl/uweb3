@@ -1300,7 +1300,11 @@ class AlchemyBaseRecord(object):
   def __init__(self, session, record):
     self.session = session
     self._BuildClassFromRecord(record)
-    
+
+  def __del__(self):
+    """Cleans up the connection at the end of its life cycle"""
+    self.session.close()
+
   def _BuildClassFromRecord(self, record):
     if isinstance(record, dict):
       for key, value in record.items():
