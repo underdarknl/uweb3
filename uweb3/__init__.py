@@ -375,7 +375,7 @@ class HotReload(object):
     def __init__(self, dev, interval=1):
       self.running = threading.Event()
       self.interval = interval
-      self.path = os.getcwd()
+      self.path = os.path.dirname(os.path.abspath(__file__))
       if dev:
         from pathlib import Path
         self.path = str(Path(self.path).parents[1])

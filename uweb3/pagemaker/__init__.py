@@ -1,22 +1,21 @@
 #!/usr/bin/python3
 """uWeb3 PageMaker class and its various Mixins."""
 
-# Standard modules
-import time
 import datetime
+import logging
 import mimetypes
 import os
+import pyclbr
 import sys
 import threading
-import uweb3
+import time
 from base64 import b64encode
 
-# Package modules
-from .. import response
-from .. import templateparser
-from .new_login import Users
+import uweb3
 from uweb3.model import SecureCookie
-import logging
+
+from .. import response, templateparser
+from .new_login import Users
 
 RFC_1123_DATE = '%a, %d %b %Y %T GMT'
 
@@ -211,7 +210,6 @@ class BasePageMaker(object):
     """Loops over all .py files apart from some exceptions in target directory
     Looks for classes that contain pagemaker
     """
-    import pyclbr
     bases = []
     routes = os.path.join(os.getcwd(), default_routes)
     for path, dirnames, filenames in os.walk(routes):
