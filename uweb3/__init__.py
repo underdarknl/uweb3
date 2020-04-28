@@ -232,7 +232,6 @@ class uWeb(object):
       # pylint: disable=W0212
       page_maker._PostInit()
       # pylint: enable=W0212
-      # method, args, hostargs, test = self.router(path, method, host)
       return getattr(page_maker, method)(*args)
     except pagemaker.ReloadModules as message:
       reload_message = reload(sys.modules[self.page_class.__module__])
