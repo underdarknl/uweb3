@@ -23,7 +23,7 @@ def main(sio=None):
   """
   config_file = os.path.join(os.path.dirname(__file__), 'config.ini')
   config = uweb3.read_config(config_file)
-  routes = [
+  routes = (
       ('/', 'Index'),
       ('/login', 'Login'),
       ('/logout', 'Logout'),
@@ -39,7 +39,6 @@ def main(sio=None):
       ('/test/escaping', 'StringEscaping'),
       (sio.on('test', namespace="/namespace"), 'EventHandler'),
       (sio.on('connect'), 'Connect'),
-      ('/(.*)', 'FourOhFour'),
-      ]
+      ('/(.*)', 'FourOhFour'))
       
   return uweb3.uWeb(pages.PageMaker, routes, config=config, sio=sio)
