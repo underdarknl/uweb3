@@ -76,20 +76,21 @@ class Router(object):
     """
     req_routes = []
     for pattern, *details in routes:
-      pagehandler = None
-      for pagemaker in self.pagemakers:
-        if hasattr(pagemaker, details[0]):
-          pagehandler = pagemaker
+      pagemaker = None
+      for pm in self.pagemakers: 
+        #Check if the pagemaker has the method/handler we are looking for
+        if hasattr(pm, details[0]):
+          pagemaker = pm
           break
       if callable(pattern):
         #TODO: Pass environment to a custom pagemaker for websockets?
-        pattern(getattr(pagehandler, details[0]))
+        pattern(getattr(pagemaker, details[0]))
         continue
       req_routes.append((re.compile(pattern + '$', re.UNICODE),
                         details[0], #handler,
                         details[1] if len(details) > 1 else 'ALL', #request types
                         details[2] if len(details) > 2 else '*', #host
-                        pagehandler #pagemaker
+                        pagemaker #pagemaker
                         )) 
     def request_router(url, method, host):
       """Returns the appropriate handler and arguments for the given `url`.

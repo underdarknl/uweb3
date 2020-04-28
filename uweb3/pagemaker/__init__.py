@@ -225,15 +225,7 @@ class BasePageMaker(object):
               if 'PageMaker' in data.super[0]:
                 module = __import__(f, fromlist=[name])
                 bases.append(getattr(module, name))
-    # cls.AddRoutes(tuple(bases))
     return bases
-
-  @classmethod
-  def AddRoutes(cls, routes):
-    if not isinstance(routes, tuple):
-      raise ValueError("Routes should be of type tuple")
-    if len(routes) > 0:
-      cls.__bases__ = tuple(routes) 
 
   def _PostInit(self):
     """Method that gets called for derived classes of BasePageMaker."""
