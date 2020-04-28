@@ -221,7 +221,8 @@ class BasePageMaker(object):
               if 'PageMaker' in data.super[0]:
                 module = __import__(f, fromlist=[name])
                 bases.append(getattr(module, name))
-    cls.AddRoutes(tuple(bases))
+    # cls.AddRoutes(tuple(bases))
+    return bases
 
   @classmethod
   def AddRoutes(cls, routes):
@@ -259,7 +260,7 @@ class BasePageMaker(object):
           break  # This happens during exception handling of DebuggingPageMaker
         frame = frame.f_back
       local_file = frame.f_code.co_filename
-    cls.LOCAL_DIR = cls_dir = os.path.dirname(local_file)
+    cls.LOCAL_DIR = cls_dir = os.path.join(os.path.abspath(os.curdir), "base")
     cls.PUBLIC_DIR = os.path.join(cls_dir, cls.PUBLIC_DIR)
     cls.TEMPLATE_DIR = os.path.join(cls_dir, cls.TEMPLATE_DIR)
 

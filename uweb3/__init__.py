@@ -50,6 +50,92 @@ class NoRouteError(Error):
 
 class Registry(object):
   """Something to hook stuff to"""
+
+
+class Router(object):
+  def __init__(self, page_class):
+    """ """
+    self.pagemakers = page_class.LoadModules()
+    self.pagemakers.append(page_class)
+
+  def router(self, routes):
+    """Returns the first request handler that matches the request URL.
+
+    The `routes` argument is an iterable of 2-tuples, each of which contain a
+    pattern (regex) and the name of the handler to use for matching requests.
+
+    Before returning the closure, all regexen are compiled, and handler methods
+    are retrieved from the provided `page_class`.
+
+    Arguments:
+      @ routes: iterable of 2-tuples.
+        Each tuple is a pair of `pattern` and `handler`, both are strings.
+
+    Returns:
+      request_router: Configured closure that processes urls.
+    """
+    req_routes = []
+    for pattern, *details in routes:
+      pagehandler = None
+      for pagemaker in self.pagemakers:
+        if hasattr(pagemaker, details[0]):
+          pagehandler = pagemaker
+          break
+      req_routes.append((re.compile(pattern + '$', re.UNICODE),
+                        details[0], #handler,
+                        details[1] if len(details) > 1 else 'ALL', #request types
+                        details[2] if len(details) > 2 else '*', #host
+                        pagehandler #pagemaker
+                        )) 
+    def request_router(url, method, host):
+      """Returns the appropriate handler and arguments for the given `url`.
+
+      The`url` is matched against the compiled patterns in the `req_routes`
+      provided by the outer scope. Upon finding a pattern that matches, the
+      match groups from the regex and the unbound handler method are returned.
+
+      N.B. The rules are such that the first matching route will be used. There
+      is no further concept of specificity. Routes should be written with this in
+      mind.
+
+      Arguments:
+        @ url: str
+          The URL requested by the client.
+        @ method: str
+          The http method requested by the client.
+        @ host: str
+          The http host header value requested by the client.
+
+      Raises:
+        NoRouteError: None of the patterns match the requested `url`.
+
+      Returns:
+        2-tuple: handler method (unbound), and tuple of pattern matches.
+      """
+      
+      for pattern, handler, routemethod, hostpattern, pagemaker in req_routes:
+        if routemethod != 'ALL':
+          # clearly not the route we where looking for
+          if isinstance(routemethod, tuple):
+            if method not in routemethod:
+              continue
+          if method != routemethod:
+            continue
+
+        hostmatch = None
+        if hostpattern != '*':
+          # see if we can match this host and extact any info from it.
+          hostmatch = re.compile(f"^{host}$").match(hostpattern)
+          if not hostmatch:
+            # clearly not the host we where looking for
+            continue
+          hostmatch = hostmatch.groups()
+        match = pattern.match(url)
+        if match:
+          return handler, match.groups(), hostmatch, pagemaker
+      raise NoRouteError(url +' cannot be handled')
+    return request_router
+
   
 class uWeb(object):
   """Returns a configured closure for handling page requests.
@@ -78,10 +164,9 @@ class uWeb(object):
     self.config = SettingsManager(filename='config')
     self.logger = self.setup_logger()
     self.page_class = page_class
-    self.page_class.sio = sio
     self.registry = Registry()
     self.registry.logger = logging.getLogger('root')
-    self.router = router(routes)
+    self.router = Router(page_class).router(routes)
     self.secure_cookie_secret = str(os.urandom(32))
     self.setup_routing()
 
@@ -92,18 +177,26 @@ class uWeb(object):
     response and returns a response iterator.
     """
     req = request.Request(env, self.registry)
-    page_maker = self.page_class(req, config=self.config.options, secure_cookie_secret=self.secure_cookie_secret)
-    response = self.get_response(page_maker,
-        req.path,
-        req.env['REQUEST_METHOD'],
-        req.env['host'])
+    try:
+      method, args, hostargs, pagemaker = self.router(req.path,
+                                            req.env['REQUEST_METHOD'],
+                                            req.env['host']
+                                          )
+      pagemaker = pagemaker(req, config=self.config.options, secure_cookie_secret=self.secure_cookie_secret)
+      response = self.get_response(pagemaker, method, args)
+    except NoRouteError:
+      #When we catch this error this means there is no method for the expected function
+      #If this happends we default to the standard pagemaker because we dont know what the target pagemaker should be. 
+      #Then we set an internalservererror and move on
+      pagemaker = self.page_class(req, config=self.config.options, secure_cookie_secret=self.secure_cookie_secret)
+      response = pagemaker.InternalServerError(*sys.exc_info())
 
     if not isinstance(response, Response):
       req.response.text = response
       response = req.response
       
-    if hasattr(page_maker, '_PostRequest'):
-      response = page_maker._PostRequest(response)
+    if hasattr(pagemaker, '_PostRequest'):
+      response = pagemaker._PostRequest(response)
     
     self._logging(req, response)
     start_response(response.status, response.headerlist)
@@ -133,20 +226,20 @@ class uWeb(object):
     protocol = req.env.get('SERVER_PROTOCOL')
     self.logger.info(f"""{host} - - [{date}] \"{method} {path} {status} {protocol}\"""")
 
-  def get_response(self, page_maker, path, method, host):
+  def get_response(self, page_maker, method, args):
     try:
       # We're specifically calling _PostInit here as promised in documentation.
       # pylint: disable=W0212
       page_maker._PostInit()
       # pylint: enable=W0212
-      method, args, hostargs = self.router(path, method, host)
+      # method, args, hostargs, test = self.router(path, method, host)
       return getattr(page_maker, method)(*args)
     except pagemaker.ReloadModules as message:
       reload_message = reload(sys.modules[self.page_class.__module__])
       return Response(content='%s\n%s' % (message, reload_message))
     except ImmediateResponse as err:
       return err[0]
-    except (NoRouteError, Exception):
+    except Exception:
       if self.config.options.get('development', None):
         if self.config.options['development'].get('error_logging', True) == 'True':
           logger = logging.getLogger('uweb3_exception_logger')
@@ -164,7 +257,7 @@ class uWeb(object):
     app = StaticMiddleware(self, static_root='static', static_dirs=static_directory)
     server = make_server(host, int(port), app)
 
-    print('Running µWeb3 server on http://{}:{}'.format(server.server_address[0],server.server_address[1]))
+    print(f'Running µWeb3 server on http://{server.server_address[0]}:{server.server_address[1]}')
     try:
       #Needs to check == True. Without it will trigger even when false
       if self.config.options['development'].get('dev', False) == 'True':

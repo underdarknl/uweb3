@@ -152,3 +152,2538 @@ Traceback (most recent call last):
   File "/home/stef/devel/uweb3/uweb3/scaffold/base/pages.py", line 15, in magic
     return f()
 TypeError: Index() missing 1 required positional argument: 'self'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 229, in get_response
+    return getattr(page_maker, method)(*args)
+AttributeError: 'PageMaker' object has no attribute 'StringEscaping'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 228, in get_response
+    return getattr(page_maker, method)(*args)
+AttributeError: 'PageMaker' object has no attribute 'StringEscaping'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 228, in get_response
+    method, args, hostargs = self.router(path, method, host)
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 116, in request_router
+    for pattern, handler, routemethod, hostpattern in req_routes:
+ValueError: too many values to unpack (expected 4)
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 238, in get_response
+    return getattr(page_maker, method)(*args)
+TypeError: Index() takes 1 positional argument but 2 were given
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 238, in get_response
+    return getattr(page_maker, method)(*args)
+AttributeError: 'PageMaker' object has no attribute '/'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 238, in get_response
+    return getattr(page_maker, method)(*args)
+AttributeError: 'PageMaker' object has no attribute '/'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 239, in get_response
+    return getattr(page_maker, method)(*args)
+TypeError: Index() takes 1 positional argument but 2 were given
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 239, in get_response
+    return getattr(page_maker, method)(*args)
+AttributeError: 'PageMaker' object has no attribute '/'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 239, in get_response
+    return getattr(page_maker, method)(*args)
+AttributeError: 'PageMaker' object has no attribute '/'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 238, in get_response
+    return getattr(page_maker, method)(*args)
+TypeError: Index() takes 1 positional argument but 2 were given
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 238, in get_response
+    return getattr(page_maker, method)(*args)
+AttributeError: 'PageMaker' object has no attribute '/'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 238, in get_response
+    return getattr(page_maker, method)(*args)
+AttributeError: 'PageMaker' object has no attribute '/'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    method, args, hostargs = self.router(path, method, host)
+ValueError: too many values to unpack (expected 3)
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 237, in get_response
+    method, args, hostargs, test = self.router(path, method, host)
+NameError: name 'path' is not defined
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 237, in get_response
+    method, args, hostargs, test = self.router(path, method, host)
+NameError: name 'path' is not defined
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 237, in get_response
+    method, args, hostargs, test = self.router(path, method, host)
+NameError: name 'path' is not defined
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 237, in get_response
+    method, args, hostargs, test = self.router(path, method, host)
+NameError: name 'path' is not defined
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 237, in get_response
+    method, args, hostargs, test = self.router(path, method, host)
+NameError: name 'path' is not defined
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 237, in get_response
+    method, args, hostargs, test = self.router(path, method, host)
+NameError: name 'path' is not defined
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 237, in get_response
+    method, args, hostargs, test = self.router(path, method, host)
+NameError: name 'path' is not defined
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 237, in get_response
+    method, args, hostargs, test = self.router(path, method, host)
+NameError: name 'path' is not defined
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 237, in get_response
+    method, args, hostargs, test = self.router(path, method, host)
+NameError: name 'path' is not defined
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 238, in get_response
+    return getattr(page_maker, method)(*args)
+TypeError: Index() takes 1 positional argument but 2 were given
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 238, in get_response
+    return getattr(page_maker, method)(*args)
+TypeError: Index() takes 1 positional argument but 2 were given
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 238, in get_response
+    return getattr(page_maker, method)(*args)
+TypeError: Index() takes 1 positional argument but 2 were given
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/404.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/404.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/base/pages.py", line 36, in FourOhFour
+    return self.parser.Parse('404.html', path=path)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/404.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/404.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/404.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/base/pages.py", line 36, in FourOhFour
+    return self.parser.Parse('404.html', path=path)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/404.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 36, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/base/pages.py", line 27, in Index
+    return self.parser.Parse('index.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/base/pages.py", line 27, in Index
+    return self.parser.Parse('index.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/base/pages.py", line 27, in Index
+    return self.parser.Parse('index.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/base/pages.py", line 27, in Index
+    return self.parser.Parse('index.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/base/pages.py", line 27, in Index
+    return self.parser.Parse('index.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/base/pages.py", line 27, in Index
+    return self.parser.Parse('index.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/base/pages.py", line 27, in Index
+    return self.parser.Parse('index.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/index.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 31, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 31, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 31, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 31, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 31, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 31, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 31, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 31, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 31, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 31, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 31, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 31, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 31, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 31, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 31, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 31, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 31, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 31, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 31, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/404.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/404.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/base/pages.py", line 36, in FourOhFour
+    return self.parser.Parse('404.html', path=path)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/404.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/404.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/404.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/base/pages.py", line 36, in FourOhFour
+    return self.parser.Parse('404.html', path=path)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/404.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/404.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/404.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/base/pages.py", line 36, in FourOhFour
+    return self.parser.Parse('404.html', path=path)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/404.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/404.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/404.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/base/pages.py", line 36, in FourOhFour
+    return self.parser.Parse('404.html', path=path)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/404.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 474, in __init__
+    self._file_mtime = os.path.getmtime(self._file_name)
+  File "/usr/lib/python3.6/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 185, in AddTemplate
+    self[name or location] = FileTemplate(template_path, parser=self)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 478, in __init__
+    raise TemplateReadError('Cannot open: %r' % template_path)
+uweb3.templateparser.TemplateReadError: Cannot open: '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 35, in Login
+    return self.parser.Parse('login.html')
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 204, in Parse
+    return self[template].Parse(**replacements)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 163, in __getitem__
+    self.AddTemplate(template)
+  File "/home/stef/devel/uweb3/uweb3/templateparser.py", line 187, in AddTemplate
+    raise TemplateReadError('Could not load template %r' % template_path)
+uweb3.templateparser.TemplateReadError: Could not load template '/home/stef/devel/uweb3/uweb3/scaffold/routes/templates/login.html'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 17, in Login
+    raise Exception("test")
+Exception: test
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 17, in Login
+    raise Exception("test")
+Exception: test
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 236, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 17, in Login
+    raise Exception("test")
+Exception: test

@@ -37,7 +37,6 @@ def main(sio=None):
       ('/getrawtemplate.*', 'GetRawTemplate'),
       ('/parsed', 'Parsed'),
       ('/test/escaping', 'StringEscaping'),
-      ('/manager', 'Manager'),
       ('socketio.on("event")', 'EventHandler'),
       ('/(.*)', 'FourOhFour'),
       ]
