@@ -180,6 +180,10 @@ class BasePageMaker(object):
     self.user = self._GetLoggedInUser()
     
   def _PostRequest(self, response):
+    # self.connection.close()
+    if response.status == '500 Internal Server Error':
+      if self.connection.open:
+        self.connection.close()
     return response
 
   def XSRFInvalidToken(self, command):

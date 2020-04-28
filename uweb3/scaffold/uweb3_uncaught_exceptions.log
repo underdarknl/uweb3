@@ -2687,3 +2687,311 @@ Traceback (most recent call last):
   File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 17, in Login
     raise Exception("test")
 Exception: test
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception('test')
+Exception: test
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception('test')
+Exception: test
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception('test')
+Exception: test
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception('test')
+Exception: test
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception('test')
+Exception: test
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception('test')
+Exception: test
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception('test')
+Exception: test
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception('test')
+Exception: test
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception('test')
+Exception: test
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception('test')
+Exception: test
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    if self.req.method == 'POST':
+Exception: test
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    if self.req.method == 'POST':
+Exception: test
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    if self.req.method == 'POST':
+Exception: test
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    if self.req.method == 'POST':
+Exception: test
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    if self.req.method == 'POST':
+Exception: test
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 235, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/routes/login.py", line 19, in Login
+    raise Exception()
+Exception
