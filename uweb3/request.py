@@ -24,7 +24,7 @@ from werkzeug.datastructures import MultiDict
 
 class CookieToBigError(Exception):
   """Error class for cookie when size is bigger than 4096 bytes"""
-  
+
 class Cookie(cookie.SimpleCookie):
   """Cookie class that uses the most specific value for a cookie name.
 
@@ -56,27 +56,26 @@ class Cookie(cookie.SimpleCookie):
 class PostDictionary(MultiDict):
   """ """
   #TODO: Add basic uweb functions
-  
-  def getfirst(self, key):
+
+  def getfirst(self, key, default=None):
     """Returns the first item out of the list from the given key
-    
+
     Arguments:
       @key: str
-    
+
     Raises:
       ValueError
     """
     items = dict(self.lists())
-    target = items.get(key, None)
-    
-    if not target:
-      raise ValueError("Given key not found")
-    return target[0]
+    try:
+      return items[key][0]
+    except KeyError:
+      return default
 
 class Request(object):
   def __init__(self, env, registry):
     self.env = env
-    self.headers = dict(self.headers_from_env(env))   
+    self.headers = dict(self.headers_from_env(env))
     self.registry = registry
     self._out_headers = []
     self._out_status = 200
@@ -89,7 +88,7 @@ class Request(object):
                 #  'get': QueryArgsDict(cgi.parse_qs(self.env['QUERY_STRING'])),
                  'post': PostDictionary()}
     self.env['host'] = self.headers.get('Host', '')
-    
+
     if self.method == 'POST':
       stream, form, files = parse_form_data(self.env)
       if self.env['CONTENT_TYPE'] == 'application/json':
@@ -100,11 +99,11 @@ class Request(object):
         request_body = self.env['wsgi.input'].read(request_body_size)
         data = json.loads(request_body)
         self.vars['post'] = PostDictionary(MultiDict(data))
-      else:   
+      else:
         self.vars['post'] = PostDictionary(form)
         for f in files:
           self.vars['post'][f] = files.get(f)
-     
+
   @property
   def path(self):
     return self.env['PATH_INFO']
@@ -114,22 +113,22 @@ class Request(object):
     if self._response is None:
       self._response = response.Response()
     return self._response
-  
+
   def Redirect(self, location, http_code=307):
     REDIRECT_PAGE = ('<!DOCTYPE html><html><head><title>Page moved</title></head>'
                    '<body>Page moved, please follow <a href="{}">this link</a>'
                    '</body></html>').format(location)
-    
+
     headers = {'Location': location}
     if self.response.headers.get('Set-Cookie'):
       headers['Set-Cookie'] = self.response.headers.get('Set-Cookie')
     return response.Response(
-      content=REDIRECT_PAGE, 
-      content_type=self.response.headers.get('Content-Type', 'text/html'), 
-      httpcode=http_code, 
+      content=REDIRECT_PAGE,
+      content_type=self.response.headers.get('Content-Type', 'text/html'),
+      httpcode=http_code,
       headers=headers
       )
-    
+
   def headers_from_env(self, env):
     for key, value in env.items():
       if key.startswith('HTTP_'):
@@ -168,23 +167,23 @@ class Request(object):
     if isinstance(value, (str)):
       if len(value.encode('utf-8')) >= 4096:
         raise CookieToBigError("Cookie is larger than 4096 bytes and wont be set")
-      
+
     new_cookie = Cookie({key: value})
     if 'max_age' in attrs:
       attrs['max-age'] = attrs.pop('max_age')
     new_cookie[key].update(attrs)
     self.AddHeader('Set-Cookie', new_cookie[key].OutputString())
-   
+
   def AddHeader(self, name, value):
     if name == 'Set-Cookie':
       if not self.response.headers.get('Set-Cookie'):
         self.response.headers['Set-Cookie'] = [value]
         return
       self.response.headers['Set-Cookie'].append(value)
-      
+
   def DeleteCookie(self, name):
     """Deletes cookie by name
-    
+
     Arguments
     @ name: str
     """
@@ -210,7 +209,7 @@ class IndexedFieldStorage(cgi.FieldStorage):
 
   def items(self):
     return list(self.iteritems())
-  
+
   def read_urlencoded(self):
     indexed = {}
     self.list = []
@@ -227,7 +226,7 @@ class IndexedFieldStorage(cgi.FieldStorage):
     self.skip_lines()
 
 
-class QueryArgsDict(dict):  
+class QueryArgsDict(dict):
   def getfirst(self, key, default=None):
     """Returns the first value for the requested key, or a fallback value."""
     try:
@@ -249,7 +248,7 @@ class QueryArgsDict(dict):
 class CustomByteLikeObject(object):
   def __init__(self, data):
     self.data = data
-    
+
   def read(self, length=None):
     if length:
       return self.data[0:length]
@@ -258,7 +257,7 @@ class CustomByteLikeObject(object):
 
   def readline(self, *args):
     return self.data
-    
+
 def ParseForm(file_handle, environ, json=False):
   """Returns an IndexedFieldStorage object from the POST data and environment.
 
@@ -271,12 +270,12 @@ def ParseForm(file_handle, environ, json=False):
   # print(file_handle.read(int(environ['CONTENT_LENGTH'])).decode('ascii'))
   # data = sys.stdin.read()
   if json:
-    #We already decoded the JSON and turned into a urlquerystring 
+    #We already decoded the JSON and turned into a urlquerystring
     environ['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
     files = CustomByteLikeObject(file_handle.encode())
   else:
     files = CustomByteLikeObject(file_handle.read(int(environ['CONTENT_LENGTH'])))
-    
+
   return IndexedFieldStorage(fp=files, environ=environ, keep_blank_values=1)
 
-  
+
