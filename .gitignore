@@ -31,6 +31,6 @@ nosetests.xml
 
 uweb3-venv
 features
-.vscode
-.log
-.out
+*.vscode
+*.log
+*.out
