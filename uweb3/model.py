@@ -1633,7 +1633,7 @@ class AlchemyRecord(AlchemyBaseRecord):
   def Save(self):
     """Saves any changes made in the current record. Sqlalchemy automatically detects
     these changes and only updates the changed values. If no values are present
-    no query will be commited."""
+    no query will be committed."""
     self.session.commit()
 
 class Smorgasbord(object):
@@ -1641,7 +1641,7 @@ class Smorgasbord(object):
 
   The idea is that you can set up a Smorgasbord with various different
   connection types (Mongo and relational), and have the smorgasbord provide the
-  correct connection for the caller's needs. MongoReceord would be given the
+  correct connection for the caller's needs. MongoRecord would be given the
   MongoDB connection as expected, and all other users will be given a relational
   database connection.
 
