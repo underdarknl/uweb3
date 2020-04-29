@@ -43,7 +43,7 @@ On some ubuntu setups venv is broken and therefore does not install the activati
 
 ```bash
 # Set up the Python3 virtualenv on Ubuntu
-python3 -m venv--without-pip env
+python3 -m venv --without-pip env
 source env/bin/activate
 curl https://bootstrap.pypa.io/get-pip.py | python
 deactivate
@@ -55,7 +55,7 @@ source env/bin/activate
 # µWeb3 database setup
 
 Setting up a database connection with µWeb3 is easy, navigate to the settings.ini file in the scaffold folder and add the following fields to the file:
-``` 
+```
 [mysql] OR [sqlite]
 host = 'host'
 user = 'username'
@@ -66,21 +66,21 @@ To access your database connection simply use the connection attribute in any cl
 
 # Config settings
 If you are working on µWeb3 core make sure to enable the following setting in the config:
-``` 
+```
 [development]
 dev = True
 ```
 This makes sure that µWeb3 restarts every time you modify something in the core of the framework aswell.
 
-µWeb3 has inbuild XSRF protection. You can import it from uweb3.pagemaker.new_decorators checkxsrf. 
+µWeb3 has inbuild XSRF protection. You can import it from uweb3.pagemaker.new_decorators checkxsrf.
 This is a decorator and it will handle validation and generation of the XSRF.
-The only thing you have to do is add the ```{{ xsrf [xsrf]}}``` tag into a form. 
+The only thing you have to do is add the ```{{ xsrf [xsrf]}}``` tag into a form.
 The xsrf token is accessible in any pagemaker with self.xsrf.  
 
 # Routing
-The default way to create new routes in µWeb3 is to create a folder called routes. 
+The default way to create new routes in µWeb3 is to create a folder called routes.
 In the routes folder create your pagemaker class of choice, the name doesn't matter as long as it inherits from PageMaker.
-After creating your pagemaker be sure to add the route endpoint to routes list in base/__init__.py. 
+After creating your pagemaker be sure to add the route endpoint to routes list in base/__init__.py.
 
 # New
 - In uweb3 __init__ a class called HotReload
@@ -95,7 +95,7 @@ After creating your pagemaker be sure to add the route endpoint to routes list i
   - Method called Redirect #Moved from the response class to the request class so cookies that are set before a redirect are actually set.
   - Method called DeleteCookie
   - A if statement that checks string like cookies and raises an error if the size is equal or bigger than 4096 bytes.
-  - AddCookie method, edited this and the response class to handle the setting of multiple cookies. Previously setting multiple cookies with the       Set-Cookie header would make the last cookie the only cookie. 
+  - AddCookie method, edited this and the response class to handle the setting of multiple cookies. Previously setting multiple cookies with the       Set-Cookie header would make the last cookie the only cookie.
 - In pagemaker/new_login Users class:
   - Create user
   - Find user by name
@@ -116,21 +116,21 @@ Instead of using sessions to keep track of logged in users µWeb3 uses secure co
 When a user logs in for the first time there is no cookie in place, to set one we go through the normal process of validating a user and loggin in.
 
 To create a secure cookie inherit from the Model.SecureCookie. The SecureCookie class has a few build in methods, Create, Update and Delete.
-To create a new cookie make use of the `Create` method, it works the same ass the AddCookie method. 
+To create a new cookie make use of the `Create` method, it works the same ass the AddCookie method.
 
 If you want to see which cookies are managed by the SecureCookie class you can call the session attribute.
-The session attribute decodes all managed cookies and can be used to read them. 
+The session attribute decodes all managed cookies and can be used to read them.
 
 # SQLAlchemy
 SQLAlchemy is available in uWeb3 by using the SqAlchemyPageMaker instead of the regular pagemaker.
 SQLAlchemy comes with most of the methods that are available in the default model.Record class, however because SQLAlchemy works like an ORM
-there are some adjustments. Instead of inheriting from dict the SQLAlchemy model.Record inherits from object, meaning you can no longer use 
-dict like functions such as get and set. Instead the model is accessible by the columns defined in the class you want to create. 
+there are some adjustments. Instead of inheriting from dict the SQLAlchemy model.Record inherits from object, meaning you can no longer use
+dict like functions such as get and set. Instead the model is accessible by the columns defined in the class you want to create.
 
-The SQLAlchemy model.Record class makes use of the session attribute accessible in the SqAlchemyPageMaker. 
-The session keeps track of all queries to the database and comes with some usefull features. 
+The SQLAlchemy model.Record class makes use of the session attribute accessible in the SqAlchemyPageMaker.
+The session keeps track of all queries to the database and comes with some usefull features.
 
-An example of a few usefull features: 
+An example of a few usefull features:
 `session.new`: The set of all instances marked as ‘new’ within this Session.
 `session.dirty`: Instances are considered dirty when they were modified but not deleted.
 `session.deleted`: The set of all instances marked as ‘deleted’ within this Session
@@ -138,8 +138,8 @@ the rest can be found at https://docs.sqlalchemy.org/en/13/orm/session_api.html
 
 Objects in the session will only be updated/created in the actuall database on session.commit()/session.flush().
 
-Defining classes that represent a table is different from how we used to do it in uWeb2. 
-SQLAlchemy requires you to define all columns from the table that you want to use. 
+Defining classes that represent a table is different from how we used to do it in uWeb2.
+SQLAlchemy requires you to define all columns from the table that you want to use.
 For example, creating a class that represents the user table could look like this:
 
 ```
@@ -153,8 +153,8 @@ class User(Base):
 
   id = Column(Integer, primary_key=True)
   username = Column(String, nullable=False, unique=True)
-  password = Column(String, nullable=False) 
-``` 
+  password = Column(String, nullable=False)
+```
 We can now use this class to query our users table in the SqAlchemyPageMaker to get the user with id 1:
 `self.session.query(User).filter(User.id == 1).first() `
 or to list all users:
@@ -173,7 +173,7 @@ class User(uweb3.model.AlchemyRecord, Base):
 
   id = Column(Integer, primary_key=True)
   username = Column(String, nullable=False, unique=True)
-  password = Column(String, nullable=False) 
+  password = Column(String, nullable=False)
 ```  
 We can now query the users table like this:
 ```
@@ -184,12 +184,12 @@ Or to get a list of all users:
 ```
 User.List(self.session, conditions=[User.id <= 2])
 >>> [
-  User({'id': 1, 'username': 'name', 'password': 'password'}), 
+  User({'id': 1, 'username': 'name', 'password': 'password'}),
   User({'id': 2, 'username': 'user2', 'password': 'password'})
   ]
 ```
 
-Now if we want to automaticly load related tables we can set it up like this:
+Now if we want to automatically load related tables we can set it up like this:
 
 ```
 from sqlalchemy import Column, Integer, String, ForeignKey
@@ -203,20 +203,19 @@ class User(uweb3.model.AlchemyRecord, Base):
 
   id = Column(Integer, primary_key=True)
   username = Column(String, nullable=False, unique=True)
-  password = Column(String, nullable=False) 
+  password = Column(String, nullable=False)
   userinfoid = Column('userinfoid', Integer, ForeignKey('UserInfo.id'))
   userdata = relationship("UserInfo",  lazy="select")
-  
+
   def __init__(self, *args, **kwargs):
     super(User, self).__init__(*args, **kwargs)
-      
+
 class UserInfo(uweb3.model.AlchemyRecord, Base):
   __tablename__ = 'UserInfo'
 
   id = Column(Integer, primary_key=True)
   name = Column(String, unique=True)
 ```
-Now the UserInfo table will be loaded on the `userinfoid` attribute, but only after we try and access 
+Now the UserInfo table will be loaded on the `userinfoid` attribute, but only after we try and access
 this key a seperate query is send to retrieve the related information.
 SQLAlchemy's lazy loading is fast but should be avoided while in loops. Take a look at SQLAlchemys documentation for optimal use.
-
