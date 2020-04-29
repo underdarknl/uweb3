@@ -43,8 +43,8 @@ class PermissionError(Error):
   """The entity has insufficient rights to access the resource."""
 
 class SettingsManager(object):
-  def __init__(self, filename=None, executing_path=None):
-    """Creates a ini file with the child class name
+  def __init__(self, filename=None):
+    """Creates a ini file with the childs class name
 
     Arguments:
       % filename: str
@@ -55,7 +55,8 @@ class SettingsManager(object):
 
     if filename:
       self.FILENAME = f"{filename[:1].lower() + filename[1:]}.ini"
-    self.FILE_LOCATION = os.path.join(executing_path, self.FILENAME)
+
+    self.FILE_LOCATION = os.path.join(os.getcwd(), "base", self.FILENAME)
     self.__CheckPermissions()
 
     if not os.path.isfile(self.FILE_LOCATION):
@@ -65,7 +66,7 @@ class SettingsManager(object):
     self.Read()
 
   def __CheckPermissions(self):
-    """Checks if SettingsManger can read/write to file."""
+    """Checks if SettingsManager can read/write to file."""
     if not os.access(self.FILE_LOCATION, os.R_OK):
       raise PermissionError(f"SettingsManager missing permissions to read file: {self.FILE_LOCATION}")
     if not os.access(self.FILE_LOCATION, os.W_OK):
@@ -1300,10 +1301,6 @@ class AlchemyBaseRecord(object):
     self.session = session
     self._BuildClassFromRecord(record)
 
-  def __del__(self):
-    """Cleans up the connection at the end of its life cycle"""
-    self.session.close()
-
   def _BuildClassFromRecord(self, record):
     if isinstance(record, dict):
       for key, value in record.items():
@@ -1633,7 +1630,7 @@ class AlchemyRecord(AlchemyBaseRecord):
   def Save(self):
     """Saves any changes made in the current record. Sqlalchemy automatically detects
     these changes and only updates the changed values. If no values are present
-    no query will be committed."""
+    no query will be commited."""
     self.session.commit()
 
 class Smorgasbord(object):
@@ -1641,7 +1638,7 @@ class Smorgasbord(object):
 
   The idea is that you can set up a Smorgasbord with various different
   connection types (Mongo and relational), and have the smorgasbord provide the
-  correct connection for the caller's needs. MongoRecord would be given the
+  correct connection for the caller's needs. MongoReceord would be given the
   MongoDB connection as expected, and all other users will be given a relational
   database connection.
 

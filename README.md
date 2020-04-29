@@ -72,10 +72,10 @@ dev = True
 ```
 This makes sure that µWeb3 restarts every time you modify something in the core of the framework aswell.
 
-µWeb3 has inbuilt XSRF protection. You can import it from uweb3.pagemaker.new_decorators checkxsrf.
+µWeb3 has inbuild XSRF protection. You can import it from uweb3.pagemaker.new_decorators checkxsrf.
 This is a decorator and it will handle validation and generation of the XSRF.
 The only thing you have to do is add the ```{{ xsrf [xsrf]}}``` tag into a form.
-The xsrf token is accessible in any pagemaker with self.xsrf.
+The xsrf token is accessible in any pagemaker with self.xsrf.  
 
 # Routing
 The default way to create new routes in µWeb3 is to create a folder called routes.
@@ -128,9 +128,10 @@ there are some adjustments. Instead of inheriting from dict the SQLAlchemy model
 dict like functions such as get and set. Instead the model is accessible by the columns defined in the class you want to create.
 
 The SQLAlchemy model.Record class makes use of the session attribute accessible in the SqAlchemyPageMaker.
-The session keeps track of all queries to the database and comes with some useful features.
 
-An example of a few useful features:
+The session keeps track of all queries to the database and comes with some usefull features.
+
+An example of a few usefull features:
 `session.new`: The set of all instances marked as ‘new’ within this Session.
 `session.dirty`: Instances are considered dirty when they were modified but not deleted.
 `session.deleted`: The set of all instances marked as ‘deleted’ within this Session
@@ -174,7 +175,7 @@ class User(uweb3.model.AlchemyRecord, Base):
   id = Column(Integer, primary_key=True)
   username = Column(String, nullable=False, unique=True)
   password = Column(String, nullable=False)
-```
+```  
 We can now query the users table like this:
 ```
 User.FromPrimary(self.session, 1)
@@ -217,6 +218,5 @@ class UserInfo(uweb3.model.AlchemyRecord, Base):
   name = Column(String, unique=True)
 ```
 Now the UserInfo table will be loaded on the `userinfoid` attribute, but only after we try and access
-this key a separate query is send to retrieve the related information.
+this key a seperate query is send to retrieve the related information.
 SQLAlchemy's lazy loading is fast but should be avoided while in loops. Take a look at SQLAlchemys documentation for optimal use.
-

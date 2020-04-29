@@ -134,7 +134,7 @@ class Page {
   function handlePage(data, url){
     // If the page is the same but the content is different we can retrieve the page from the hash and replace the placeholders with new values
     // If the page is different we need to reload everything and update the cache
-    // Create a new instance of the page object. This only happends on the first call.
+    // Create a new instance of the page object. This only happens on the first call.
     if(url.split('?').length >= 2){
       // console.log(url);
       url = url.split('?')[1];
