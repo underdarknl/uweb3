@@ -10,6 +10,7 @@ import sys
 import threading
 import time
 from base64 import b64encode
+from pymysql import Error as pymysqlerr
 
 import uweb3
 from uweb3.model import SecureCookie
@@ -84,10 +85,7 @@ class MimeTypeDict(dict):
     >>> mime_type_dict['text/html'] = 'HTML content'
 
   One could also define a default for the whole type, as follows:
-    >>> mime_type_dict['text/*'] = 'Default'
-
-  Looking up a type/subtype that doesn't exist, but for which a bare type does,
-  will result in the value for the bare type to be returned:
+    >>> mime_type_dict['text/*'] = 'Default'Exception
     >>> mime_type_dict['text/nonexistant']
     'Default'
   """
@@ -143,7 +141,7 @@ class MimeTypeDict(dict):
           self[key] = value
     if kwargs:
       self.update(kwargs)
-    
+
 class BasePageMaker(object):
   """Provides the base pagemaker methods for all the html generators."""
   # Constant for persistent storage accross requests. This will be accessible
@@ -177,12 +175,13 @@ class BasePageMaker(object):
     self.persistent = self.PERSISTENT
     self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_secret)
     self.user = self._GetLoggedInUser()
-    
+
   def _PostRequest(self, response):
     if response.status == '500 Internal Server Error':
-      if hasattr(self, 'connection'):
-        if self.connection.open:
-          self.connection.close()
+      if not hasattr(self, 'connection_error'): #this is set when we try and create a connection but it failed
+        if hasattr(self, 'connection'):
+            if self.connection.open:
+              self.connection.close()
     return response
 
   def XSRFInvalidToken(self, command):
@@ -190,7 +189,7 @@ class BasePageMaker(object):
     page_data = self.parser.Parse('403.html', error=command,
                                   **self.CommonBlocks('Invalid XSRF token'))
     return uweb3.Response(content=page_data, httpcode=403)
-  
+
   def _GetLoggedInUser(self):
     """Checks if user is logged in based on cookie"""
     scookie = SecureCookie(self.secure_cookie_connection)
@@ -204,7 +203,7 @@ class BasePageMaker(object):
     if not user:
       return None
     return Users(None, user)
-    
+
   @classmethod
   def LoadModules(cls, default_routes='routes', excluded_files=('__init__', '.pyc')):
     """Loops over all .py files apart from some exceptions in target directory
@@ -284,17 +283,17 @@ class BasePageMaker(object):
   def Reload():
     """Raises `ReloadModules`, telling the Handler() to reload its pageclass."""
     raise ReloadModules('Reloading ... ')
-  
+
   def _GetXSRF(self):
     if 'xsrf' in self.cookies:
       return self.cookies['xsrf']
     return None
-    
+
   def CommonBlocks(self, title, page_id=None, scripts=None):
     """Returns a dictionary with the header and footer in it."""
     if not page_id:
       page_id = title.replace(' ', '_').lower()
-      
+
     return {'header': self.parser.Parse(
                 'header.html', title=title, page_id=page_id, user=self.user
                 ),
@@ -418,9 +417,9 @@ class SqlAlchemyMixin(object):
       from sqlalchemy import create_engine
       mysql_config = self.options['mysql']
       engine = create_engine('mysql://{username}:{password}@{host}/{database}'.format(
-          username=mysql_config.get('user'), 
-          password=mysql_config.get('password'), 
-          host=mysql_config.get('host', 'localhost'), 
+          username=mysql_config.get('user'),
+          password=mysql_config.get('password'),
+          host=mysql_config.get('host', 'localhost'),
           database=mysql_config.get('database')), pool_size=5, max_overflow=0)
       self.persistent.Set('__sql_alchemy', engine)
     return self.persistent.Get('__sql_alchemy')
@@ -431,23 +430,29 @@ class SqlAlchemyMixin(object):
     Session = sessionmaker()
     Session.configure(bind=self.engine, expire_on_commit=False)
     return Session()
-    
+
 class MysqlMixin(object):
   """Adds MySQL support to PageMaker."""
   @property
   def connection(self):
     """Returns a MySQL database connection."""
-    if '__mysql' not in self.persistent:
-      from underdark.libs.sqltalk import mysql
-      mysql_config = self.options['mysql']
-      self.persistent.Set('__mysql', mysql.Connect(
-          host=mysql_config.get('host', 'localhost'),
-          user=mysql_config.get('user'),
-          passwd=mysql_config.get('password'),
-          db=mysql_config.get('database'),
-          charset=mysql_config.get('charset', 'utf8'),
-          debug=DebuggerMixin in self.__class__.__mro__))
-    return self.persistent.Get('__mysql')
+    try:
+      if '__mysql' not in self.persistent:
+        from underdark.libs.sqltalk import mysql
+        mysql_config = self.options['mysql']
+        self.persistent.Set('__mysql', mysql.Connect(
+            host=mysql_config.get('host', 'localhost'),
+            user=mysql_config.get('user'),
+            passwd=mysql_config.get('password'),
+            db=mysql_config.get('database'),
+            charset=mysql_config.get('charset', 'utf8'),
+            debug=DebuggerMixin in self.__class__.__mro__))
+      return self.persistent.Get('__mysql')
+    except Exception as e:
+      self.connection_error = True
+      raise e
+
+
 
 class SqliteMixin(object):
   """Adds SQLite support to PageMaker."""
