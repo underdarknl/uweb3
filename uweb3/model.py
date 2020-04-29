@@ -57,7 +57,7 @@ class SettingsManager(object):
       self.FILENAME = f"{filename[:1].lower() + filename[1:]}.ini"
 
     self.FILE_LOCATION = os.path.join(os.path.dirname(os.path.abspath(__file__)), "base", self.FILENAME)
-    self.__CheckPremissions()
+    self.__CheckPermissions()
     
     if not os.path.isfile(self.FILE_LOCATION):
       os.mknod(self.FILE_LOCATION)
@@ -65,12 +65,12 @@ class SettingsManager(object):
     self.config = configparser.ConfigParser()
     self.Read()
     
-  def __CheckPremissions(self):
+  def __CheckPermissions(self):
     """Checks if SettingsManger can read/write to file."""
     if not os.access(self.FILE_LOCATION, os.R_OK):
-      raise PermissionError(f"SettingsManager missing premissions to read file: {self.FILE_LOCATION}")
+      raise PermissionError(f"SettingsManager missing permissions to read file: {self.FILE_LOCATION}")
     if not os.access(self.FILE_LOCATION, os.W_OK):
-      raise PermissionError(f"SettingsManager missing premissions to write to file: {self.FILE_LOCATION}")
+      raise PermissionError(f"SettingsManager missing permissions to write to file: {self.FILE_LOCATION}")
 
   def Create(self, section, key, value):
     """Creates a section or/and key = value

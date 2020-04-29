@@ -22,7 +22,7 @@ class UserPageMaker(PageMaker):
         if Users.ComparePassword(self.post.getfirst('password'), user['password']):
           scookie.Create("login", {
                 'user_id': user['id'],
-                'premissions': 1,
+                'permissions': 1,
                 'data': {'data': 'data'}
                 })
           return self.req.Redirect('/home', http_code=303)
