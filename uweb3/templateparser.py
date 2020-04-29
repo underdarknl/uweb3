@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.5
 """uWeb TemplateParser
 
 Classes:
@@ -907,8 +907,8 @@ class TemplateText(str):
 
 
 TAG_FUNCTIONS = {
-    'default': lambda d: HTMLsafestring('') + d,
-    'html': lambda d: HTMLsafestring('') + d,
+    'default': lambda d: HTMLsafestring('') + d, #HtmlEscape,
+    'html': lambda d: HTMLsafestring('') + d, #HtmlEscape,
     'raw': lambda x: x,
     'url': lambda d: URLqueryargumentsafestring(d, unsafe=True),
     'items': lambda d: list(d.items()),
