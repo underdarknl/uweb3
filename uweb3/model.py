@@ -1320,6 +1320,10 @@ class AlchemyBaseRecord(object):
     """Returns the hashed value of the key."""
     return hash(self.key)
 
+  def __del__(self):
+    """Cleans up the connection at the end of its life cycle"""
+    self.session.close()
+
   def __repr__(self):
     s = {}
     for key in self.__table__.columns.keys():
