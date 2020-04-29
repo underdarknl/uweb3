@@ -21,8 +21,7 @@ def main(sio=None):
     name of a presenter method which should handle it.
   - The configuration file (ini format) from which settings should be read.
   """
-  config_file = os.path.join(os.path.dirname(__file__), 'config.ini')
-  config = uweb3.read_config(config_file)
+  path = os.path.dirname(os.path.abspath(__file__))
   routes = (
       ('/', 'Index'),
       ('/login', 'Login'),
@@ -41,4 +40,4 @@ def main(sio=None):
       (sio.on('connect'), 'Connect'),
       ('/(.*)', 'FourOhFour'))
       
-  return uweb3.uWeb(pages.PageMaker, routes, config=config, sio=sio)
+  return uweb3.uWeb(pages.PageMaker, routes, executing_path=path, sio=sio)

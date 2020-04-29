@@ -165,8 +165,9 @@ class uWeb(object):
   Returns:
     RequestHandler: Configured closure that is ready to process requests.
   """
-  def __init__(self, page_class, routes, config, sio=None):
-    self.config = SettingsManager(filename='config')
+  def __init__(self, page_class, routes, executing_path=None, sio=None):
+    self.executing_path = executing_path
+    self.config = SettingsManager(filename='config', executing_path=executing_path)
     self.logger = self.setup_logger()
     self.page_class = page_class
     self.registry = Registry()
@@ -256,7 +257,7 @@ class uWeb(object):
     """Sets up and starts WSGI development server for the current app."""
     host = self.config.options['development'].get('host', 'localhost')
     port = self.config.options['development'].get('port', 8001)
-
+    
     static_directory = [os.path.join(sys.path[0], 'base/static')]
     app = StaticMiddleware(self, static_root='static', static_dirs=static_directory)
     server = make_server(host, int(port), app)
