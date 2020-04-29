@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 """Request handlers for the uWeb3 project scaffold"""
 
-import uweb3
 from uweb3 import SqAlchemyPageMaker
+from uweb3.alchemy_model import AlchemyRecord
 from uweb3.pagemaker.new_login import Users, UserCookie, Test
 from uweb3.pagemaker.new_decorators import checkxsrf
 
@@ -12,34 +12,34 @@ from sqlalchemy.orm import sessionmaker, relationship, lazyload
 
 Base = declarative_base()
 
-class User(uweb3.model.AlchemyRecord, Base):
+class User(AlchemyRecord, Base):
   __tablename__ = 'alchemy_users'
 
   id = Column(Integer, primary_key=True)
   username = Column(String, nullable=False, unique=True)
-  password = Column(String, nullable=False) 
+  password = Column(String, nullable=False)
   authorid = Column('authorid', Integer, ForeignKey('author.id'))
   children = relationship("Author",  lazy="select")
-  
-  
+
+
   def __init__(self, *args, **kwargs):
     super(User, self).__init__(*args, **kwargs)
-      
-class Author(uweb3.model.AlchemyRecord, Base):
+
+class Author(AlchemyRecord, Base):
   __tablename__ = 'author'
 
   id = Column(Integer, primary_key=True)
   name = Column(String, unique=True)
   personid = Column('personid', Integer, ForeignKey('persons.id'))
   children = relationship("Persons",  lazy="select")
-  
-  
-class Persons(uweb3.model.AlchemyRecord, Base):
+
+
+class Persons(AlchemyRecord, Base):
   __tablename__ = 'persons'
-  
+
   id = Column(Integer)
   name = Column(String, primary_key=True)
-         
+
 
 def buildTables(connection, session):
   meta = MetaData()
@@ -51,7 +51,7 @@ def buildTables(connection, session):
       Column('authorid', Integer, ForeignKey('author.id')),
     )
   Table(
-    'author', meta, 
+    'author', meta,
     Column('id', Integer, primary_key=True),
     Column('name', String(32), nullable=False),
     Column('personid', Integer, ForeignKey('persons.id'))
@@ -61,7 +61,7 @@ def buildTables(connection, session):
     Column('id', Integer,primary_key=True),
     Column('name', String(32), nullable=False)
   )
-  
+
   meta.create_all(connection)
 
   Persons.Create(session, {'name': 'Person name'})
@@ -69,10 +69,10 @@ def buildTables(connection, session):
   Author.Create(session, {'name': 'Author number 2', 'personid': 1})
   User.Create(session, {'username': 'name', 'password': 'test', 'authorid': 1})
 
-  
+
 class UserPageMaker(SqAlchemyPageMaker):
   """Holds all the request handlers for the application"""
-  
+
   def Sqlalchemy(self):
     """Returns the index template"""
     tables = inspect(self.engine).get_table_names()
@@ -81,11 +81,10 @@ class UserPageMaker(SqAlchemyPageMaker):
 
     user = User.FromPrimary(self.session, 1)
     # print(User.Create(self.session, {'username': 'hello', 'password': 'test', 'authorid': 1}))
-
     # print("Returns user with primary key 1: ", user)
     # print("Will only load the children when we ask for them: ", user.children)
     # print("Conditional list, lists users with id < 10: ", list(User.List(self.session, conditions=[User.id <= 10])))
-    # print("List item 0: ",  list(User.List(self.session, conditions=[User.id <= 10]))[0])
+    print("List item 0: ",  list(User.List(self.session, conditions=[User.id <= 10]))[0])
     # print("List item 0.children: ",  list(User.List(self.session, conditions=[User.id <= 10]))[0].children)
 
     # User.Update(self.session, [User.id > 2, User.id < 100], {User.username: 'username', User.password: 'password'})
