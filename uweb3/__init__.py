@@ -76,7 +76,7 @@ class Router(object):
     req_routes = []
     for pattern, *details in routes:
       pagemaker = None
-      for pm in self.pagemakers: 
+      for pm in self.pagemakers:
         #Check if the pagemaker has the method/handler we are looking for
         if hasattr(pm, details[0]):
           pagemaker = pm
@@ -93,7 +93,7 @@ class Router(object):
                         details[1] if len(details) > 1 else 'ALL', #request types
                         details[2] if len(details) > 2 else '*', #host
                         pagemaker #pagemaker
-                        )) 
+                        ))
     def request_router(url, method, host):
       """Returns the appropriate handler and arguments for the given `url`.
 
@@ -119,7 +119,7 @@ class Router(object):
       Returns:
         2-tuple: handler method (unbound), and tuple of pattern matches.
       """
-      
+
       for pattern, handler, routemethod, hostpattern, pagemaker in req_routes:
         if routemethod != 'ALL':
           # clearly not the route we where looking for
@@ -177,7 +177,7 @@ class uWeb(object):
     self.secure_cookie_secret = str(os.urandom(32))
     self.setup_routing()
 
-      
+
   def __call__(self, env, start_response):
     """WSGI request handler.
     Accepts the WSGI `environment` dictionary and a function to start the
@@ -193,21 +193,21 @@ class uWeb(object):
       response = self.get_response(pagemaker, method, args)
     except NoRouteError:
       #When we catch this error this means there is no method for the expected function
-      #If this happends we default to the standard pagemaker because we dont know what the target pagemaker should be. 
+      #If this happends we default to the standard pagemaker because we dont know what the target pagemaker should be.
       #Then we set an internalservererror and move on
       pagemaker = self.page_class(req, config=self.config.options, secure_cookie_secret=self.secure_cookie_secret, executing_path=self.executing_path)
       response = pagemaker.InternalServerError(*sys.exc_info())
     if not isinstance(response, Response):
       req.response.text = response
       response = req.response
-      
+
     if hasattr(pagemaker, '_PostRequest'):
       response = pagemaker._PostRequest(response)
-    
+
     self._logging(req, response)
     start_response(response.status, response.headerlist)
     yield response.content.encode(response.charset)
-  
+
   def setup_logger(self):
     logger = logging.getLogger('uweb3_logger')
     logger.setLevel(logging.INFO)
@@ -346,7 +346,7 @@ def router(routes):
     Returns:
       2-tuple: handler method (unbound), and tuple of pattern matches.
     """
-    
+
     for pattern, handler, routemethod, hostpattern in req_routes:
       if routemethod != 'ALL':
         # clearly not the route we where looking for
@@ -382,10 +382,10 @@ class HotReload(object):
       self.thread = threading.Thread(target=self.run, args=())
       self.thread.daemon = True
       self.thread.start()
-                  
+
     def run(self):
       """ Method runs forever and watches all files in the project folder.
-      
+
       Does not trigger a reload when the following files change:
       - .pyc
       - .ini
@@ -394,11 +394,11 @@ class HotReload(object):
       - .log
 
       Changes in the HTML are noticed by the TemplateParser,
-      which then reloads the HTML file into the object and displays the updated version.  
+      which then reloads the HTML file into the object and displays the updated version.
       """
       self.WATCHED_FILES = self.getListOfFiles()[1]
       WATCHED_FILES_MTIMES = [(f, os.path.getmtime(f)) for f in self.WATCHED_FILES]
-      
+
       while True:
         if len(self.WATCHED_FILES) != self.getListOfFiles()[0]:
           print('{color}New file added or deleted\x1b[0m \nRestarting µWeb3'.format(color='\x1b[7;30;41m'))
@@ -408,10 +408,10 @@ class HotReload(object):
             print('{color}Detected changes in {file}\x1b[0m \nRestarting µWeb3'.format(color='\x1b[7;30;41m', file=f))
             self.restart()
         time.sleep(self.interval)
-          
+
     def getListOfFiles(self):
-      """Returns all files inside the working directory of uweb3. 
-      Also returns a count so that we can restart on file add/remove. 
+      """Returns all files inside the working directory of uweb3.
+      Also returns a count so that we can restart on file add/remove.
       """
       watched_files = [__file__]
       for r, d, f in os.walk(self.path):
@@ -419,9 +419,9 @@ class HotReload(object):
           ext = os.path.splitext(file)[1]
           if ext not in (".pyc", '.ini', '.md', '.html', '.log'):
             watched_files.append(os.path.join(r, file))
-      return (len(watched_files), watched_files)   
-      
+      return (len(watched_files), watched_files)
+
     def restart(self):
       """Restart uweb3 with all provided system arguments."""
       self.running.clear()
-      os.execl(sys.executable, sys.executable, * sys.argv)   
+      os.execl(sys.executable, sys.executable, * sys.argv)

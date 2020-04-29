@@ -44,7 +44,7 @@ class PermissionError(Error):
 
 class SettingsManager(object):
   def __init__(self, filename=None, executing_path=None):
-    """Creates a ini file with the childs class name
+    """Creates a ini file with the child class name
 
     Arguments:
       % filename: str
@@ -57,13 +57,13 @@ class SettingsManager(object):
       self.FILENAME = f"{filename[:1].lower() + filename[1:]}.ini"
     self.FILE_LOCATION = os.path.join(executing_path, self.FILENAME)
     self.__CheckPermissions()
-    
+
     if not os.path.isfile(self.FILE_LOCATION):
       os.mknod(self.FILE_LOCATION)
 
     self.config = configparser.ConfigParser()
     self.Read()
-    
+
   def __CheckPermissions(self):
     """Checks if SettingsManger can read/write to file."""
     if not os.access(self.FILE_LOCATION, os.R_OK):
@@ -73,14 +73,14 @@ class SettingsManager(object):
 
   def Create(self, section, key, value):
     """Creates a section or/and key = value
-    
+
     Arguments:
       @ section: str
         Name of the section you want to create or append key = value to
       @ key: str
         Name of the key you want to create
       @ value: str
-      
+
     Raises:
       ValueError
     """
@@ -89,42 +89,42 @@ class SettingsManager(object):
     else:
       if self.config[section].get(key):
         raise ValueError("key already exists")
-        
+
     self.config.set(section, key, value)
-    
+
     with open(self.FILE_LOCATION, 'w') as configfile:
       self.config.write(configfile)
     self.Read()
-    
+
   def Read(self):
     self.config.read(self.FILE_LOCATION)
     self.options = self.config._sections
-  
+
   def Update(self, section, key, value):
     """Updates ini file
     After update reads file again and updates options attribute
-    
+
     Arguments:
       @ section: str
       @ key: str
       @ value: str
-      
+
     Raises
       TypeError: Option values must be string
     """
     if not self.options.get(section):
       self.config.add_section(section)
     self.config.set(section, key, value)
-    
+
     with open(self.FILE_LOCATION, 'w') as configfile:
       self.config.write(configfile)
     self.Read()
-  
+
   def Delete(self, section, key, delete_section=False):
     """Delete sections/keys from the INI file
     Be aware, deleting a section that is not empty will remove all keys from that
     given section
-    
+
     Arguments:
       @ section: str
         Name of the section
@@ -141,9 +141,9 @@ class SettingsManager(object):
     with open(self.FILE_LOCATION, 'w') as configfile:
       self.config.write(configfile)
     self.Read()
-  
-    
-class SecureCookie(object):  
+
+
+class SecureCookie(object):
   def __init__(self, connection):
     self.req = connection[0]
     self.cookies = connection[1]
@@ -153,25 +153,25 @@ class SecureCookie(object):
   def __GetSessionCookies(self):
     cookiejar = {}
     for key, value in self.cookies.items():
-      if value: 
+      if value:
         isValid, value = self.__ValidateCookieHash(value)
         if isValid:
           cookiejar[key] = value
     return cookiejar
-  
+
   def Create(self, name, data, **attrs):
     """Creates a secure cookie
-    
+
     Arguments:
       @ name: str
         Name of the cookie
-      @ data: dict 
+      @ data: dict
         Needs to have a key called __name with value of how you want to name the 'table'
       % only_return_hash: boolean
-        If this is set it will just return the hash of the cookie. This is used to 
-        validate the cookies hash 
+        If this is set it will just return the hash of the cookie. This is used to
+        validate the cookies hash
       % update: boolean
-        Used to update the cookie. Updating actually means deleting and setting a new 
+        Used to update the cookie. Updating actually means deleting and setting a new
         one. This attribute is used by the update method from this class
       % expires: str ~~ None
         The date + time when the cookie should expire. The format should be:
@@ -194,15 +194,15 @@ class SecureCookie(object):
       % httponly: boolean
         When True, the cookie is only used for http(s) requests, and is not
         accessible through Javascript (DOM).
-        
+
     Raises:
       ValueError: When cookie with name already exists
-    """ 
+    """
     if not attrs.get('update') and self.cookiejar.get(name):
       raise ValueError("Cookie with name already exists")
     if attrs.get('update'):
       self.cookiejar[name] = data
-    
+
     hashed = self.__CreateCookieHash(data)
     if not attrs.get('only_return_hash'):
       #Delete all these settings to prevent them from injecting in a cookie
@@ -213,22 +213,22 @@ class SecureCookie(object):
       self.req.AddCookie(name, hashed, **attrs)
     else:
       return hashed
-    
+
   def Update(self, name, data, **attrs):
     """"Updates a secure cookie
     Keep in mind that the actual cookie is updated on the next request. After calling
     this method it will update the session attribute to the new value however.
-    
+
     Arguments:
       @ name: str
         Name of the cookie
-      @ data: dict 
+      @ data: dict
         Needs to have a key called __name with value of how you want to name the 'table'
       % only_return_hash: boolean
-        If this is set it will just return the hash of the cookie. This is used to 
-        validate the cookies hash 
+        If this is set it will just return the hash of the cookie. This is used to
+        validate the cookies hash
       % update: boolean
-        Used to update the cookie. Updating actually means deleting and setting a new 
+        Used to update the cookie. Updating actually means deleting and setting a new
         one. This attribute is used by the update method from this class
       % expires: str ~~ None
         The date + time when the cookie should expire. The format should be:
@@ -251,21 +251,21 @@ class SecureCookie(object):
       % httponly: boolean
         When True, the cookie is only used for http(s) requests, and is not
         accessible through Javascript (DOM).
-        
+
     Raises:
       ValueError: When no cookie with given name found
     """
     if not self.cookiejar.get(name):
       raise ValueError("No cookie with name `{}` found".format(name))
-    
+
     attrs['update'] = True
     self.Create(name, data, **attrs)
-    
-    
+
+
   def Delete(self, name):
     """Deletes cookie based on name
     The cookie is no longer in the session after calling this method
-    
+
     Arguments:
       % name: str
         Deletes cookie by name
@@ -273,20 +273,20 @@ class SecureCookie(object):
     self.req.DeleteCookie(name)
     if self.cookiejar.get(name):
       self.cookiejar.pop(name)
-        
+
   def __CreateCookieHash(self, data):
     hex_string = pickle.dumps(data).hex()
-      
+
     hashed = (hex_string + self.cookie_salt).encode('utf-8')
     h = hashlib.new('ripemd160')
     h.update(hashed)
     return '{}+{}'.format(h.hexdigest(), hex_string)
-  
+
   def __ValidateCookieHash(self, cookie):
     """Takes a cookie and validates it
-    
+
     Arguments:
-      @ str: A hashed cookie from the `__CreateCookieHash` method 
+      @ str: A hashed cookie from the `__CreateCookieHash` method
     """
     if not cookie:
       return None
@@ -298,7 +298,7 @@ class SecureCookie(object):
 
     if cookie != self.__CreateCookieHash(data):
       return (False, None)
-    
+
     return (True, data)
 
 # Record classes have many methods, this is not an actual problem.
@@ -1267,7 +1267,7 @@ class MongoRecord(BaseRecord):
   @classmethod
   def FromPrimary(cls, connection, pkey_value):
     from bson.objectid import ObjectId
-    
+
     if not isinstance(pkey_value, ObjectId):
       pkey_value = ObjectId(pkey_value)
     collection = cls.Collection(connection)
@@ -1295,7 +1295,7 @@ class MongoRecord(BaseRecord):
     self.key = self.Collection(self.connection).save(self._DataRecord())
 
 
-class AlchemyBaseRecord(object):  
+class AlchemyBaseRecord(object):
   def __init__(self, session, record):
     self.session = session
     self._BuildClassFromRecord(record)
@@ -1318,11 +1318,11 @@ class AlchemyBaseRecord(object):
           raise
         else:
           self.session.commit()
-    
+
   def __hash__(self):
     """Returns the hashed value of the key."""
     return hash(self.key)
-                   
+
   def __repr__(self):
     s = {}
     for key in self.__table__.columns.keys():
@@ -1330,7 +1330,7 @@ class AlchemyBaseRecord(object):
       if value:
         s[key] = value
     return f'{type(self).__name__}({s})'
-  
+
   def __eq__(self, other):
     if type(self) != type(other):
       return False  # Types must be the same.
@@ -1349,16 +1349,16 @@ class AlchemyBaseRecord(object):
       elif value != other_value:
         return False
     return True
-  
+
   def __ne__(self, other):
     """Returns the proper inverse of __eq__."""
     # Without this, the non-equal checks used in __eq__ will not work,
     # and the  `!=` operator would not be the logical inverse of `==`.
     return not self == other
-  
+
   def __len__(self):
     return len(dict((col, getattr(self, col)) for col in self.__table__.columns.keys() if getattr(self, col)))
-    
+
   def __int__(self):
     """Returns the integer key value of the Record.
 
@@ -1371,16 +1371,16 @@ class AlchemyBaseRecord(object):
       # Nor turn strings of numbers into an integer.
       raise ValueError('The primary key is not an integral number.')
     return key_val
-  
+
   def copy(self):
     """Returns a shallow copy of the Record that is a new functional Record."""
     import copy
     return copy.copy(self)
-  
+
   def deepcopy(self):
     import copy
     return copy.deepcopy(self)
-   
+
   def __gt__(self, other):
     """Index of this record is greater than the other record's.
 
@@ -1410,54 +1410,54 @@ class AlchemyBaseRecord(object):
 
   def __le__(self, other):
     """Index of this record is smaller than, or equal to, the other record's.
-    
+
     This requires both records to be of the same record class.
     """
     if type(self) == type(other):
       return self.key <= other.key
-    return NotImplemented 
-  
+    return NotImplemented
+
   def __getitem__(self, field):
     return getattr(self, field)
-  
+
   def iteritems(self):
     """Yields all field+value pairs in the Record.
-    
-    This automaticly loads in relationships.
+
+    This automatically loads in relationships.
     """
-    return chain(((key, getattr(self, key)) for key in self.__table__.columns.keys()),  
+    return chain(((key, getattr(self, key)) for key in self.__table__.columns.keys()),
     ((child[0], getattr(self, child[0])) for child in inspect(type(self)).relationships.items()))
 
   def itervalues(self):
     """Yields all values in the Record, loads relationships"""
-    return chain((getattr(self, key) for key in self.__table__.columns.keys()), 
+    return chain((getattr(self, key) for key in self.__table__.columns.keys()),
                  (getattr(self, child[0]) for child in inspect(type(self)).relationships.items()))
 
   def items(self):
     """Returns a list of field+value pairs in the Record.
-    
-    This automaticly loads in relationships.
+
+    This automatically loads in relationships.
     """
     return list(self.iteritems())
 
   def values(self):
     """Returns a list of values in the Record, loading foreign references."""
     return list(self.itervalues())
-    
+
   @property
   def key(self):
     return getattr(self, inspect(type(self)).primary_key[0].name)
-  
+
   @classmethod
   def TableName(cls):
     """Returns the database table name for the Record class."""
     return cls.__tablename__
-  
+
   @classmethod
   def _AlchemyRecordToDict(cls, record):
     """Turns the values of a given class into a dictionary. Doesn't trigger
     automatic loading of child classes.
-    
+
     Arguments:
       @ record: cls
         AlchemyBaseRecord class that is retrieved from a database query
@@ -1468,28 +1468,28 @@ class AlchemyBaseRecord(object):
     if not isinstance(record, type(None)):
       return dict((col, getattr(record, col)) for col in record.__table__.columns.keys())
     return None
-  
+
   @reconstructor
   def reconstruct(self):
     """This is called instead of __init__ when the result comes from the database"""
     self.session = object_session(self)
-  
-  @classmethod    
+
+  @classmethod
   def _PrimaryKeyCondition(cls, target):
     """Returns the name of the primary key of given class
-    
+
     Arguments:
       @ target: cls
         Class that you want to know the primary key name from
     """
     return getattr(cls, inspect(cls).primary_key[0].name)
-    
+
 class AlchemyRecord(AlchemyBaseRecord):
   """ """
   @classmethod
   def FromPrimary(cls, session, p_key):
     """Finds record based on given class and supplied primary key.
-    
+
     Arguments:
       @ session: sqlalchemy session object
         Available in the pagemaker with self.session
@@ -1508,19 +1508,19 @@ class AlchemyRecord(AlchemyBaseRecord):
       if not record:
         raise NotExistError(f"Record with primary key {p_key} does not exist")
       return record
-  
+
   @classmethod
   def DeletePrimary(cls, session, p_key):
     """Deletes record base on primary key from given class.
-    
+
     Arguments:
       @ session: sqlalchemy session object
         Available in the pagemaker with self.session
       @ p_key: integer
         primary_key of the object to delete
-        
+
     Returns:
-      isdeleted: boolean  
+      isdeleted: boolean
     """
     try:
       isdeleted = session.query(cls).filter(cls._PrimaryKeyCondition(cls) == p_key).delete()
@@ -1530,11 +1530,11 @@ class AlchemyRecord(AlchemyBaseRecord):
     else:
       session.commit()
       return isdeleted
-  
-  @classmethod  
+
+  @classmethod
   def Create(cls, session, record):
     """Creates a new instance and commits it to the database
-    
+
     Arguments:
       @ session: sqlalchemy session object
         Available in the pagemaker with self.session
@@ -1544,7 +1544,7 @@ class AlchemyRecord(AlchemyBaseRecord):
       cls
     """
     return cls(session, record)
-    
+
   @classmethod
   def List(cls, session, conditions=None, limit=None, offset=None,
            order=None, yield_unlimited_total_first=False):
@@ -1565,13 +1565,13 @@ class AlchemyRecord(AlchemyBaseRecord):
         with limit this enables proper pagination.
       % order: tuple of operants
         For example the User class has 3 fields; id, username, password. We can pass
-        the field we want to order on to the tuple like so; 
+        the field we want to order on to the tuple like so;
         (User.id.asc(), User.username.desc())
       % yield_unlimited_total_first: bool ~~ False
         Instead of yielding only Record objects, the first item returned is the
         number of results from the query if it had been executed without limit.
-        
-    Returns: 
+
+    Returns:
       integer: integer with length of results.
       list: List of classes from request type
     """
@@ -1595,11 +1595,11 @@ class AlchemyRecord(AlchemyBaseRecord):
       if yield_unlimited_total_first:
         return len(result)
       return result
-    
+
   @classmethod
   def Update(cls, session, conditions, values):
     """Update table based on conditions.
-    
+
     Arguments:
       @ session: sqlalchemy session object
           Available in the pagemaker with self.session
@@ -1629,9 +1629,9 @@ class AlchemyRecord(AlchemyBaseRecord):
     else:
       self.session.commit()
       return isdeleted
-  
+
   def Save(self):
-    """Saves any changes made in the current record. Sqlalchemy automaticly detects 
+    """Saves any changes made in the current record. Sqlalchemy automatically detects
     these changes and only updates the changed values. If no values are present
     no query will be commited."""
     self.session.commit()
