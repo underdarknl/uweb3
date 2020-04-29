@@ -61,16 +61,25 @@ class PostDictionary(MultiDict):
     """Returns the first item out of the list from the given key
 
     Arguments:
-      @key: str
-
-    Raises:
-      ValueError
+      @ key: str
+      % default: any
     """
     items = dict(self.lists())
     try:
       return items[key][0]
     except KeyError:
       return default
+
+  def getlist(self, key):
+    """Returns a list with all values that were given for the requested key.
+
+    N.B. If the given key does not exist, an empty list is returned.
+    """
+    items = dict(self.lists())
+    try:
+      return items[key]
+    except KeyError:
+      return []
 
 class Request(object):
   def __init__(self, env, registry):
@@ -224,25 +233,6 @@ class IndexedFieldStorage(cgi.FieldStorage):
         self.list.append(cgi.MiniFieldStorage(field, value))
     self.list = list(indexed.values()) + self.list
     self.skip_lines()
-
-
-class QueryArgsDict(dict):
-  def getfirst(self, key, default=None):
-    """Returns the first value for the requested key, or a fallback value."""
-    try:
-      return self[key][0]
-    except KeyError:
-      return default
-
-  def getlist(self, key):
-    """Returns a list with all values that were given for the requested key.
-
-    N.B. If the given key does not exist, an empty list is returned.
-    """
-    try:
-      return self[key]
-    except KeyError:
-      return []
 
 
 class CustomByteLikeObject(object):
