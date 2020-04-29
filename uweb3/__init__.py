@@ -86,6 +86,9 @@ class Router(object):
         #TODO: Pass environment to a custom pagemaker for websockets?
         pattern(getattr(pagemaker, details[0]))
         continue
+      if not pagemaker:
+        raise NoRouteError(f"""There is no handler called: {details[0]} in any of the projects PageMaker.
+      Static routes are automaticly handled so there is no need to define them in routes anymore.""")
       req_routes.append((re.compile(pattern + '$', re.UNICODE),
                         details[0], #handler,
                         details[1] if len(details) > 1 else 'ALL', #request types
@@ -196,7 +199,6 @@ class uWeb(object):
       #Then we set an internalservererror and move on
       pagemaker = self.page_class(req, config=self.config.options, secure_cookie_secret=self.secure_cookie_secret, executing_path=self.executing_path)
       response = pagemaker.InternalServerError(*sys.exc_info())
-
     if not isinstance(response, Response):
       req.response.text = response
       response = req.response
