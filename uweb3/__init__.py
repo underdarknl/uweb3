@@ -193,7 +193,7 @@ class uWeb(object):
       response = self.get_response(pagemaker, method, args)
     except NoRouteError:
       #When we catch this error this means there is no method for the expected function
-      #If this happends we default to the standard pagemaker because we dont know what the target pagemaker should be.
+      #If this happens we default to the standard pagemaker because we dont know what the target pagemaker should be.
       #Then we set an internalservererror and move on
       pagemaker = self.page_class(req, config=self.config.options, secure_cookie_secret=self.secure_cookie_secret, executing_path=self.executing_path)
       response = pagemaker.InternalServerError(*sys.exc_info())
