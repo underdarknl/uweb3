@@ -40,4 +40,4 @@ def main(sio=None):
       (sio.on('connect'), 'Connect'),
       ('/(.*)', 'FourOhFour'))
       
-  return uweb3.uWeb(pages.PageMaker, routes, executing_path=path, sio=sio)
+  return uweb3.uWeb(pages.PageMaker, routes, executing_path=path)

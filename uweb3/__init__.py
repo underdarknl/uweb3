@@ -37,11 +37,11 @@ from .helpers import StaticMiddleware
 from uweb3.model import SettingsManager
 
 class Error(Exception):
-  """Superclass used for inheritance and external excepion handling."""
+  """Superclass used for inheritance and external exception handling."""
 
 
 class ImmediateResponse(Exception):
-  """Used to trigger an immediate repsonse, foregoing the regular returns."""
+  """Used to trigger an immediate response, foregoing the regular returns."""
 
 
 class NoRouteError(Error):
@@ -53,10 +53,9 @@ class Registry(object):
 
 
 class Router(object):
-  def __init__(self, page_class, sio):
+  def __init__(self, page_class):
     self.pagemakers = page_class.LoadModules()
     self.pagemakers.append(page_class)
-    self.sio = sio
 
   def router(self, routes):
     """Returns the first request handler that matches the request URL.
@@ -64,7 +63,7 @@ class Router(object):
     The `routes` argument is an iterable of 2-tuples, each of which contain a
     pattern (regex) and the name of the handler to use for matching requests.
 
-    Before returning the closure, all regexen are compiled, and handler methods
+    Before returning the closure, all regexp are compiled, and handler methods
     are retrieved from the provided `page_class`.
 
     Arguments:
@@ -88,7 +87,7 @@ class Router(object):
         continue
       if not pagemaker:
         raise NoRouteError(f"""There is no handler called: {details[0]} in any of the projects PageMaker.
-      Static routes are automaticly handled so there is no need to define them in routes anymore.""")
+      Static routes are automatically handled so there is no need to define them in routes anymore.""")
       req_routes.append((re.compile(pattern + '$', re.UNICODE),
                         details[0], #handler,
                         details[1] if len(details) > 1 else 'ALL', #request types
@@ -144,7 +143,6 @@ class Router(object):
       raise NoRouteError(url +' cannot be handled')
     return request_router
 
-  
 class uWeb(object):
   """Returns a configured closure for handling page requests.
 
@@ -168,21 +166,21 @@ class uWeb(object):
   Returns:
     RequestHandler: Configured closure that is ready to process requests.
   """
-  def __init__(self, page_class, routes, executing_path=None, sio=None):
+  def __init__(self, page_class, routes, executing_path=None):
     self.executing_path = executing_path
     self.config = SettingsManager(filename='config', executing_path=executing_path)
     self.logger = self.setup_logger()
     self.page_class = page_class
     self.registry = Registry()
     self.registry.logger = logging.getLogger('root')
-    self.router = Router(page_class, sio).router(routes)
+    self.router = Router(page_class).router(routes)
     self.secure_cookie_secret = str(os.urandom(32))
     self.setup_routing()
 
       
   def __call__(self, env, start_response):
     """WSGI request handler.
-    Accpepts the WSGI `environment` dictionary and a function to start the
+    Accepts the WSGI `environment` dictionary and a function to start the
     response and returns a response iterator.
     """
     req = request.Request(env, self.registry)
@@ -306,7 +304,7 @@ def router(routes):
   The `routes` argument is an iterable of 2-tuples, each of which contain a
   pattern (regex) and the name of the handler to use for matching requests.
 
-  Before returning the closure, all regexen are compiled, and handler methods
+  Before returning the closure, all regexp are compiled, and handler methods
   are retrieved from the provided `page_class`.
 
   Arguments:
