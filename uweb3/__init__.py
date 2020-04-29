@@ -265,7 +265,7 @@ class uWeb(object):
     try:
       #Needs to check == True. Without it will trigger even when false
       if self.config.options['development'].get('dev', False) == 'True':
-        HotReload(self.config.options['development'].get('dev', 'False'))
+        HotReload(self.executing_path, uweb_dev=self.config.options['development'].get('uweb_dev', 'False'))
       server.serve_forever()
     except:
       server.shutdown()
@@ -372,11 +372,11 @@ def router(routes):
 
 
 class HotReload(object):
-    def __init__(self, dev, interval=1):
+    def __init__(self, path, interval=1, uweb_dev=False):
       self.running = threading.Event()
       self.interval = interval
-      self.path = os.path.dirname(os.path.abspath(__file__))
-      if dev:
+      self.path = os.path.dirname(path)
+      if uweb_dev == 'True':
         from pathlib import Path
         self.path = str(Path(self.path).parents[1])
       self.thread = threading.Thread(target=self.run, args=())
@@ -413,7 +413,7 @@ class HotReload(object):
       """Returns all files inside the working directory of uweb3.
       Also returns a count so that we can restart on file add/remove.
       """
-      watched_files = [__file__]
+      watched_files = []
       for r, d, f in os.walk(self.path):
         for file in f:
           ext = os.path.splitext(file)[1]

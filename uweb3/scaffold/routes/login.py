@@ -10,7 +10,7 @@ class UserPageMaker(PageMaker):
   """Holds all the request handlers for the application"""
   def __init__(self, *args, **kwds):
     super(UserPageMaker, self).__init__(*args, **kwds)
-    
+
   def Login(self):
     """Returns the index template"""
     scookie = UserCookie(self.secure_cookie_connection)
@@ -27,8 +27,8 @@ class UserPageMaker(PageMaker):
                 })
           return self.req.Redirect('/home', http_code=303)
         else:
-          print('Wrong username/password combination')      
+          print('Wrong username/password combination')
       except uweb3.model.NotExistError as e:
         Users.CreateNew(self.connection, { 'username': self.post.getfirst('username'), 'password' : self.post.getfirst('password')})
-        print(e)  
+        print(e)
     return self.parser.Parse('login.html')
