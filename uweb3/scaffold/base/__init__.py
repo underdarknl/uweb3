@@ -26,7 +26,7 @@ def main(sio=None):
       ('/', 'Index'),
       ('/login', 'Login'),
       ('/logout', 'Logout'),
-      ('/home', 'Home'), 
+      ('/home', 'Home'),
       ('/home/create', 'Create'),
       ('/home/update', 'Update'),
       ('/home/delete', 'Delete'),
@@ -36,8 +36,8 @@ def main(sio=None):
       ('/getrawtemplate.*', 'GetRawTemplate'),
       ('/parsed', 'Parsed'),
       ('/test/escaping', 'StringEscaping'),
-      (sio.on('test', namespace="/namespace"), 'EventHandler'),
-      (sio.on('connect'), 'Connect'),
+      # (sio.on('test', namespace="/namespace"), 'EventHandler'),
+      # (sio.on('connect'), 'Connect'),
       ('/(.*)', 'FourOhFour'))
-      
+
   return uweb3.uWeb(pages.PageMaker, routes, executing_path=path)

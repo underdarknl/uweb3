@@ -94,7 +94,7 @@ class Request(object):
     self.vars = {'cookie': dict((name, value.value) for name, value in
                                 Cookie(self.env.get('HTTP_COOKIE')).items()),
                  'get': '',
-                #  'get': QueryArgsDict(cgi.parse_qs(self.env['QUERY_STRING'])),
+                #  'get': PostDictionary(cgi.parse_qs(self.env['QUERY_STRING'])),
                  'post': PostDictionary()}
     self.env['host'] = self.headers.get('Host', '')
 
@@ -144,7 +144,7 @@ class Request(object):
         yield key[5:].lower().replace('_', '-'), value
 
   def AddCookie(self, key, value, **attrs):
-    """Adds a new cookie header to the repsonse.
+    """Adds a new cookie header to the response.
 
     Arguments:
       @ key: str

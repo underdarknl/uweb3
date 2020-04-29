@@ -68,7 +68,7 @@ class User(model.Record):
     if len(salt) != cls.SALT_BYTES:
       raise ValueError('Salt is of incorrect length. Expected %d, got: %d' % (
           cls.SALT_BYTES, len(salt)))
-    password = hashlib.sha1(password + binascii.hexlify(salt)).digest()
+    password = hashlib.sha1(password.encode() + binascii.hexlify(salt)).digest()
     return {'password': password, 'salt': salt}
 
   @classmethod

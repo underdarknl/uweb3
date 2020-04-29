@@ -179,9 +179,11 @@ class BasePageMaker(object):
   def _PostRequest(self, response):
     if response.status == '500 Internal Server Error':
       if not hasattr(self, 'connection_error'): #this is set when we try and create a connection but it failed
+        self.connection_error = False
         if hasattr(self, 'connection'):
             if self.connection.open:
               self.connection.close()
+              self.persistent.Del("__mysql")
     return response
 
   def XSRFInvalidToken(self, command):
@@ -242,7 +244,7 @@ class BasePageMaker(object):
       local_file = os.path.abspath(sys.modules[cls.__module__].__file__)
     except KeyError:
       # This happens for old-style mod_python solutions: The pages file is
-      # imported through the mechanics of mod_python (not package imports) and
+      # imported through the mechanics of mod_pythoif '__mysql' not in self.persistent: (not package imports) and
       # isn't known in sys modules. We use the CPython implementation details
       # to get the correct executing file.
       frame = sys._getframe()
