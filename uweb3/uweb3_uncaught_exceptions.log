@@ -8735,3 +8735,17 @@ sqlalchemy.exc.IntegrityError: (MySQLdb._exceptions.IntegrityError) (1062, "Dupl
 [SQL: INSERT INTO alchemy_users (username, password, authorid) VALUES (%s, %s, %s)]
 [parameters: ('hello', 'test', 1)]
 (Background on this error at: http://sqlalche.me/e/gkpj)
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 241, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/base/pages.py", line 27, in Index
+    return self.tmpl(template) % {'name': 'Bob'}, 'Hello Bob'
+AttributeError: 'PageMaker' object has no attribute 'tmpl'
+UNCAUGHT EXCEPTION:
+Traceback (most recent call last):
+  File "/home/stef/devel/uweb3/uweb3/__init__.py", line 241, in get_response
+    return getattr(page_maker, method)(*args)
+  File "/home/stef/devel/uweb3/uweb3/scaffold/base/pages.py", line 13, in Index
+    print(Template('index.html'))
+NameError: name 'Template' is not defined

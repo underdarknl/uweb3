@@ -211,7 +211,8 @@ class uWeb(object):
   def setup_logger(self):
     logger = logging.getLogger('uweb3_logger')
     logger.setLevel(logging.INFO)
-    fh = logging.FileHandler(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'access_logging.log'))
+    print(os.path.join(self.executing_path, 'access_logging.log'))
+    fh = logging.FileHandler(os.path.join(self.executing_path, 'access_logging.log'))
     fh.setLevel(logging.INFO)
     logger.addHandler(fh)
     return logger
