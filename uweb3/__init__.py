@@ -193,10 +193,11 @@ class uWeb(object):
       response = self.get_response(pagemaker, method, args)
     except NoRouteError:
       #When we catch this error this means there is no method for the expected function
-      #If this happens we default to the standard pagemaker because we dont know what the target pagemaker should be.
+      #If this happens we default to the standard pagemaker because we don't know what the target pagemaker should be.
       #Then we set an internalservererror and move on
       pagemaker = self.page_class(req, config=self.config.options, secure_cookie_secret=self.secure_cookie_secret, executing_path=self.executing_path)
       response = pagemaker.InternalServerError(*sys.exc_info())
+
     if not isinstance(response, Response):
       req.response.text = response
       response = req.response
@@ -263,7 +264,6 @@ class uWeb(object):
 
     print(f'Running µWeb3 server on http://{server.server_address[0]}:{server.server_address[1]}')
     try:
-      #Needs to check == True. Without it will trigger even when false
       if self.config.options['development'].get('dev', False) == 'True':
         HotReload(self.executing_path, uweb_dev=self.config.options['development'].get('uweb_dev', 'False'))
       server.serve_forever()
