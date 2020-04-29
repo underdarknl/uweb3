@@ -78,6 +78,8 @@ class Response(object):
   
   @property
   def status(self):
+    if not self.httpcode:
+      return '%d %s' % (500, httplib.responses[500])
     return '%d %s' % (self.httpcode, httplib.responses[self.httpcode])
 
   def __repr__(self):
