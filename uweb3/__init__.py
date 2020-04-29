@@ -210,7 +210,7 @@ class uWeb(object):
   def setup_logger(self):
     logger = logging.getLogger('uweb3_logger')
     logger.setLevel(logging.INFO)
-    fh = logging.FileHandler(os.path.join(os.getcwd(), 'access_logging.log'))
+    fh = logging.FileHandler(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'access_logging.log'))
     fh.setLevel(logging.INFO)
     logger.addHandler(fh)
     return logger
@@ -247,7 +247,7 @@ class uWeb(object):
       if self.config.options.get('development', None):
         if self.config.options['development'].get('error_logging', True) == 'True':
           logger = logging.getLogger('uweb3_exception_logger')
-          fh = logging.FileHandler(os.path.join(os.getcwd(), 'uweb3_uncaught_exceptions.log'))
+          fh = logging.FileHandler(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uweb3_uncaught_exceptions.log'))
           logger.addHandler(fh)
           logger.exception("UNCAUGHT EXCEPTION:")
       return page_maker.InternalServerError(*sys.exc_info())

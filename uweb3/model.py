@@ -56,7 +56,7 @@ class SettingsManager(object):
     if filename:
       self.FILENAME = f"{filename[:1].lower() + filename[1:]}.ini"
 
-    self.FILE_LOCATION = os.path.join(os.getcwd(), "base", self.FILENAME)
+    self.FILE_LOCATION = os.path.join(os.path.dirname(os.path.abspath(__file__)), "base", self.FILENAME)
     self.__CheckPremissions()
     
     if not os.path.isfile(self.FILE_LOCATION):
