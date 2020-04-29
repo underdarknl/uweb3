@@ -259,8 +259,7 @@ class uWeb(object):
     """Sets up and starts WSGI development server for the current app."""
     host = self.config.options['development'].get('host', 'localhost')
     port = self.config.options['development'].get('port', 8001)
-    
-    static_directory = [os.path.join(sys.path[0], 'base/static')]
+    static_directory = [os.path.join(sys.path[0], os.path.join(self.executing_path, 'static'))]
     app = StaticMiddleware(self, static_root='static', static_dirs=static_directory)
     server = make_server(host, int(port), app)
 

@@ -16,7 +16,7 @@ class SocketMiddleWare(socketio.WSGIApp):
                                            )
 
 class Uweb3SocketIO(object):
-  def __init__(self, app, sio, static_dir='base/static'):
+  def __init__(self, app, sio, static_dir=os.path.dirname(os.path.abspath(__file__))):
     if not isinstance(app, uWeb):
       raise Exception("App must be an uWeb3 instance!")
 
@@ -28,7 +28,8 @@ class Uweb3SocketIO(object):
   
 
   def setup_app(self, app, sio, static_dir):
+    path = os.path.join(app.executing_path, 'static')
     app = SocketMiddleWare(sio, app)
-    static_directory = [os.path.join(sys.path[0], static_dir)]
+    static_directory = [os.path.join(sys.path[0], path)]
     app = StaticMiddleware(app, static_root='static', static_dirs=static_directory)
     eventlet.wsgi.server(eventlet.listen((self.host, int(self.port))), app)
