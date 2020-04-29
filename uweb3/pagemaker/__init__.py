@@ -158,7 +158,7 @@ class BasePageMaker(object):
   # Default Static() handler cache durations, per MIMEtype, in days
   CACHE_DURATION = MimeTypeDict({'text': 7, 'image': 30, 'application': 7})
 
-  def __init__(self, req, config=None, secure_cookie_secret=None):
+  def __init__(self, req, config=None, secure_cookie_secret=None, executing_path=None):
     """sets up the template parser and database connections
 
     Arguments:
@@ -168,7 +168,7 @@ class BasePageMaker(object):
         Configuration for the pagemaker, with database connection information
         and other settings. This will be available through `self.options`.
     """
-    self.__SetupPaths()
+    self.__SetupPaths(executing_path)
     self.req = req
     self.cookies = req.vars['cookie']
     self.get = req.vars['get']
@@ -229,7 +229,7 @@ class BasePageMaker(object):
     """Method that gets called for derived classes of BasePageMaker."""
 
   @classmethod
-  def __SetupPaths(cls):
+  def __SetupPaths(cls, executing_path):
     """This sets up the correct paths for the PageMaker subclasses.
 
     From the passed in `cls`, it retrieves the filename. Of that path, the
@@ -254,7 +254,7 @@ class BasePageMaker(object):
           break  # This happens during exception handling of DebuggingPageMaker
         frame = frame.f_back
       local_file = frame.f_code.co_filename
-    cls.LOCAL_DIR = cls_dir = os.path.join(os.path.abspath(os.curdir), "base")
+    cls.LOCAL_DIR = cls_dir = executing_path
     cls.PUBLIC_DIR = os.path.join(cls_dir, cls.PUBLIC_DIR)
     cls.TEMPLATE_DIR = os.path.join(cls_dir, cls.TEMPLATE_DIR)
 
