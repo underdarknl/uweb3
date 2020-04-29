@@ -128,6 +128,7 @@ there are some adjustments. Instead of inheriting from dict the SQLAlchemy model
 dict like functions such as get and set. Instead the model is accessible by the columns defined in the class you want to create.
 
 The SQLAlchemy model.Record class makes use of the session attribute accessible in the SqAlchemyPageMaker.
+
 The session keeps track of all queries to the database and comes with some usefull features.
 
 An example of a few usefull features:
@@ -136,7 +137,7 @@ An example of a few usefull features:
 `session.deleted`: The set of all instances marked as ‘deleted’ within this Session
 the rest can be found at https://docs.sqlalchemy.org/en/13/orm/session_api.html
 
-Objects in the session will only be updated/created in the actuall database on session.commit()/session.flush().
+Objects in the session will only be updated/created in the actual database on session.commit()/session.flush().
 
 Defining classes that represent a table is different from how we used to do it in uWeb2.
 SQLAlchemy requires you to define all columns from the table that you want to use.
