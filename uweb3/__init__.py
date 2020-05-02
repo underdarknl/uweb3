@@ -197,6 +197,10 @@ class uWeb(object):
       #Then we set an internalservererror and move on
       pagemaker = self.page_class(req, config=self.config.options, secure_cookie_secret=self.secure_cookie_secret, executing_path=self.executing_path)
       response = pagemaker.InternalServerError(*sys.exc_info())
+    except Exception:
+      #This should only happend when something is very wrong
+      pagemaker = PageMaker(req, config=self.config.options, secure_cookie_secret=self.secure_cookie_secret, executing_path=self.executing_path)
+      response = pagemaker.InternalServerError(*sys.exc_info())
 
     if not isinstance(response, Response):
       req.response.text = response

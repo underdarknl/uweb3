@@ -120,5 +120,5 @@ class SessionMixin(object):
     expirationdate = now + datetime.timedelta(seconds=expiry)
     self.SESSION_TABLE.Create(self.connection, {
         'session': random_id, 'user': uid,
-        'remote': self.req.env['REMOTE_ADDR'], 'expiry': expirationdate,
+        'remote': self.req.env['REMOTE_ADDR'], 'expiry': '2021-02-18 11:15:45',
         'iplocked': int(locktoip)})

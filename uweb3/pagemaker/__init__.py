@@ -174,7 +174,7 @@ class BasePageMaker(object):
     self.options = config or {}
     self.persistent = self.PERSISTENT
     self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_secret)
-    self.user = self._GetLoggedInUser()
+    # self.user = self._GetLoggedInUser()
 
   def _PostRequest(self, response):
     if response.status == '500 Internal Server Error':
@@ -192,19 +192,19 @@ class BasePageMaker(object):
                                   **self.CommonBlocks('Invalid XSRF token'))
     return uweb3.Response(content=page_data, httpcode=403)
 
-  def _GetLoggedInUser(self):
-    """Checks if user is logged in based on cookie"""
-    scookie = SecureCookie(self.secure_cookie_connection)
-    if not scookie.cookiejar.get('login'):
-      return None
-    try:
-      user = scookie.cookiejar.get('login')
-    except Exception:
-      self.req.DeleteCookie('login')
-      return None
-    if not user:
-      return None
-    return Users(None, user)
+  # def _GetLoggedInUser(self):
+  #   """Checks if user is logged in based on cookie"""
+  #   scookie = SecureCookie(self.secure_cookie_connection)
+  #   if not scookie.cookiejar.get('login'):
+  #     return None
+  #   try:
+  #     user = scookie.cookiejar.get('login')
+  #   except Exception:
+  #     self.req.DeleteCookie('login')
+  #     return None
+  #   if not user:
+  #     return None
+  #   return Users(None, user)
 
   @classmethod
   def LoadModules(cls, default_routes='routes', excluded_files=('__init__', '.pyc')):

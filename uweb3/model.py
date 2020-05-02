@@ -145,10 +145,10 @@ class SettingsManager(object):
 
 
 class SecureCookie(object):
-  def __init__(self, connection):
-    self.req = connection[0]
-    self.cookies = connection[1]
-    self.cookie_salt = connection[2]
+  def __init__(self):
+    self.req = self.secure_cookie_connection[0]
+    self.cookies = self.secure_cookie_connection[1]
+    self.cookie_salt = self.secure_cookie_connection[2]
     self.cookiejar = self.__GetSessionCookies()
 
   def __GetSessionCookies(self):
