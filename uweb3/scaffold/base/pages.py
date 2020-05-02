@@ -12,10 +12,6 @@ class PageMaker(DebuggingPageMaker):
     """Returns the index template"""
     return self.parser.Parse('index.html')
 
-  def TestRoute(self):
-    """Returns the index template"""
-    return self.parser.Parse('index.html')
-
   def FourOhFour(self, path):
     """The request could not be fulfilled, this returns a 404."""
     self.req.response.httpcode = 404

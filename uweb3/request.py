@@ -93,8 +93,7 @@ class Request(object):
     # `self.vars` setup, will contain keys 'cookie', 'get' and 'post'
     self.vars = {'cookie': dict((name, value.value) for name, value in
                                 Cookie(self.env.get('HTTP_COOKIE')).items()),
-                 'get': '',
-                #  'get': PostDictionary(cgi.parse_qs(self.env['QUERY_STRING'])),
+                 'get': PostDictionary(cgi.parse_qs(self.env.get('QUERY_STRING'))),
                  'post': PostDictionary()}
     self.env['host'] = self.headers.get('Host', '')
 
