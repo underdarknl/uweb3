@@ -11,25 +11,25 @@ from uweb3.model import SettingsManager
 
 class Test(PageMaker):
   """Holds all the request handlers for the application"""
-  
+
   @staticmethod
   def Limit(length=80):
-    """Returns a closure that limits input to a number of chars/elements.""" 
+    """Returns a closure that limits input to a number of chars/elements."""
     return lambda string: string[:length]
 
   def Test(self):
     """Returns the index template"""
     self.parser.RegisterFunction('substr', self.Limit)
     return self.parser.Parse('test.html', variable='test')
-  
+
   def GetRawTemplate(self):
     """Endpoint that only returns the raw template"""
     template = self.get.getfirst('template')
     content_hash = self.get.getfirst('content_hash')
     if not template or not content_hash:
-      return 404 
+      return 404
     del self.get['template']
-    del self.get['content_hash']  
+    del self.get['content_hash']
     kwds = {}
     for item in self.get:
       kwds[item] = self.get.getfirst(item)

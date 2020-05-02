@@ -145,10 +145,10 @@ class SettingsManager(object):
 
 
 class SecureCookie(object):
-  def __init__(self, connection):
-    self.req = connection[0]
-    self.cookies = connection[1]
-    self.cookie_salt = connection[2]
+  def __init__(self):
+    self.req = self.secure_cookie_connection[0]
+    self.cookies = self.secure_cookie_connection[1]
+    self.cookie_salt = self.secure_cookie_connection[2]
     self.cookiejar = self.__GetSessionCookies()
 
   def __GetSessionCookies(self):
@@ -717,13 +717,13 @@ class Record(BaseRecord):
       return None
     elif not isinstance(value, BaseRecord):
       if field in self._FOREIGN_RELATIONS:
-        return self._LoadUsingForeignRelations(
+         value = self._LoadUsingForeignRelations(
             self._FOREIGN_RELATIONS[field], field, value)
       elif field == self.TableName():
         return value
       elif field in self._SUBTYPES:
         value = self._SUBTYPES[field]._LoadAsForeign(self.connection, value)
-        self[field] = value
+      self[field] = value
     return value
 
   def _LoadUsingForeignRelations(self, foreign_cls, field, value):
@@ -833,7 +833,8 @@ class Record(BaseRecord):
   # Private methods to be used for development
   #
   @classmethod
-  def _FromParent(cls, parent, relation_field=None, conditions=None):
+  def _FromParent(cls, parent, relation_field=None, conditions=None,
+                 limit=None, offset=None, order=None):
     """Returns all `cls` objects that are a child of the given parent.
 
     This utilized the parent's _Children method, with either this class'
@@ -843,10 +844,21 @@ class Record(BaseRecord):
       @ parent: Record
         The parent for who children should be found in this class
       % relation_field: str ~~ cls.TableName()
-        The fieldname in this class' table which relates to the parent's primary
-        key. If not given, parent.TableName() will be used.
+        The fieldname in this class' table which relates to the parent's
+        primary key. If not given, parent.TableName() will be used.
       % conditions: str / iterable ~~ None
         The extra condition(s) that should be applied when querying for records.
+      % limit: int ~~ None
+        Specifies a maximum number of items to be yielded. The limit happens on
+        the database side, limiting the query results.
+      % offset: int ~~ None
+        Specifies the offset at which the yielded items should start. Combined
+        with limit this enables proper pagination.
+      % order: iterable of str/2-tuple
+        Defines the fields on which the output should be ordered. This should
+        be a list of strings or 2-tuples. The string or first item indicates
+        the field, the second argument defines descending order
+        (desc. if True).
     """
     if not isinstance(parent, Record):
       raise TypeError('parent argument should be a Record type.')
@@ -858,7 +870,8 @@ class Record(BaseRecord):
         qry_conditions.append(conditions)
       else:
         qry_conditions.extend(conditions)
-    for record in cls.List(parent.connection, conditions=qry_conditions):
+    for record in cls.List(parent.connection, conditions=qry_conditions,
+                        limit=limit, offset=offset, order=order):
       record[relation_field] = parent.copy()
       yield record
 
@@ -927,15 +940,15 @@ class Record(BaseRecord):
     """
     try:
       # Compound key case
+      values = self._DataRecord()
       if isinstance(self._PRIMARY_KEY, tuple):
-        values = self._DataRecord()
         auto_inc_field = set(self._PRIMARY_KEY) - set(values)
         if auto_inc_field:
           raise ValueError('No value for compound key field(s): %s' % (
               ', '.join(map(repr, auto_inc_field))))
-        return cursor.Insert(table=self.TableName(), values=self._DataRecord())
+        return cursor.Insert(table=self.TableName(), values=values)
       # Single-column key case
-      result = cursor.Insert(table=self.TableName(), values=self._DataRecord())
+      result = cursor.Insert(table=self.TableName(), values=values)
       if result.insertid:
         self._record[self._PRIMARY_KEY] = self.key = result.insertid
     except cursor.OperationalError as err_obj:
@@ -1120,10 +1133,11 @@ class VersionedRecord(Record):
       Record: The newest record for the given identifier.
     """
     safe_id = connection.EscapeValues(identifier)
+
     with connection as cursor:
       record = cursor.Select(
           table=cls.TableName(), order=[(cls._PRIMARY_KEY, True)],
-          conditions='`%s`=%s' % (cls.RecordKey(), safe_id))
+          conditions='`%s`=%s' % (cls.RecordKey(), safe_id), limit=1)
     if not record:
       raise NotExistError('There is no %r for identifier %r' % (
           cls.__name__, identifier))

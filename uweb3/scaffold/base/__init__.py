@@ -8,8 +8,6 @@ import uweb3
 
 # Application
 from . import pages
-from uweb3.scaffold.routes import login
-from uweb3.scaffold.routes import home
 
 def main(sio=None):
   """Creates a uWeb3 application.
@@ -24,20 +22,14 @@ def main(sio=None):
   path = os.path.dirname(os.path.abspath(__file__))
   routes = (
       ('/', 'Index'),
-      ('/login', 'Login'),
-      ('/logout', 'Logout'),
-      ('/home', 'Home'), 
-      ('/home/create', 'Create'),
-      ('/home/update', 'Update'),
-      ('/home/delete', 'Delete'),
-      ('/sqlalchemy', 'Sqlalchemy'),
       #test routes
+      ('/sqlalchemy', 'Sqlalchemy'),
       ('/test', 'Test'),
       ('/getrawtemplate.*', 'GetRawTemplate'),
       ('/parsed', 'Parsed'),
       ('/test/escaping', 'StringEscaping'),
-      (sio.on('test', namespace="/namespace"), 'EventHandler'),
-      (sio.on('connect'), 'Connect'),
+      # (sio.on('test', namespace="/namespace"), 'EventHandler'),
+      # (sio.on('connect'), 'Connect'),
       ('/(.*)', 'FourOhFour'))
-      
+
   return uweb3.uWeb(pages.PageMaker, routes, executing_path=path)

@@ -193,10 +193,15 @@ class uWeb(object):
       response = self.get_response(pagemaker, method, args)
     except NoRouteError:
       #When we catch this error this means there is no method for the expected function
-      #If this happens we default to the standard pagemaker because we dont know what the target pagemaker should be.
+      #If this happens we default to the standard pagemaker because we don't know what the target pagemaker should be.
       #Then we set an internalservererror and move on
       pagemaker = self.page_class(req, config=self.config.options, secure_cookie_secret=self.secure_cookie_secret, executing_path=self.executing_path)
       response = pagemaker.InternalServerError(*sys.exc_info())
+    except Exception:
+      #This should only happend when something is very wrong
+      pagemaker = PageMaker(req, config=self.config.options, secure_cookie_secret=self.secure_cookie_secret, executing_path=self.executing_path)
+      response = pagemaker.InternalServerError(*sys.exc_info())
+
     if not isinstance(response, Response):
       req.response.text = response
       response = req.response
@@ -211,7 +216,7 @@ class uWeb(object):
   def setup_logger(self):
     logger = logging.getLogger('uweb3_logger')
     logger.setLevel(logging.INFO)
-    fh = logging.FileHandler(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'access_logging.log'))
+    fh = logging.FileHandler(os.path.join(self.executing_path, 'access_logging.log'))
     fh.setLevel(logging.INFO)
     logger.addHandler(fh)
     return logger
@@ -248,7 +253,7 @@ class uWeb(object):
       if self.config.options.get('development', None):
         if self.config.options['development'].get('error_logging', True) == 'True':
           logger = logging.getLogger('uweb3_exception_logger')
-          fh = logging.FileHandler(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uweb3_uncaught_exceptions.log'))
+          fh = logging.FileHandler(os.path.join(self.executing_path, 'uweb3_uncaught_exceptions.log'))
           logger.addHandler(fh)
           logger.exception("UNCAUGHT EXCEPTION:")
       return page_maker.InternalServerError(*sys.exc_info())
@@ -263,9 +268,8 @@ class uWeb(object):
 
     print(f'Running µWeb3 server on http://{server.server_address[0]}:{server.server_address[1]}')
     try:
-      #Needs to check == True. Without it will trigger even when false
       if self.config.options['development'].get('dev', False) == 'True':
-        HotReload(self.config.options['development'].get('dev', 'False'))
+        HotReload(self.executing_path, uweb_dev=self.config.options['development'].get('uweb_dev', 'False'))
       server.serve_forever()
     except:
       server.shutdown()
@@ -297,86 +301,12 @@ def read_config(config_file):
   return dict((section, dict(parser.items(section)))
               for section in parser.sections())
 
-
-def router(routes):
-  """Returns the first request handler that matches the request URL.
-
-  The `routes` argument is an iterable of 2-tuples, each of which contain a
-  pattern (regex) and the name of the handler to use for matching requests.
-
-  Before returning the closure, all regexp are compiled, and handler methods
-  are retrieved from the provided `page_class`.
-
-  Arguments:
-    @ routes: iterable of 2-tuples.
-      Each tuple is a pair of `pattern` and `handler`, both are strings.
-
-  Returns:
-    request_router: Configured closure that processes urls.
-  """
-  req_routes = []
-  for pattern, *details in routes:
-    req_routes.append((re.compile(pattern + '$', re.UNICODE),
-                      details[0], #handler,
-                      details[1] if len(details) > 1 else 'ALL', #request types
-                      details[2] if len(details) > 2 else '*')) #host
-
-  def request_router(url, method, host):
-    """Returns the appropriate handler and arguments for the given `url`.
-
-    The`url` is matched against the compiled patterns in the `req_routes`
-    provided by the outer scope. Upon finding a pattern that matches, the
-    match groups from the regex and the unbound handler method are returned.
-
-    N.B. The rules are such that the first matching route will be used. There
-    is no further concept of specificity. Routes should be written with this in
-    mind.
-
-    Arguments:
-      @ url: str
-        The URL requested by the client.
-      @ method: str
-        The http method requested by the client.
-      @ host: str
-        The http host header value requested by the client.
-
-    Raises:
-      NoRouteError: None of the patterns match the requested `url`.
-
-    Returns:
-      2-tuple: handler method (unbound), and tuple of pattern matches.
-    """
-
-    for pattern, handler, routemethod, hostpattern in req_routes:
-      if routemethod != 'ALL':
-        # clearly not the route we where looking for
-        if isinstance(routemethod, tuple):
-          if method not in routemethod:
-            continue
-        if method != routemethod:
-          continue
-
-      hostmatch = None
-      if hostpattern != '*':
-        # see if we can match this host and extact any info from it.
-        hostmatch = re.compile(f"^{host}$").match(hostpattern)
-        if not hostmatch:
-          # clearly not the host we where looking for
-          continue
-        hostmatch = hostmatch.groups()
-      match = pattern.match(url)
-      if match:
-        return handler, match.groups(), hostmatch
-    raise NoRouteError(url +' cannot be handled')
-  return request_router
-
-
 class HotReload(object):
-    def __init__(self, dev, interval=1):
+    def __init__(self, path, interval=1, uweb_dev=False):
       self.running = threading.Event()
       self.interval = interval
-      self.path = os.path.dirname(os.path.abspath(__file__))
-      if dev:
+      self.path = os.path.dirname(path)
+      if uweb_dev == 'True':
         from pathlib import Path
         self.path = str(Path(self.path).parents[1])
       self.thread = threading.Thread(target=self.run, args=())
@@ -413,7 +343,7 @@ class HotReload(object):
       """Returns all files inside the working directory of uweb3.
       Also returns a count so that we can restart on file add/remove.
       """
-      watched_files = [__file__]
+      watched_files = []
       for r, d, f in os.walk(self.path):
         for file in f:
           ext = os.path.splitext(file)[1]

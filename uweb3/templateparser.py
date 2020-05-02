@@ -1,4 +1,4 @@
-#!/usr/bin/python2.5
+#!/usr/bin/python
 """uWeb TemplateParser
 
 Classes:
@@ -246,7 +246,7 @@ class Template(list):
         )+)?                        # end of function block
       \])                         # end of tag""",
       re.VERBOSE)
-  
+
   def __init__(self, raw_template, parser=None):
     """Initializes a Template from a string.
 
@@ -380,10 +380,10 @@ class Template(list):
   # ############################################################################
   # Template syntax constructs
   #
-    
+
   def _TemplateConstructXsrf(self, value):
     self.AddString('<input type="hidden" value="{}" name="xsrf" />'.format(value))
-    
+
   def _TemplateConstructInline(self, name):
     """Processing for {{ inline }} template syntax."""
     self.AddFile(name)
@@ -619,7 +619,7 @@ class TemplateConditional(object):
       return ''.join(part.Parse(**kwds) for part in self.default)
     return ''
 
-  
+
 
 class TemplateConditionalPresence(TemplateConditional):
   """A template construct to safely check for the presence of tags."""
@@ -641,7 +641,7 @@ class TemplateConditionalPresence(TemplateConditional):
   def NewBranch(self, tags):
     """Begins a new branch based on the given tags."""
     self.branches.append((map(TemplateTag.FromString, tags.split()), []))
-    
+
 class TemplateLoop(list):
   """Template loops are used to repeat a portion of template multiple times.
 
@@ -734,7 +734,7 @@ class TemplateTag(object):
     self.name = name
     self.indices = indices
     self.functions = functions
-  
+
 
   def __repr__(self):
     return '%s(%r)' % (type(self).__name__, str(self))
@@ -907,8 +907,8 @@ class TemplateText(str):
 
 
 TAG_FUNCTIONS = {
-    'default': lambda d: HTMLsafestring('') + d, #HtmlEscape,
-    'html': lambda d: HTMLsafestring('') + d, #HtmlEscape,
+    'default': lambda d: HTMLsafestring('') + d,
+    'html': lambda d: HTMLsafestring('') + d,
     'raw': lambda x: x,
     'url': lambda d: URLqueryargumentsafestring(d, unsafe=True),
     'items': lambda d: list(d.items()),
