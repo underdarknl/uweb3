@@ -139,7 +139,7 @@ class ThreadedConnection(threading.Thread):
           response.put(SqliteResult(result.fetchall(), result.description,
                                     result.rowcount, result.lastrowid))
           del execute, result
-      except Exception, error:
+      except Exception as error:
         response.put(error)
         del error
 
