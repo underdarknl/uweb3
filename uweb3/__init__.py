@@ -86,8 +86,7 @@ class Router(object):
         pattern(getattr(pagemaker, details[0]))
         continue
       if not pagemaker:
-        raise NoRouteError(f"""There is no handler called: {details[0]} in any of the projects PageMaker.
-      Static routes are automatically handled so there is no need to define them in routes anymore.""")
+        raise NoRouteError(f"µWeb3 could not find a route handler called '{details[0]}' in any of your projects PageMakers.")
       req_routes.append((re.compile(pattern + '$', re.UNICODE),
                         details[0], #handler,
                         details[1] if len(details) > 1 else 'ALL', #request types
