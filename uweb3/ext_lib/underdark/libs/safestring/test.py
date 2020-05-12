@@ -107,7 +107,6 @@ class TestSQLSAFEMethods(unittest.TestCase):
     self.assertEqual(testdata, "SELECT * FROM users WHERE username = 'username\\\"'")
     testdata = SQLSAFE("""SELECT * FROM users WHERE username = ? AND ? """, values=('username"', "password"), unsafe=True)
 
-
   def test_concatenation(self):
     testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=("username'",), unsafe=True)
     other = "AND firstname='test'"
@@ -115,6 +114,17 @@ class TestSQLSAFEMethods(unittest.TestCase):
     testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=('username"',), unsafe=True)
     other = "AND firstname='test'"
     self.assertEqual(testdata + other, "SELECT * FROM users WHERE username = 'username\\\"' AND firstname=\\'test\\'")
+
+  # def test_unescape_wrong_type(self):
+  #   """Validate if the string we are trying to unescape is part of an SQLSAFE instance"""
+  #   testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=("username'",), unsafe=True)
+  #   with self.assertRaises(ValueError) as msg:
+  #     self.assertRaises(testdata.unescape('whatever'))
+
+  def test_unescape(self):
+    testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=("username\\t \\0",), unsafe=True)
+    testdata.unescape(testdata)
+
 
 if __name__ == '__main__':
     unittest.main()
