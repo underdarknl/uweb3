@@ -5,7 +5,7 @@ __version__ = '0.4'
 
 
 # Custom modules
-from libs.sqltalk import sqlresult
+from ext_libs.libs.sqltalk import sqlresult
 
 
 class Cursor(object):

@@ -17,7 +17,7 @@ import unittest
 import urllib
 
 # Unittest target
-from . import request
+import request
 
 
 class IndexedFieldStorageTest(unittest.TestCase):

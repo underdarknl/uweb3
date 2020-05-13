@@ -17,7 +17,7 @@ except ImportError:
 import re
 import json
 # uWeb modules
-from . import response
+from uweb3 import response
 from werkzeug.formparser import parse_form_data
 from werkzeug.datastructures import MultiDict
 
