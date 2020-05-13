@@ -8,7 +8,6 @@ REQUIREMENTS = [
   'decorator',
   'PyMySQL',
   'python-magic',
-  'python3-openid',
   'pytz',
   'simplejson',
   'sqlalchemy',
