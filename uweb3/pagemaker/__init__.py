@@ -16,7 +16,6 @@ import uweb3
 from uweb3.model import SecureCookie
 
 from .. import response, templateparser
-from .new_login import Users
 
 RFC_1123_DATE = '%a, %d %b %Y %T GMT'
 

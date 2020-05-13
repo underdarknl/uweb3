@@ -149,7 +149,7 @@ class AdminMixin(object):
           obj[item] = int(self.post.getfirst(item, 0))
       try:
         obj.Save()
-      except Exception, error:
+      except Exception as error:
         return error
       return 'Changes saved'
     return 'Invalid table'

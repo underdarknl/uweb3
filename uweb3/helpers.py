@@ -102,7 +102,8 @@ def http404(env, start_response):
                   [('Content-type', 'text/plain; charset=utf-8')])
   return [b'404 Not Found']
 
-
+#This code is copied and altered from the WSGI static middleware PyPi package
+#https://pypi.org/project/wsgi-static-middleware/
 class StaticMiddleware:
     CACHE_DURATION = MimeTypeDict({'text': 7, 'image': 30, 'application': 7})
 
