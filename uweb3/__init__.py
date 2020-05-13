@@ -29,7 +29,6 @@ from . import request
 
 # Package classes
 from .response import Response
-from .response import Redirect
 from .pagemaker import PageMaker
 from .pagemaker import DebuggingPageMaker
 from .pagemaker import SqAlchemyPageMaker
