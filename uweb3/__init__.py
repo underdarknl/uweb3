@@ -18,7 +18,6 @@ from wsgiref.simple_server import make_server
 import socket, errno
 import datetime
 
-
 # Add the ext_lib directory to the path
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), 'ext_lib')))
@@ -174,7 +173,6 @@ class uWeb(object):
     self.router = Router(page_class).router(routes)
     self.secure_cookie_secret = str(os.urandom(32))
     self.setup_routing()
-
 
   def __call__(self, env, start_response):
     """WSGI request handler.
