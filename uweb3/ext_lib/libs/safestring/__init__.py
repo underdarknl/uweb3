@@ -153,6 +153,7 @@ class SQLSAFE(Basesafestring):
     escaped = ""
     if not isinstance(values, tuple):
       raise ValueError("Values should be a tuple")
+
     if len(self.PLACEHOLDERS_REGEX.findall(sql)) != len(values):
       raise ValueError("Number of values does not match number of replacements")
 

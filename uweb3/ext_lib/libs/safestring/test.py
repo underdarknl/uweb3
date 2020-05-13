@@ -100,6 +100,20 @@ class TestEmailAddresssafestringMethods(unittest.TestCase):
     self.assertEqual(testdata, 'jan@underdark.nl')
 
 class TestSQLSAFEMethods(unittest.TestCase):
+  def test_user_supplied_safe_value(self):
+    user_supplied_safe_object = SQLSAFE("SELECT * FROM users WHERE username = 'username\t'")
+    self.assertEqual(user_supplied_safe_object, "SELECT * FROM users WHERE username = 'username\t'")
+    self.assertIsInstance(user_supplied_safe_object, SQLSAFE)
+
+  def test_escaping_wrong_values_type(self):
+    with self.assertRaises(ValueError):
+      self.assertRaises(SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=["username'"], unsafe=True))
+
+  def test_escaping_uneven_replacements_and_values(self):
+    with self.assertRaises(ValueError):
+      self.assertRaises(SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=["username'", "test"], unsafe=True))
+      self.assertRaises(SQLSAFE("""SELECT * FROM users WHERE username = ? AND name=?""", values=["username'"], unsafe=True))
+
   def test_escaping(self):
     testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=("username'",), unsafe=True)
     self.assertEqual(testdata, "SELECT * FROM users WHERE username = 'username\\''")
@@ -118,7 +132,7 @@ class TestSQLSAFEMethods(unittest.TestCase):
   def test_unescape_wrong_type(self):
     """Validate if the string we are trying to unescape is part of an SQLSAFE instance"""
     testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=("username'",), unsafe=True)
-    with self.assertRaises(ValueError) as msg:
+    with self.assertRaises(ValueError):
       self.assertRaises(testdata.unescape('whatever'))
 
   def test_correct_escape_character(self):
