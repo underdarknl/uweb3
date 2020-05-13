@@ -174,16 +174,22 @@ class BasePageMaker(object):
     self.options = config or {}
     self.persistent = self.PERSISTENT
     self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_secret)
-    # self.user = self._GetLoggedInUser()
 
   def _PostRequest(self, response):
     if response.status == '500 Internal Server Error':
       if not hasattr(self, 'connection_error'): #this is set when we try and create a connection but it failed
+        #TODO: This requires some testing
+        print("ATTEMPTING TO ROLLBACK DATABASE")
+        try:
+          with self.connection as cursor:
+            cursor.Execute("ROLLBACK")
+        except Exception:
+          if hasattr(self, 'connection'):
+              if self.connection.open:
+                self.connection.close()
+                self.persistent.Del("__mysql")
         self.connection_error = False
-        if hasattr(self, 'connection'):
-            if self.connection.open:
-              self.connection.close()
-              self.persistent.Del("__mysql")
+
     return response
 
   def XSRFInvalidToken(self, command):
@@ -191,20 +197,6 @@ class BasePageMaker(object):
     page_data = self.parser.Parse('403.html', error=command,
                                   **self.CommonBlocks('Invalid XSRF token'))
     return uweb3.Response(content=page_data, httpcode=403)
-
-  # def _GetLoggedInUser(self):
-  #   """Checks if user is logged in based on cookie"""
-  #   scookie = SecureCookie(self.secure_cookie_connection)
-  #   if not scookie.cookiejar.get('login'):
-  #     return None
-  #   try:
-  #     user = scookie.cookiejar.get('login')
-  #   except Exception:
-  #     self.req.DeleteCookie('login')
-  #     return None
-  #   if not user:
-  #     return None
-  #   return Users(None, user)
 
   @classmethod
   def LoadModules(cls, default_routes='routes', excluded_files=('__init__', '.pyc')):
@@ -296,6 +288,7 @@ class BasePageMaker(object):
     if not page_id:
       page_id = title.replace(' ', '_').lower()
 
+    #TODO: self.user is no more
     return {'header': self.parser.Parse(
                 'header.html', title=title, page_id=page_id, user=self.user
                 ),
@@ -440,7 +433,7 @@ class MysqlMixin(object):
     """Returns a MySQL database connection."""
     try:
       if '__mysql' not in self.persistent:
-        from underdark.libs.sqltalk import mysql
+        from libs.sqltalk import mysql
         mysql_config = self.options['mysql']
         self.persistent.Set('__mysql', mysql.Connect(
             host=mysql_config.get('host', 'localhost'),
@@ -462,7 +455,7 @@ class SqliteMixin(object):
   def connection(self):
     """Returns an SQLite database connection."""
     if '__sqlite' not in self.persistent:
-      from underdark.libs.sqltalk import sqlite
+      from libs.sqltalk import sqlite
       self.persistent.Set('__sqlite', sqlite.Connect(
           self.options['sqlite']['database']))
     return self.persistent.Get('__sqlite')

@@ -17,7 +17,7 @@ except ImportError:
 import re
 import json
 # uWeb modules
-from . import response
+from uweb3 import response
 from werkzeug.formparser import parse_form_data
 from werkzeug.datastructures import MultiDict
 
@@ -90,7 +90,6 @@ class Request(object):
     self._out_status = 200
     self._response = None
     self.method = self.env['REQUEST_METHOD']
-    # `self.vars` setup, will contain keys 'cookie', 'get' and 'post'
     self.vars = {'cookie': dict((name, value.value) for name, value in
                                 Cookie(self.env.get('HTTP_COOKIE')).items()),
                  'get': PostDictionary(cgi.parse_qs(self.env.get('QUERY_STRING'))),

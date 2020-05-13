@@ -6,7 +6,7 @@ import json
 from uweb3 import PageMaker
 from uweb3.pagemaker.new_login import UserCookie
 from uweb3.pagemaker.new_decorators import loggedin, checkxsrf
-from uweb3.ext_lib.underdark.libs.safestring import SQLSAFE, HTMLsafestring
+from uweb3.ext_lib.libs.safestring import SQLSAFE, HTMLsafestring
 from uweb3.model import SettingsManager
 
 class Test(PageMaker):
@@ -55,7 +55,8 @@ class Test(PageMaker):
 
   def StringEscaping(self):
     if self.post:
-      result = SQLSAFE(self.post.getfirst('sql'), self.post.getfirst('value1'), self.post.getfirst('value2'), unsafe=True)
-      t = f"""t = 't"''"""
-      print(result + t)
+      result = SQLSAFE(self.post.getfirst('sql'), values=(self.post.getfirst('value1'), self.post.getfirst('value2')), unsafe=True)
+      print(result)
+      print(result.unescape(result))
+
     return self.req.Redirect('/test')

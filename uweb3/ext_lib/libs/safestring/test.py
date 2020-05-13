@@ -7,7 +7,7 @@ __version__ = 0.1
 import unittest
 
 #custom modules
-from uweb3.ext_lib.underdark.libs.safestring import URLsafestring, SQLSAFE, HTMLsafestring, URLqueryargumentsafestring, JSONsafestring, EmailAddresssafestring, Basesafestring
+from uweb3.ext_lib.libs.safestring import URLsafestring, SQLSAFE, HTMLsafestring, URLqueryargumentsafestring, JSONsafestring, EmailAddresssafestring, Basesafestring
 
 class BasesafestringMethods(unittest.TestCase):
   def test_creation_str(self):
@@ -100,13 +100,26 @@ class TestEmailAddresssafestringMethods(unittest.TestCase):
     self.assertEqual(testdata, 'jan@underdark.nl')
 
 class TestSQLSAFEMethods(unittest.TestCase):
+  def test_user_supplied_safe_value(self):
+    user_supplied_safe_object = SQLSAFE("SELECT * FROM users WHERE username = 'username\t'")
+    self.assertEqual(user_supplied_safe_object, "SELECT * FROM users WHERE username = 'username\t'")
+    self.assertIsInstance(user_supplied_safe_object, SQLSAFE)
+
+  def test_escaping_wrong_values_type(self):
+    with self.assertRaises(ValueError):
+      self.assertRaises(SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=["username'"], unsafe=True))
+
+  def test_escaping_uneven_replacements_and_values(self):
+    with self.assertRaises(ValueError):
+      self.assertRaises(SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=["username'", "test"], unsafe=True))
+      self.assertRaises(SQLSAFE("""SELECT * FROM users WHERE username = ? AND name=?""", values=["username'"], unsafe=True))
+
   def test_escaping(self):
     testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=("username'",), unsafe=True)
     self.assertEqual(testdata, "SELECT * FROM users WHERE username = 'username\\''")
     testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=('username"',), unsafe=True)
     self.assertEqual(testdata, "SELECT * FROM users WHERE username = 'username\\\"'")
     testdata = SQLSAFE("""SELECT * FROM users WHERE username = ? AND ? """, values=('username"', "password"), unsafe=True)
-
 
   def test_concatenation(self):
     testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=("username'",), unsafe=True)
@@ -115,6 +128,31 @@ class TestSQLSAFEMethods(unittest.TestCase):
     testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=('username"',), unsafe=True)
     other = "AND firstname='test'"
     self.assertEqual(testdata + other, "SELECT * FROM users WHERE username = 'username\\\"' AND firstname=\\'test\\'")
+
+  def test_unescape_wrong_type(self):
+    """Validate if the string we are trying to unescape is part of an SQLSAFE instance"""
+    testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=("username'",), unsafe=True)
+    with self.assertRaises(ValueError):
+      self.assertRaises(testdata.unescape('whatever'))
+
+  def test_correct_escape_character(self):
+    """Validate that all characters are escaped as expected"""
+    self.assertEqual(SQLSAFE.sanitize('\0', with_quotes=False), '\\0')
+    self.assertEqual(SQLSAFE.sanitize('\b', with_quotes=False), '\\b')
+    self.assertEqual(SQLSAFE.sanitize('\t', with_quotes=False), '\\t')
+    self.assertEqual(SQLSAFE.sanitize('\n', with_quotes=False), '\\n')
+    self.assertEqual(SQLSAFE.sanitize('\r', with_quotes=False), '\\r')
+    self.assertEqual(SQLSAFE.sanitize('\x1a', with_quotes=False), '\\Z')
+    self.assertEqual(SQLSAFE.sanitize('"', with_quotes=False), '\\"')
+    self.assertEqual(SQLSAFE.sanitize('\'', with_quotes=False), '\\\'')
+    self.assertEqual(SQLSAFE.sanitize('\\', with_quotes=False), '\\\\')
+
+  def test_unescape(self):
+    """Validate that the string is converted back to the original after escaping and unescaping"""
+    testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=("username\t \t",), unsafe=True)
+    self.assertEqual(testdata, "SELECT * FROM users WHERE username = 'username\\t \\t'")
+    self.assertEqual(testdata.unescape(testdata), "SELECT * FROM users WHERE username = 'username\t \t'")
+
 
 if __name__ == '__main__':
     unittest.main()

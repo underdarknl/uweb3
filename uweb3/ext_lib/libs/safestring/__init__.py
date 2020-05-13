@@ -21,7 +21,7 @@ type. Handy escape() functions are present to do manual escaping if required.
 """
 
 #TODO: logger geen enters
-#bash injection 
+#bash injection
 #mysql escaping
 __author__ = 'Jan Klopper (jan@underdark.nl)'
 __version__ = 0.1
@@ -84,18 +84,31 @@ class Basesafestring(str):
 
 class SQLSAFE(Basesafestring):
   CHARS_ESCAPE_DICT = {
-    '\0'   : '\\0',
-    '\b'   : '\\b',
-    '\t'   : '\\t',
-    '\n'   : '\\n',
-    '\r'   : '\\r',
-    '\x1a' : '\\Z',
-    '"'    : '\\"',
-    '\''   : '\\\'',
-    '\\'   : '\\\\'
+    '\0': '\\0',
+    '\b': '\\b',
+    '\t': '\\t',
+    '\n': '\\n',
+    '\r': '\\r',
+    '\x1a': '\\Z',
+    '"': '\\"',
+    '\'': '\\\'',
+    '\\': '\\\\'
   }
-  
+
+  CHARS_UNESCAPE_DICT = {
+    '\\0': '\0',
+    '\\b': '\b',
+    '\\t': '\t',
+    '\\n': '\n',
+    '\\r': '\r',
+    '\\Z': '\x1a',
+    '\\"': '"',
+    '\\\'': '\'',
+    '\\\\': '\\'
+  }
+
   CHARS_ESCAPE_REGEX = re.compile(r"""[\0\b\t\n\r\x1a\"\'\\]""")
+  CHARS_UNESCAPE_REGEX = re.compile(r"""((\\t)|(\\0)|(\\n)|(\\b)|(\\r)|(\\Z)|(\\")|(\\\\')|(\\\\\\))""")
   PLACEHOLDERS_REGEX = re.compile(r"""\?+""")
   QUOTES_REGEX = re.compile(r"""([\"'])(?:(?=(\\?))\2.)*?\1""", re.DOTALL)
 
@@ -113,15 +126,15 @@ class SQLSAFE(Basesafestring):
         return self.sanitize(otherdata) # escape it using our context
       else:
         other = " " + other
-        return self.sanitize(other, qoutes=False)
+        return self.sanitize(other, with_quotes=False)
 
   @classmethod
-  def sanitize(cls, value, qoutes=True):
+  def sanitize(cls, value, with_quotes=True):
     index = 0
     escaped = ""
     if len(cls.CHARS_ESCAPE_REGEX.findall(value)) == 0:
       if not str.isdigit(value):
-        if qoutes:
+        if with_quotes:
           return f"'{value}'"
         return value
       return value
@@ -130,30 +143,45 @@ class SQLSAFE(Basesafestring):
       index = m.span()[1]
     escaped += value[index:]
     if not str.isdigit(escaped):
-      if qoutes:
+      if with_quotes:
         return f"'{escaped}'"
       return escaped
     return escaped
 
-  def escape(cls, sql, values):
+  def escape(self, sql, values):
     x = 0
     escaped = ""
     if not isinstance(values, tuple):
       raise ValueError("Values should be a tuple")
-    if len(cls.PLACEHOLDERS_REGEX.findall(sql)) != len(values):
+
+    if len(self.PLACEHOLDERS_REGEX.findall(sql)) != len(values):
       raise ValueError("Number of values does not match number of replacements")
-    for index, m in enumerate(cls.PLACEHOLDERS_REGEX.finditer(sql)):
-      escaped += sql[x:m.span()[0]] + cls.sanitize(values[index])
+
+    for index, m in enumerate(self.PLACEHOLDERS_REGEX.finditer(sql)):
+      escaped += sql[x:m.span()[0]] + self.sanitize(values[index])
       x = m.span()[1]
     escaped += sql[x:]
     return SQLSAFE(escaped)
-    
-    
+
+  def unescape(self, value):
+    if not isinstance(value, SQLSAFE):
+      raise ValueError(f"The value needs to be an instance of the SQLSAFE class and not of type: {type(value)}")
+    x = 0
+    escaped = ""
+    for index, m in enumerate(self.CHARS_UNESCAPE_REGEX.finditer(value)):
+      escaped += value[x:m.span()[0]]
+      target = value[m.span()[0]:m.span()[1]]
+      escaped += self.CHARS_UNESCAPE_DICT.get(target)
+      x = m.span()[1]
+    escaped += value[x:]
+    return SQLSAFE(escaped)
+
+
 # what follows are the actual useable classes that are safe in specific contexts
 class HTMLsafestring(Basesafestring):
   """This class signals that the content is HTML safe"""
- 
-    
+
+
   def escape(self, data):
     return html.escape(data)
 
