@@ -4,8 +4,6 @@
 import uweb3
 import json
 from uweb3 import PageMaker
-from uweb3.pagemaker.new_login import UserCookie
-from uweb3.pagemaker.new_decorators import loggedin, checkxsrf
 from uweb3.ext_lib.libs.safestring import SQLSAFE, HTMLsafestring
 from uweb3.model import SettingsManager
 
