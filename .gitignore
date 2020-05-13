@@ -34,4 +34,4 @@ features
 *.vscode
 *.log
 *.out
-*/scaffold/*
+scaffold/
