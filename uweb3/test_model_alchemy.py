@@ -19,7 +19,7 @@ from sqlalchemy.orm import lazyload, relationship
 
 import uweb3
 from uweb3.alchemy_model import AlchemyRecord
-from uweb3.ext_lib.underdark.libs.sqltalk import mysql
+from uweb3.ext_lib.libs.sqltalk import mysql
 
 # ##############################################################################
 # Record classes for testing

@@ -17,7 +17,7 @@ __version__ = '1.6'
 import os
 import re
 import urllib.parse as urlparse
-from .ext_lib.underdark.libs.safestring import *
+from .ext_lib.libs.safestring import *
 import hashlib
 import itertools
 

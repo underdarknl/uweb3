@@ -7,7 +7,7 @@ __version__ = 0.1
 import unittest
 
 #custom modules
-from uweb3.ext_lib.underdark.libs.safestring import URLsafestring, SQLSAFE, HTMLsafestring, URLqueryargumentsafestring, JSONsafestring, EmailAddresssafestring, Basesafestring
+from uweb3.ext_lib.libs.safestring import URLsafestring, SQLSAFE, HTMLsafestring, URLqueryargumentsafestring, JSONsafestring, EmailAddresssafestring, Basesafestring
 
 class BasesafestringMethods(unittest.TestCase):
   def test_creation_str(self):

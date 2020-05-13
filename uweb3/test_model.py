@@ -8,7 +8,7 @@
 import unittest
 
 # Importing uWeb3 makes the SQLTalk library available as a side-effect
-from uweb3.ext_lib.underdark.libs.sqltalk import mysql
+from uweb3.ext_lib.libs.sqltalk import mysql
 # Unittest target
 from uweb3 import model
 from pymysql.err import InternalError
@@ -435,7 +435,7 @@ def DatabaseConnection():
       passwd='24192419',
       db='uweb_test',
       charset='utf8')
-  
+
 
 
 if __name__ == '__main__':
