@@ -96,15 +96,15 @@ class SQLSAFE(Basesafestring):
   }
 
   CHARS_UNESCAPE_DICT = {
-    '\\\\0': '\0',
-    '\\\\b': '\b',
-    '\\\\t': '\t',
-    '\\\\n': '\n',
-    '\\\\r': '\r',
-    '\\\\Z': '\x1a',
-    '\\\\"': '"',
-    '\\\\\'': '\'',
-    '\\\\\\': '\\'
+    '\\0': '\0',
+    '\\b': '\b',
+    '\\t': '\t',
+    '\\n': '\n',
+    '\\r': '\r',
+    '\\Z': '\x1a',
+    '\\"': '"',
+    '\\\'': '\'',
+    '\\\\': '\\'
   }
 
   CHARS_ESCAPE_REGEX = re.compile(r"""[\0\b\t\n\r\x1a\"\'\\]""")
@@ -126,15 +126,15 @@ class SQLSAFE(Basesafestring):
         return self.sanitize(otherdata) # escape it using our context
       else:
         other = " " + other
-        return self.sanitize(other, qoutes=False)
+        return self.sanitize(other, with_quotes=False)
 
   @classmethod
-  def sanitize(cls, value, qoutes=True):
+  def sanitize(cls, value, with_quotes=True):
     index = 0
     escaped = ""
     if len(cls.CHARS_ESCAPE_REGEX.findall(value)) == 0:
       if not str.isdigit(value):
-        if qoutes:
+        if with_quotes:
           return f"'{value}'"
         return value
       return value
@@ -143,7 +143,7 @@ class SQLSAFE(Basesafestring):
       index = m.span()[1]
     escaped += value[index:]
     if not str.isdigit(escaped):
-      if qoutes:
+      if with_quotes:
         return f"'{escaped}'"
       return escaped
     return escaped
@@ -168,8 +168,8 @@ class SQLSAFE(Basesafestring):
     x = 0
     escaped = ""
     for index, m in enumerate(self.CHARS_UNESCAPE_REGEX.finditer(value)):
-      escaped += value[x:m.span()[0] - 1]
-      target = value[m.span()[0] - 1:m.span()[1]]
+      escaped += value[x:m.span()[0]]
+      target = value[m.span()[0]:m.span()[1]]
       escaped += self.CHARS_UNESCAPE_DICT.get(target)
       x = m.span()[1]
     escaped += value[x:]

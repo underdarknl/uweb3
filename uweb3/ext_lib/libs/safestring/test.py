@@ -115,15 +115,29 @@ class TestSQLSAFEMethods(unittest.TestCase):
     other = "AND firstname='test'"
     self.assertEqual(testdata + other, "SELECT * FROM users WHERE username = 'username\\\"' AND firstname=\\'test\\'")
 
-  # def test_unescape_wrong_type(self):
-  #   """Validate if the string we are trying to unescape is part of an SQLSAFE instance"""
-  #   testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=("username'",), unsafe=True)
-  #   with self.assertRaises(ValueError) as msg:
-  #     self.assertRaises(testdata.unescape('whatever'))
+  def test_unescape_wrong_type(self):
+    """Validate if the string we are trying to unescape is part of an SQLSAFE instance"""
+    testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=("username'",), unsafe=True)
+    with self.assertRaises(ValueError) as msg:
+      self.assertRaises(testdata.unescape('whatever'))
+
+  def test_correct_escape_character(self):
+    """Validate that all characters are escaped as expected"""
+    self.assertEqual(SQLSAFE.sanitize('\0', with_quotes=False), '\\0')
+    self.assertEqual(SQLSAFE.sanitize('\b', with_quotes=False), '\\b')
+    self.assertEqual(SQLSAFE.sanitize('\t', with_quotes=False), '\\t')
+    self.assertEqual(SQLSAFE.sanitize('\n', with_quotes=False), '\\n')
+    self.assertEqual(SQLSAFE.sanitize('\r', with_quotes=False), '\\r')
+    self.assertEqual(SQLSAFE.sanitize('\x1a', with_quotes=False), '\\Z')
+    self.assertEqual(SQLSAFE.sanitize('"', with_quotes=False), '\\"')
+    self.assertEqual(SQLSAFE.sanitize('\'', with_quotes=False), '\\\'')
+    self.assertEqual(SQLSAFE.sanitize('\\', with_quotes=False), '\\\\')
 
   def test_unescape(self):
-    testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=("username\\t \\0",), unsafe=True)
-    testdata.unescape(testdata)
+    """Validate that the string is converted back to the original after escaping and unescaping"""
+    testdata = SQLSAFE("""SELECT * FROM users WHERE username = ?""", values=("username\t \t",), unsafe=True)
+    self.assertEqual(testdata, "SELECT * FROM users WHERE username = 'username\\t \\t'")
+    self.assertEqual(testdata.unescape(testdata), "SELECT * FROM users WHERE username = 'username\t \t'")
 
 
 if __name__ == '__main__':
