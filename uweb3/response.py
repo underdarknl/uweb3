@@ -88,3 +88,17 @@ class Response(object):
   def __str__(self):
     return self.content
 
+
+class Redirect(Response):
+  """A response tailored to do redirects."""
+  REDIRECT_PAGE = ('<!DOCTYPE html><html><head><title>Page moved</title></head>'
+                   '<body>Page moved, please follow <a href="%s">this link</a>'
+                   '</body></html>')
+  #TODO make sure we inject cookies set on the previous response by copying any Set-Cookie headers from them into these headers.
+  def __init__(self, location, httpcode=307):
+    super(Redirect, self).__init__(
+        content=self.REDIRECT_PAGE % location,
+        content_type='text/html',
+        httpcode=httpcode,
+        headers={'Location': location})
+
