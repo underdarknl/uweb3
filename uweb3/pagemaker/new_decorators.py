@@ -7,8 +7,8 @@ class XSRF(object):
   # secret = str(os.urandom(64))
   secret = "test"
   def __init__(self, AddCookie, post):
-    """Checks if cookie with xsrf key is present. 
-    
+    """Checks if cookie with xsrf key is present.
+
     If not generates xsrf token and places it in a cookie.
     Checks if xsrf token in post is equal to the one in the cookie and returns
     True when they do not match and False when they do match for the 'incorrect_xsrf_token' flag.
@@ -16,16 +16,16 @@ class XSRF(object):
     self.unix_timestamp = time.mktime(datetime.datetime.now().date().timetuple())
     self.AddCookie = AddCookie
     self.post = post
-    
+
   def is_valid_xsrf_token(self, userid):
     """Validate given xsrf token based on userid
-    
+
     Arguments:
       @ userid: str/int
-      
+
     Returns:
         IsValid: boolean
-    """ 
+    """
     token = self.Generate_xsrf_token(userid)
     if not self.post.get('xsrf'):
       return False
@@ -33,7 +33,7 @@ class XSRF(object):
       return False
     return True
 
-  def Generate_xsrf_token(self, userid):    
+  def Generate_xsrf_token(self, userid):
       hashed = (str(self.unix_timestamp) + self.secret + userid).encode('utf-8')
       h = hashlib.new('ripemd160')
       h.update(hashed)
@@ -43,7 +43,7 @@ def loggedin(f):
     """Decorator that checks if the user requesting the page is logged in based on set cookie."""
     def wrapper(*args, **kwargs):
       if not args[0].user:
-        return args[0].req.Redirect('/login', http_code=303)
+        return args[0].req.Redirect('/login', httpcode=303)
       return f(*args, **kwargs)
     return wrapper
 
