@@ -170,6 +170,8 @@ class BasePageMaker(object):
     self.cookies = req.vars['cookie']
     self.get = req.vars['get']
     self.post = req.vars['post']
+    self.put = req.vars['put']
+    self.delete = req.vars['delete']
     self.options = config or {}
     self.persistent = self.PERSISTENT
     self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_secret)
