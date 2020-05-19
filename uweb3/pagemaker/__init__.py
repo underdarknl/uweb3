@@ -9,6 +9,7 @@ import pyclbr
 import sys
 import threading
 import time
+import hashlib
 from base64 import b64encode
 from pymysql import Error as pymysqlerr
 
@@ -18,7 +19,6 @@ from uweb3.model import SecureCookie
 from .. import response, templateparser
 
 RFC_1123_DATE = '%a, %d %b %Y %T GMT'
-
 
 class ReloadModules(Exception):
   """Signals the handler that it should reload the pageclass"""
@@ -141,6 +141,28 @@ class MimeTypeDict(dict):
     if kwargs:
       self.update(kwargs)
 
+class XSRF(object):
+  def __init__(self, seed, remote_addr):
+    self.seed = seed
+    self.remote_addr = remote_addr
+    self.unix_today = time.mktime(datetime.datetime.now().date().timetuple())
+
+  def generate_token(self):
+    """Generate an XSRF token
+
+    XSRF token is generated based on the unix timestamp from today,
+    a randomly generated seed and the IP addres from the user
+    """
+    hashed = (str(self.unix_today) + self.seed + self.remote_addr).encode('utf-8')
+    h = hashlib.new('ripemd160')
+    h.update(hashed)
+    return h.hexdigest()
+
+  def is_valid(self, supplied_token):
+    token = self.generate_token()
+    return token != supplied_token
+
+
 class BasePageMaker(object):
   """Provides the base pagemaker methods for all the html generators."""
   # Constant for persistent storage accross requests. This will be accessible
@@ -155,7 +177,12 @@ class BasePageMaker(object):
   # Default Static() handler cache durations, per MIMEtype, in days
   CACHE_DURATION = MimeTypeDict({'text': 7, 'image': 30, 'application': 7})
 
-  def __init__(self, req, config=None, secure_cookie_secret=None, executing_path=None):
+  def __init__(self,
+              req,
+              config=None,
+              secure_cookie_secret=None,
+              executing_path=None,
+              XSRF_seed=None):
     """sets up the template parser and database connections
 
     Arguments:
@@ -175,6 +202,35 @@ class BasePageMaker(object):
     self.options = config or {}
     self.persistent = self.PERSISTENT
     self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_secret)
+    self.set_invalid_xsrf_token_flag(XSRF_seed)
+
+  def set_invalid_xsrf_token_flag(self, XSRF_seed):
+    """Sets the invalid_xsrf_token flag to true or false"""
+    self.invalid_xsrf_token = False
+    if self.req.method != 'GET':
+      user_supplied_xsrf_token = getattr(self, self.req.method.lower()).get('xsrf')
+      xsrf = XSRF(XSRF_seed, self.req.env['REAL_REMOTE_ADDR'])
+      self.invalid_xsrf_token = xsrf.is_valid(user_supplied_xsrf_token)
+    #First we try to validate the token, then we check if the user has an xsrf cookie
+    self._Set_XSRF_cookie(XSRF_seed)
+
+
+  def _Set_XSRF_cookie(self, XSRF_seed):
+    """Checks if XSRF is enabled in the config and handles accordingly
+
+    If XSRF is enabled it will check if there is an XSRF cookie, if not create one.
+    If XSRF is disabled nothing will happen
+    """
+    if self.options.get('development'):
+      xsrf_enabled = self.options['development'].get('xsrf')
+      if xsrf_enabled == "True":
+        xsrf_cookie = self.cookies.get('xsrf')
+        if self.invalid_xsrf_token:
+          self.req.AddCookie("xsrf",  XSRF(XSRF_seed, self.req.env['REAL_REMOTE_ADDR']).generate_token())
+          return
+        if not xsrf_cookie:
+          self.req.AddCookie("xsrf",  XSRF(XSRF_seed, self.req.env['REAL_REMOTE_ADDR']).generate_token())
+          return
 
   def _PostRequest(self, response):
     if response.status == '500 Internal Server Error':
@@ -186,18 +242,17 @@ class BasePageMaker(object):
             cursor.Execute("ROLLBACK")
         except Exception:
           if hasattr(self, 'connection'):
-              if self.connection.open:
-                self.connection.close()
-                self.persistent.Del("__mysql")
+            if self.connection.open:
+              self.connection.close()
+              self.persistent.Del("__mysql")
         self.connection_error = False
 
     return response
 
   def XSRFInvalidToken(self, command):
     """Returns an error message regarding an incorrect XSRF token."""
-    page_data = self.parser.Parse('403.html', error=command,
-                                  **self.CommonBlocks('Invalid XSRF token'))
-    return uweb3.Response(content=page_data, httpcode=403)
+    page_data = self.parser.Parse('403.html', error=command)
+    return uweb3.Response(content=page_data, httpcode=403, headers=self.req.response.headers)
 
   @classmethod
   def LoadModules(cls, default_routes='routes', excluded_files=('__init__', '.pyc')):
@@ -291,14 +346,13 @@ class BasePageMaker(object):
 
     #TODO: self.user is no more
     return {'header': self.parser.Parse(
-                'header.html', title=title, page_id=page_id, user=self.user
+                'header.html', title=title, page_id=page_id
                 ),
             'footer': self.parser.Parse(
-                'footer.html', year=time.strftime('%Y'), user=self.user,
+                'footer.html', year=time.strftime('%Y'),
                 page_id=page_id, scripts=scripts
                 ),
             'page_id': page_id,
-            'xsrftoken': self._GetXSRF(),
             }
 
 

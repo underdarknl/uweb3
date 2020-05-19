@@ -98,7 +98,6 @@ class Request(object):
                  'delete': PostDictionary(),
                  }
     self.env['host'] = self.headers.get('Host', '')
-
     if self.method == 'POST':
       stream, form, files = parse_form_data(self.env)
       if self.env['CONTENT_TYPE'] == 'application/json':

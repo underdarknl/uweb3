@@ -34,6 +34,16 @@ from .pagemaker import SqAlchemyPageMaker
 from .helpers import StaticMiddleware
 from uweb3.model import SettingsManager
 
+
+def return_real_remote_addr(env):
+  """Returns the client addres,
+  if there is a proxy involved it will take the last IP addres from the HTTP_X_FORWARDED_FOR list
+  """
+  try:
+    return env['HTTP_X_FORWARDED_FOR'].split(',')[-1].strip()
+  except KeyError:
+    return env['REMOTE_ADDR']
+
 class Error(Exception):
   """Superclass used for inheritance and external exception handling."""
 
@@ -171,8 +181,10 @@ class uWeb(object):
     self.registry = Registry()
     self.registry.logger = logging.getLogger('root')
     self.router = Router(page_class).router(routes)
-    self.secure_cookie_secret = str(os.urandom(32))
     self.setup_routing()
+    #generating random seeds on uWeb3 startup
+    self.secure_cookie_secret = str(os.urandom(32))
+    self.XSRF_seed = str(os.urandom(32))
 
   def __call__(self, env, start_response):
     """WSGI request handler.
@@ -180,22 +192,35 @@ class uWeb(object):
     response and returns a response iterator.
     """
     req = request.Request(env, self.registry)
+    req.env['REAL_REMOTE_ADDR'] = return_real_remote_addr(req.env)
     try:
       method, args, hostargs, pagemaker = self.router(req.path,
                                             req.env['REQUEST_METHOD'],
                                             req.env['host']
                                           )
-      pagemaker = pagemaker(req, config=self.config.options, secure_cookie_secret=self.secure_cookie_secret, executing_path=self.executing_path)
+      pagemaker = pagemaker(req,
+                            config=self.config.options,
+                            secure_cookie_secret=self.secure_cookie_secret,
+                            executing_path=self.executing_path,
+                            XSRF_seed=self.XSRF_seed)
       response = self.get_response(pagemaker, method, args)
     except NoRouteError:
       #When we catch this error this means there is no method for the expected function
       #If this happens we default to the standard pagemaker because we don't know what the target pagemaker should be.
       #Then we set an internalservererror and move on
-      pagemaker = self.page_class(req, config=self.config.options, secure_cookie_secret=self.secure_cookie_secret, executing_path=self.executing_path)
+      pagemaker = self.page_class(req,
+                                  config=self.config.options,
+                                  secure_cookie_secret=self.secure_cookie_secret,
+                                  executing_path=self.executing_path,
+                                  XSRF_seed=self.XSRF_seed)
       response = pagemaker.InternalServerError(*sys.exc_info())
     except Exception:
       #This should only happend when something is very wrong
-      pagemaker = PageMaker(req, config=self.config.options, secure_cookie_secret=self.secure_cookie_secret, executing_path=self.executing_path)
+      pagemaker = PageMaker(req,
+                            config=self.config.options,
+                            secure_cookie_secret=self.secure_cookie_secret,
+                            executing_path=self.executing_path,
+                            XSRF_seed=self.XSRF_seed)
       response = pagemaker.InternalServerError(*sys.exc_info())
 
     if not isinstance(response, Response):
