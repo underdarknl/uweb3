@@ -162,8 +162,22 @@ class XSRF(object):
     token = self.generate_token()
     return token != supplied_token
 
+class Storage(object):
+  def __init__(self):
+    self.storage = {}
+    self.messages = []
+    self.extended_templates = {}
 
-class BasePageMaker(object):
+  def Flash(self, message):
+    self.messages.append(message)
+
+  def ExtendTemplate(self, title, template, **kwds):
+    if self.extended_templates.get(title):
+      raise ValueError("There is already a template with this title")
+    self.extended_templates[title] = self.parser.Parse(template, **kwds)
+
+
+class BasePageMaker(Storage):
   """Provides the base pagemaker methods for all the html generators."""
   # Constant for persistent storage accross requests. This will be accessible
   # by all threads of the same application (in the same Python process).
@@ -203,6 +217,7 @@ class BasePageMaker(object):
     self.persistent = self.PERSISTENT
     self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_secret)
     self.set_invalid_xsrf_token_flag(XSRF_seed)
+    super(BasePageMaker, self).__init__()
 
   def set_invalid_xsrf_token_flag(self, XSRF_seed):
     """Sets the invalid_xsrf_token flag to true or false"""
@@ -318,7 +333,11 @@ class BasePageMaker(object):
     if '__parser' not in self.persistent:
       self.persistent.Set('__parser', templateparser.Parser(
           self.options.get('templates', {}).get('path', self.TEMPLATE_DIR)))
-    return self.persistent.Get('__parser')
+    parser = self.persistent.Get('__parser')
+    parser.messages = self.messages
+    parser.templates = self.extended_templates
+    parser.storage = self.storage
+    return parser
 
   def InternalServerError(self, exc_type, exc_value, traceback):
     """Returns a plain text notification about an internal server error."""
@@ -344,7 +363,6 @@ class BasePageMaker(object):
     if not page_id:
       page_id = title.replace(' ', '_').lower()
 
-    #TODO: self.user is no more
     return {'header': self.parser.Parse(
                 'header.html', title=title, page_id=page_id
                 ),
