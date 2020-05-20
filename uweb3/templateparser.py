@@ -211,7 +211,6 @@ class Parser(dict):
     replacements['messages'] = self.messages
     replacements['storage'] = self.storage
     replacements.update(self.templates)
-    print(replacements)
     return self[template].Parse(**replacements)
 
   def ParseString(self, template, **replacements):

@@ -203,6 +203,10 @@ class uWeb(object):
                             secure_cookie_secret=self.secure_cookie_secret,
                             executing_path=self.executing_path,
                             XSRF_seed=self.XSRF_seed)
+
+      if hasattr(pagemaker, '_PreRequest'):
+        pagemaker = pagemaker._PreRequest()
+
       response = self.get_response(pagemaker, method, args)
     except NoRouteError:
       #When we catch this error this means there is no method for the expected function

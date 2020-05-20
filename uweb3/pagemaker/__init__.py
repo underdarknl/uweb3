@@ -247,6 +247,11 @@ class BasePageMaker(Storage):
           self.req.AddCookie("xsrf",  XSRF(XSRF_seed, self.req.env['REAL_REMOTE_ADDR']).generate_token())
           return
 
+  def _PreRequest(self):
+    # self.ExtendTemplate("footer", "footer.html")
+    # self.ExtendTemplate("header", "header.html")
+    return self
+
   def _PostRequest(self, response):
     if response.status == '500 Internal Server Error':
       if not hasattr(self, 'connection_error'): #this is set when we try and create a connection but it failed
@@ -261,7 +266,6 @@ class BasePageMaker(Storage):
               self.connection.close()
               self.persistent.Del("__mysql")
         self.connection_error = False
-
     return response
 
   def XSRFInvalidToken(self, command):
