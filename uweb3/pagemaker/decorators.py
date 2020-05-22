@@ -43,7 +43,7 @@ import pytz
 from datetime import datetime
 import time
 import pickle
-from underdarkcustomers import model
+from uweb3 import model
 def Cached(maxage=None, verbose=False, *t_args, **t_kwargs):
     """Decorator that wraps checks the cache table for a cached page.
 
