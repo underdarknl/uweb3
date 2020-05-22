@@ -8,7 +8,7 @@ def loggedin(f):
     def wrapper(*args, **kwargs):
       try:
         args[0].user = args[0]._CurrentUser()
-      except (uweb.model.NotExistError, args[0].NoSessionError):
+      except (uweb3.model.NotExistError, args[0].NoSessionError):
         path = '/login'
         if args[0].req.env['PATH_INFO'].strip() != '':
           path = '%s/%s' % (path, args[0].req.env['PATH_INFO'].strip())
@@ -106,7 +106,7 @@ def Cached(maxage=None, verbose=False, *t_args, **t_kwargs):
               data = pickle.loads(str(data['data']))
           except NameError:
             create = True
-        except uweb.model.NotExistError:  # we don't have anything fresh enough, lets create
+        except uweb3.model.NotExistError:  # we don't have anything fresh enough, lets create
           create = True
         if create:
           try:
@@ -140,7 +140,7 @@ def TemplateParser(template, *t_args, **t_kwargs):
     def template_decorator(f):
       def wrapper(*args, **kwargs):
         pageresult = f(*args, **kwargs) or {}
-        if not isinstance(pageresult, (str, uweb.Response, uweb.Redirect)):
+        if not isinstance(pageresult, (str, uweb3.Response, uweb3.Redirect)):
           pageresult.update(args[0].CommonBlocks(*t_args, **t_kwargs))
           return args[0].parser.Parse(template, **pageresult)
         return pageresult
