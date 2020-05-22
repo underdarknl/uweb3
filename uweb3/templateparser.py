@@ -139,8 +139,14 @@ class Parser(dict):
     super(Parser, self).__init__()
     self.template_dir = path
     self.noparse = noparse
+
+    self.messages = None
+    self.templates = None
+    self.storage = None
+
     for template in templates:
       self.AddTemplate(template)
+
 
   def __getitem__(self, template):
     """Retrieves a stored template by name.
@@ -201,6 +207,10 @@ class Parser(dict):
     Returns:
       str: The template with relevant tags replaced by the replacement dict.
     """
+
+    replacements['messages'] = self.messages
+    replacements['storage'] = self.storage
+    replacements.update(self.templates)
     return self[template].Parse(**replacements)
 
   def ParseString(self, template, **replacements):

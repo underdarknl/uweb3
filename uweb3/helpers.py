@@ -135,4 +135,3 @@ class StaticMiddleware:
         return res
       else:
         return http404(env, start_response)
-

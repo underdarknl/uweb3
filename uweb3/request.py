@@ -93,9 +93,11 @@ class Request(object):
     self.vars = {'cookie': dict((name, value.value) for name, value in
                                 Cookie(self.env.get('HTTP_COOKIE')).items()),
                  'get': PostDictionary(cgi.parse_qs(self.env.get('QUERY_STRING'))),
-                 'post': PostDictionary()}
+                 'post': PostDictionary(),
+                 'put': PostDictionary(),
+                 'delete': PostDictionary(),
+                 }
     self.env['host'] = self.headers.get('Host', '')
-
     if self.method == 'POST':
       stream, form, files = parse_form_data(self.env)
       if self.env['CONTENT_TYPE'] == 'application/json':
@@ -110,6 +112,10 @@ class Request(object):
         self.vars['post'] = PostDictionary(form)
         for f in files:
           self.vars['post'][f] = files.get(f)
+    else:
+      if self.method in ('PUT', 'DELETE'):
+        stream, form, files = parse_form_data(self.env)
+        self.vars[self.method.lower()] = PostDictionary(form)
 
   @property
   def path(self):
@@ -121,7 +127,7 @@ class Request(object):
       self._response = response.Response()
     return self._response
 
-  def Redirect(self, location, http_code=307):
+  def Redirect(self, location, httpcode=307):
     REDIRECT_PAGE = ('<!DOCTYPE html><html><head><title>Page moved</title></head>'
                    '<body>Page moved, please follow <a href="{}">this link</a>'
                    '</body></html>').format(location)
@@ -132,7 +138,7 @@ class Request(object):
     return response.Response(
       content=REDIRECT_PAGE,
       content_type=self.response.headers.get('Content-Type', 'text/html'),
-      httpcode=http_code,
+      httpcode=httpcode,
       headers=headers
       )
 
