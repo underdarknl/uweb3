@@ -62,7 +62,6 @@ def Cached(maxage=None, verbose=False, handler=None, *t_args, **t_kwargs):
     """
     def cache_decorator(f):
       def wrapper(*args, **kwargs):
-        print()
         create = False
         name = f.__name__
         modulename = f.__module__
@@ -83,7 +82,6 @@ def Cached(maxage=None, verbose=False, handler=None, *t_args, **t_kwargs):
                                                data['age'])
           else:
             data = pickle.loads(codecs.decode(data['data'].encode(), "base64"))
-          print("LOAD FROM CACHE")
         except model.CurrentlyWorking:  # we dont have anything fresh enough, but someones working on it
           age = 0
           while age < maxage:  # as long as there's no output, we should try periodically until we have waited too long
@@ -110,7 +108,6 @@ def Cached(maxage=None, verbose=False, handler=None, *t_args, **t_kwargs):
         except uweb3.model.NotExistError:  # we don't have anything fresh enough, lets create
           create = True
         if create:
-          print("CREATE NEW CACHE")
           try:
             cache = handler.Create(args[0].connection, {
               'name': name,

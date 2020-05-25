@@ -1468,7 +1468,7 @@ def MakeJson(record, complete=False, recursive=False, indent=None):
 
 import functools
 
-class CachedPage(Record):
+class CachedPage(object):
   """Abstraction class for the cached Pages table in the database."""
 
   MAXAGE = 61
