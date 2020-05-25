@@ -206,6 +206,7 @@ class BasePageMaker(Storage):
         Configuration for the pagemaker, with database connection information
         and other settings. This will be available through `self.options`.
     """
+    super(BasePageMaker, self).__init__()
     self.__SetupPaths(executing_path)
     self.req = req
     self.cookies = req.vars['cookie']
@@ -217,7 +218,6 @@ class BasePageMaker(Storage):
     self.persistent = self.PERSISTENT
     self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_secret)
     self.set_invalid_xsrf_token_flag(XSRF_seed)
-    super(BasePageMaker, self).__init__()
 
   def set_invalid_xsrf_token_flag(self, XSRF_seed):
     """Sets the invalid_xsrf_token flag to true or false"""
@@ -563,7 +563,7 @@ class SmorgasbordMixin(object):
 
     def _LoadRelational(self):
       """Returns the PageMaker's relational database connection."""
-      return self.pagemaker.connection
+      return self.pagemaker.connectionPageMaker
 
   @property
   def bord(self):

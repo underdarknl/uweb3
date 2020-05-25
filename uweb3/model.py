@@ -21,6 +21,8 @@ class Error(Exception):
 class DatabaseError(Error):
   """Superclass for errors returned by the database backend."""
 
+class CurrentlyWorking(Error):
+  """Caching error"""
 
 class BadFieldError(DatabaseError):
   """A field in the record could not be written to the database."""
@@ -1462,3 +1464,62 @@ def MakeJson(record, complete=False, recursive=False, indent=None):
     record = RecordToDict(record, complete=complete, recursive=recursive)
   return simplejson.dumps(
       record, default=_Encode, sort_keys=True, indent=indent)
+
+
+import functools
+
+class CachedPage(Record):
+  """Abstraction class for the cached Pages table in the database."""
+
+  MAXAGE = 61
+
+  @classmethod
+  def Clean(cls, connection, maxage=None):
+    """Deletes all cached pages that are older than MAXAGE.
+
+    An optional 'maxage' integer can be specified instead of MAXAGE.
+    """
+    with connection as cursor:
+      cursor.Execute("""delete
+        from
+          %s
+        where
+          TIME_TO_SEC(TIMEDIFF(UTC_TIMESTAMP(), created)) > %d
+          """ % (
+          cls.TableName(),
+          (cls.MAXAGE if maxage is None else maxage)
+        ))
+
+  @classmethod
+  def FromSignature(cls, connection, maxage, name, modulename, args, kwargs):
+    """Returns a cached page from the given signature."""
+    with connection as cursor:
+      cache = cursor.Execute("""select
+          data,
+          TIME_TO_SEC(TIMEDIFF(UTC_TIMESTAMP(), created)) as age,
+          creating
+        from
+          %s
+        where
+          TIME_TO_SEC(TIMEDIFF(UTC_TIMESTAMP(), created)) < %d AND
+          name = %s AND
+          modulename = %s AND
+          args = %s AND
+          kwargs = %s
+          order by created desc
+          limit 1
+          """ % (
+        cls.TableName(),
+        (cls.MAXAGE if maxage is None else maxage),
+        connection.EscapeValues(name),
+        connection.EscapeValues(modulename),
+        connection.EscapeValues(args),
+        connection.EscapeValues(kwargs)))
+
+    if cache:
+      if cache[0]['creating'] is not None:
+        raise CurrentlyWorking(cache[0]['age'])
+      return cls(connection, cache[0])
+    else:
+      raise cls.NotExistError('No cached data found')
+
