@@ -1,7 +1,16 @@
 """This file holds all the decorators we use in this project."""
 
-import uweb3
+import pickle
+import time
+from datetime import datetime
+
+import pytz
+import simplejson
+
 import _mysql_exceptions
+import uweb3
+from uweb3 import model
+
 
 def loggedin(f):
     """Decorator that checks if the user requesting the page is logged in."""
@@ -38,12 +47,6 @@ def validapikey(f):
       return f(*args, **kwargs)
     return wrapper
 
-import simplejson
-import pytz
-from datetime import datetime
-import time
-import pickle
-from uweb3 import model
 def Cached(maxage=None, verbose=False, *t_args, **t_kwargs):
     """Decorator that wraps checks the cache table for a cached page.
 
