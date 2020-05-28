@@ -169,9 +169,28 @@ class Storage(object):
     self.extended_templates = {}
 
   def Flash(self, message):
+    """Appends message to list, list element is vailable in the template under keyword messages
+
+    Arguments:
+      @ message: str
+    Raises:
+      TypeError
+    """
+    if not isinstance(message, str):
+      raise TypeError("Message is of incorrect type, Should be string.")
     self.messages.append(message)
 
   def ExtendTemplate(self, title, template, **kwds):
+    """Extend the template on which this method is called.
+
+    Arguments:
+    @ title: str
+      Name of the variable that you can access the extended template at
+    @ template: str
+      Name of the template that you want to extend
+    % **kwds: kwds
+      The keywords that you want to pass to the template. Works the same as self.parser.Parse('template.html', var=value)
+    """
     if self.extended_templates.get(title):
       raise ValueError("There is already a template with this title")
     self.extended_templates[title] = self.parser.Parse(template, **kwds)
