@@ -10,7 +10,8 @@ import codecs
 # import _mysql_exceptions
 import uweb3
 from uweb3 import model
-from pymysql import err
+from pymysql import Error
+
 
 def loggedin(f):
     """Decorator that checks if the user requesting the page is logged in."""
@@ -75,7 +76,6 @@ def Cached(maxage=None, verbose=False, handler=None, *t_args, **t_kwargs):
         create = False
         name = f.__name__
         modulename = f.__module__
-        # model.CachedPage.Clean(args[0].connection, maxage)
         handler.Clean(args[0].connection, maxage)
         requesttime = time.time()
         time.clock()
@@ -134,8 +134,7 @@ def Cached(maxage=None, verbose=False, handler=None, *t_args, **t_kwargs):
             cache.Save()
             if verbose:
               data = '%s<!-- Fresh -->' % data
-          # except _mysql_exceptions.OperationalError:
-          except Exception:
+          except Error: #This is a pymysql Error
             pass
         return data
       return wrapper
