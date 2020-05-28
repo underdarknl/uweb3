@@ -56,12 +56,22 @@ def Cached(maxage=None, verbose=False, handler=None, *t_args, **t_kwargs):
     from pages import decorators
     @decorators.Cached(60)
     def mypage()
+
     Arguments:
-      maxage: int(60), cache time in seconds.
-      verbose: bool(false), insert html comment with cache information.
+      #TODO: Make handler an argument instead of a kwd since it is required?
+      @ handler: class CustomClass(model.Record, model.CachedPage)
+        This is some sort of custom mixin class that we use to store our cached page in the database
+      % maxage: int(60)
+        Cache time in seconds.
+      % verbose: bool(False)
+        Insert html comment with cache information.
+    Raises:
+      KeyError
     """
     def cache_decorator(f):
       def wrapper(*args, **kwargs):
+        if not handler:
+          raise KeyError("A handler is required for storing this page into the database.")
         create = False
         name = f.__name__
         modulename = f.__module__
