@@ -216,7 +216,8 @@ class BasePageMaker(Storage):
               secure_cookie_secret=None,
               executing_path=None,
               XSRF_seed=None):
-    """sets up the template parser and database connections
+    """sets up the template parser and database connections.
+    Handles setting the XSRF flag for each incoming request.
 
     Arguments:
       @ req: request.Request
@@ -224,6 +225,12 @@ class BasePageMaker(Storage):
       % config: dict ~~ None
         Configuration for the pagemaker, with database connection information
         and other settings. This will be available through `self.options`.
+      % secure_cookie_secret: Randomly generated os.urandom(32) byte string
+        This is used as a secret for the SecureCookie class
+      % executing_path: str/path
+        This is the path to the uWeb3 routing file.
+      % XSRF_seed: Randomly generated os.urandom(32) byte string
+        This is used as a secret for the XSRF hash in the XSRF class.
     """
     super(BasePageMaker, self).__init__()
     self.__SetupPaths(executing_path)
