@@ -169,9 +169,28 @@ class Storage(object):
     self.extended_templates = {}
 
   def Flash(self, message):
+    """Appends message to list, list element is vailable in the template under keyword messages
+
+    Arguments:
+      @ message: str
+    Raises:
+      TypeError
+    """
+    if not isinstance(message, str):
+      raise TypeError("Message is of incorrect type, Should be string.")
     self.messages.append(message)
 
   def ExtendTemplate(self, title, template, **kwds):
+    """Extend the template on which this method is called.
+
+    Arguments:
+    @ title: str
+      Name of the variable that you can access the extended template at
+    @ template: str
+      Name of the template that you want to extend
+    % **kwds: kwds
+      The keywords that you want to pass to the template. Works the same as self.parser.Parse('template.html', var=value)
+    """
     if self.extended_templates.get(title):
       raise ValueError("There is already a template with this title")
     self.extended_templates[title] = self.parser.Parse(template, **kwds)
@@ -197,7 +216,8 @@ class BasePageMaker(Storage):
               secure_cookie_secret=None,
               executing_path=None,
               XSRF_seed=None):
-    """sets up the template parser and database connections
+    """sets up the template parser and database connections.
+    Handles setting the XSRF flag for each incoming request.
 
     Arguments:
       @ req: request.Request
@@ -205,7 +225,14 @@ class BasePageMaker(Storage):
       % config: dict ~~ None
         Configuration for the pagemaker, with database connection information
         and other settings. This will be available through `self.options`.
+      % secure_cookie_secret: Randomly generated os.urandom(32) byte string
+        This is used as a secret for the SecureCookie class
+      % executing_path: str/path
+        This is the path to the uWeb3 routing file.
+      % XSRF_seed: Randomly generated os.urandom(32) byte string
+        This is used as a secret for the XSRF hash in the XSRF class.
     """
+    super(BasePageMaker, self).__init__()
     self.__SetupPaths(executing_path)
     self.req = req
     self.cookies = req.vars['cookie']
@@ -217,7 +244,6 @@ class BasePageMaker(Storage):
     self.persistent = self.PERSISTENT
     self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_secret)
     self.set_invalid_xsrf_token_flag(XSRF_seed)
-    super(BasePageMaker, self).__init__()
 
   def set_invalid_xsrf_token_flag(self, XSRF_seed):
     """Sets the invalid_xsrf_token flag to true or false"""
@@ -563,7 +589,7 @@ class SmorgasbordMixin(object):
 
     def _LoadRelational(self):
       """Returns the PageMaker's relational database connection."""
-      return self.pagemaker.connection
+      return self.pagemaker.connectionPageMaker
 
   @property
   def bord(self):
