@@ -29,6 +29,7 @@ from . import request
 # Package classes
 from .response import Response
 from .pagemaker import PageMaker
+from .pagemaker import WebsocketPageMaker
 from .pagemaker import DebuggingPageMaker
 from .pagemaker import SqAlchemyPageMaker
 from .helpers import StaticMiddleware
@@ -82,6 +83,10 @@ class Router(object):
       request_router: Configured closure that processes urls.
     """
     req_routes = []
+    #Variable used to store websocket pagemakers,
+    #these pagemakers are only created at startup but can have multiple routes.
+    #To prevent creating the same instance for each route we store them in a dict
+    websocket_pagemaker = {}
     for pattern, *details in routes:
       pagemaker = None
       for pm in self.pagemakers:
@@ -90,8 +95,11 @@ class Router(object):
           pagemaker = pm
           break
       if callable(pattern):
-        #TODO: Pass environment to a custom pagemaker for websockets?
-        pattern(getattr(pagemaker, details[0]))
+        #Check if the pagemaker is already in the dict, if not instantiate
+        #if so just use that one. This prevents creating multiple instances for one route.
+        if not websocket_pagemaker.get(pagemaker.__name__):
+          websocket_pagemaker[pagemaker.__name__] = pagemaker()
+        pattern(getattr(websocket_pagemaker[pagemaker.__name__], details[0]))
         continue
       if not pagemaker:
         raise NoRouteError(f"µWeb3 could not find a route handler called '{details[0]}' in any of your projects PageMakers.")
