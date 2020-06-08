@@ -195,8 +195,35 @@ class Storage(object):
       raise ValueError("There is already a template with this title")
     self.extended_templates[title] = self.parser.Parse(template, **kwds)
 
+class Base(object):
+  # Constant for persistent storage accross requests. This will be accessible
+  # by all threads of the same application (in the same Python process).
+  PERSISTENT = CacheStorage()
+  # Base paths for templates and public data. These are used in the PageMaker
+  # classmethods that set up paths specific for that pagemaker.
+  PUBLIC_DIR = 'static'
+  TEMPLATE_DIR = 'templates'
 
-class WebsocketPageMaker(object):
+  @property
+  def parser(self):
+    """Provides a templateparser.Parser instance.
+
+    If the config file specificied a [templates] section and a `path` is
+    assigned in there, this path will be used.
+    Otherwise, the `TEMPLATE_DIR` will be used to load templates from.
+    """
+    if '__parser' not in self.persistent:
+      self.persistent.Set('__parser', templateparser.Parser(
+          self.options.get('templates', {}).get('path', self.TEMPLATE_DIR)))
+    parser = self.persistent.Get('__parser')
+    if hasattr(self, "messages"):
+      parser.messages = self.messages
+      parser.templates = self.extended_templates
+      parser.storage = self.storage
+    return parser
+
+
+class WebsocketPageMaker(Base):
   """Pagemaker for the websocket routes.
   This is different from the BasePageMaker as we choose to not have a database connection
   in our WebSocketPageMaker.
@@ -206,18 +233,12 @@ class WebsocketPageMaker(object):
 
   #TODO: What functions/methods need to be in this class
   def __init__(self):
-    """ """
-    print("called")
+    #request
+    self.persistent = self.PERSISTENT
 
-class BasePageMaker(Storage):
+
+class BasePageMaker(Base, Storage):
   """Provides the base pagemaker methods for all the html generators."""
-  # Constant for persistent storage accross requests. This will be accessible
-  # by all threads of the same application (in the same Python process).
-  PERSISTENT = CacheStorage()
-  # Base paths for templates and public data. These are used in the PageMaker
-  # classmethods that set up paths specific for that pagemaker.
-  PUBLIC_DIR = 'static'
-  TEMPLATE_DIR = 'templates'
   _registery = []
 
   # Default Static() handler cache durations, per MIMEtype, in days
@@ -365,23 +386,6 @@ class BasePageMaker(Storage):
     cls.LOCAL_DIR = cls_dir = executing_path
     cls.PUBLIC_DIR = os.path.join(cls_dir, cls.PUBLIC_DIR)
     cls.TEMPLATE_DIR = os.path.join(cls_dir, cls.TEMPLATE_DIR)
-
-  @property
-  def parser(self):
-    """Provides a templateparser.Parser instance.
-
-    If the config file specificied a [templates] section and a `path` is
-    assigned in there, this path will be used.
-    Otherwise, the `TEMPLATE_DIR` will be used to load templates from.
-    """
-    if '__parser' not in self.persistent:
-      self.persistent.Set('__parser', templateparser.Parser(
-          self.options.get('templates', {}).get('path', self.TEMPLATE_DIR)))
-    parser = self.persistent.Get('__parser')
-    parser.messages = self.messages
-    parser.templates = self.extended_templates
-    parser.storage = self.storage
-    return parser
 
   def InternalServerError(self, exc_type, exc_value, traceback):
     """Returns a plain text notification about an internal server error."""
