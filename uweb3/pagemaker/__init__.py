@@ -162,11 +162,20 @@ class XSRF(object):
     token = self.generate_token()
     return token != supplied_token
 
-class Storage(object):
+class Base(object):
+  # Constant for persistent storage accross requests. This will be accessible
+  # by all threads of the same application (in the same Python process).
+  PERSISTENT = CacheStorage()
+  # Base paths for templates and public data. These are used in the PageMaker
+  # classmethods that set up paths specific for that pagemaker.
+  PUBLIC_DIR = 'static'
+  TEMPLATE_DIR = 'templates'
+
   def __init__(self):
     self.storage = {}
     self.messages = []
     self.extended_templates = {}
+    self.persistent = self.PERSISTENT
 
   def Flash(self, message):
     """Appends message to list, list element is vailable in the template under keyword messages
@@ -195,15 +204,6 @@ class Storage(object):
       raise ValueError("There is already a template with this title")
     self.extended_templates[title] = self.parser.Parse(template, **kwds)
 
-class Base(object):
-  # Constant for persistent storage accross requests. This will be accessible
-  # by all threads of the same application (in the same Python process).
-  PERSISTENT = CacheStorage()
-  # Base paths for templates and public data. These are used in the PageMaker
-  # classmethods that set up paths specific for that pagemaker.
-  PUBLIC_DIR = 'static'
-  TEMPLATE_DIR = 'templates'
-
   @property
   def parser(self):
     """Provides a templateparser.Parser instance.
@@ -222,7 +222,7 @@ class Base(object):
     return parser
 
 
-class WebsocketPageMaker(Base, Storage):
+class WebsocketPageMaker(Base):
   """Pagemaker for the websocket routes.
   This is different from the BasePageMaker as we choose to not have a database connection
   in our WebSocketPageMaker.
@@ -231,11 +231,14 @@ class WebsocketPageMaker(Base, Storage):
   """
 
   #TODO: Add request to pagemaker?
-  def __init__(self):
-    self.persistent = self.PERSISTENT
+  def Connect(self, sid, env):
+    """This is the connect event,
+    sets the req variable that contains the request headers.
+    """
+    print(f"User connected with SocketID {sid}: ")
+    self.req = env
 
-
-class BasePageMaker(Base, Storage):
+class BasePageMaker(Base):
   """Provides the base pagemaker methods for all the html generators."""
   _registery = []
 
@@ -273,7 +276,6 @@ class BasePageMaker(Base, Storage):
     self.put = req.vars['put']
     self.delete = req.vars['delete']
     self.options = config or {}
-    self.persistent = self.PERSISTENT
     self.secure_cookie_connection = (self.req, self.cookies, secure_cookie_secret)
     self.set_invalid_xsrf_token_flag(XSRF_seed)
 
