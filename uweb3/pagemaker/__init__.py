@@ -216,14 +216,13 @@ class Base(object):
       self.persistent.Set('__parser', templateparser.Parser(
           self.options.get('templates', {}).get('path', self.TEMPLATE_DIR)))
     parser = self.persistent.Get('__parser')
-    if hasattr(self, "messages"):
-      parser.messages = self.messages
-      parser.templates = self.extended_templates
-      parser.storage = self.storage
+    parser.messages = self.messages
+    parser.templates = self.extended_templates
+    parser.storage = self.storage
     return parser
 
 
-class WebsocketPageMaker(Base):
+class WebsocketPageMaker(Base, Storage):
   """Pagemaker for the websocket routes.
   This is different from the BasePageMaker as we choose to not have a database connection
   in our WebSocketPageMaker.
@@ -231,9 +230,8 @@ class WebsocketPageMaker(Base):
   This class lacks pretty much all functionality that the BasePageMaker has.
   """
 
-  #TODO: What functions/methods need to be in this class
+  #TODO: Add request to pagemaker?
   def __init__(self):
-    #request
     self.persistent = self.PERSISTENT
 
 
