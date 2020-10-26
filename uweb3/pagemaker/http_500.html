@@ -128,7 +128,7 @@
                   <thead><tr><td colspan="2">Frame locals</td></tr></thead>
                   <tbody>
                     {{ for name, value in [frame:locals|items|sorted] }}
-                    <tr><td>[name]</td><td>[value]</td></tr>
+                    <tr><td>[name]</td><td title="[value|type|html]">{{ if type([value]) == str}}"[value]"{{else}}[value]{{endif}}</td></tr>
                     {{ endfor }}
                   </tbody>
                 </table>

@@ -8,17 +8,15 @@ import pytz
 import simplejson
 import time
 
-from pymysql import Error
-
 import uweb3
 from uweb3 import model
-from uweb3.request import PostDictionary
+from uweb3.request import IndexedFieldStorage
 
 def loggedin(f):
   """Decorator that checks if the user requesting the page is logged in based on set cookie."""
   def wrapper(*args, **kwargs):
     if not args[0].user:
-      return args[0].req.Redirect('/login', httpcode=303)
+      return args[0].RequestLogin()
     return f(*args, **kwargs)
   return wrapper
 
@@ -27,21 +25,21 @@ def checkxsrf(f):
   The function will compare the XSRF in the user's cookie and in the
   (post) request. Make sure to have xsrf_enabled = True in the config.ini
   """
-  def _clear_form_data(*args):
-    method = args[0].req.method.lower()
-    #Set an attribute in the pagemaker that holds the form data on an invalid XSRF validation
-    args[0].invalid_form_data = getattr(args[0], method)
-    #Remove the form data from the PageMaker
-    setattr(args[0], method, PostDictionary())
-    #Remove the form data from the Request class
-    args[0].req.vars[method] = PostDictionary()
-    return args
+  def _clear_form_data(pagemaker):
+    method = pagemaker.req.method.lower()
+    # Set an attribute in the pagemaker that holds the form data on an invalid XSRF validation
+    pagemaker.invalid_xsrf_data = getattr(pagemaker, method)
+    # Remove the form data from the PageMaker
+    setattr(pagemaker, method, IndexedFieldStorage())
+    # Remove the form data from the Request class
+    pagemaker.req.vars[method] = IndexedFieldStorage()
+    return pagemaker
 
   def wrapper(*args, **kwargs):
     if args[0].req.method != "GET":
       if args[0].invalid_xsrf_token:
-        args = _clear_form_data(*args)
-        return args[0].XSRFInvalidToken('XSRF token is invalid or missing')
+        _clear_form_data(args[0])
+        return args[0].XSRFInvalidToken()
     return f(*args, **kwargs)
   return wrapper
 
@@ -132,11 +130,35 @@ def Cached(maxage=None, verbose=False, handler=None, *t_args, **t_kwargs):
           cache.Save()
           if verbose:
             data += '<!-- Freshly generated -->'
-        except Error: #This is probably a pymysql Error. or db collision, whilst unfortunate, we wont break the page on this
+        except Exception: #This is probably a pymysql Error. or db collision, whilst unfortunate, we wont break the page on this
           pass
       return data
     return wrapper
   return cache_decorator
+
+def ContentType(content_type):
+  """Decorator that wraps and returns sets the contentType."""
+  def content_type_decorator(f):
+    def wrapper(*args, **kwargs):
+      pageresult = f(*args, **kwargs) or {}
+      if not isinstance(pageresult, uweb3.Response):
+        return uweb3.Response(pageresult,
+                              content_type=content_type)
+      if isinstance(pageresult, uweb3.Response):
+        pageresult.content_type = content_type
+      args[0].req.content_type = content_type
+      return pageresult
+    return wrapper
+  return content_type_decorator
+
+def CSP(resourcetype, urls, append=True):
+  """Decorator that injects a new CSP allowed source into the current csp output."""
+  def csp_decorator(f):
+    def wrapper(*args, **kwargs):
+      args[0]._SetCsp(resourcetype, urls, append)
+      return f(*args, **kwargs) or {}
+    return wrapper
+  return csp_decorator
 
 def TemplateParser(template, *t_args, **t_kwargs):
   """Decorator that wraps and returns the output.
@@ -148,7 +170,6 @@ def TemplateParser(template, *t_args, **t_kwargs):
     def wrapper(*args, **kwargs):
       pageresult = f(*args, **kwargs) or {}
       if not isinstance(pageresult, (str, uweb3.Response, uweb3.Redirect)):
-        pageresult.update(args[0].CommonBlocks(*t_args, **t_kwargs))
         return args[0].parser.Parse(template, **pageresult)
       return pageresult
     return wrapper
