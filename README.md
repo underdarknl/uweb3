@@ -33,7 +33,9 @@ python3 setup.py install
 # Or you can install in development mode which allows easy modification of the source:
 python3 setup.py develop  --user
 
-cd uweb3/scaffold
+# clone the uweb3scaffold project to get started
+git clone git@github.com:underdarknl/uweb3scaffold.git
+cd uweb3scaffold
 
 python3 serve.py
 ```
@@ -83,18 +85,21 @@ After creating your pagemaker be sure to add the route endpoint to routes list i
   - A classmethod called loadModules that loads all pagemaker modules inheriting from PageMaker class
   - A XSRF class
     - Generates a xsrf token and creates a cookie if not in place
-    - Validates the xsrf token in a post request if the enable_xsrf flag is set in the config.ini
 - In requests:
   - Self.method attribute
   - self.post.form attribute. This is the post request as a dict, includes blank values.
-  - Method called Redirect #Moved from the response class to the request class so cookies that are set before a redirect are actually set.
+  - Method called Redirect #Moved from the response class to the request class so cookies that are set before a redirect are actually persist to the next request.
   - Method called DeleteCookie
-  - A if statement that checks string like cookies and raises an error if the size is equal or bigger than 4096 bytes.
-  - AddCookie method, edited this and the response class to handle the setting of multiple cookies. Previously setting multiple cookies with the       Set-Cookie header would make the last cookie the only cookie.
+  - An if statement that checks string like cookies and raises an error if the size is equal or bigger than 4096 bytes.
+  - AddCookie method, now supports multiple calls to Set-Cookie setting all cookies instead of just the last.
 - In pagemaker/decorators:
   - Loggedin decorator that validates if user is loggedin based on cookie with userid
   - Checkxsrf decorator that checks if the incorrect_xsrf_token flag is set
 - In templatepaser:
-  - A function called _TemplateConstructXsrf that generates a hidden input field with the supplied value: {{ xsrf [xsrf_variable]}}
-- In libs/sqltalk
-  - So far so good but it might crash on functions that I didn't use yet
+  - Its possible to register tags to the parser, for example in your _postInit call
+  - Its possible to register 'Just in Time' tags to the parser, which will be evaluated only when needed.
+- In libs/sqltalk, use of PyMysql instead of c mysql functions
+- Connections
+  - All Connections are now all availabe on the self.connections member of the pagemaker, regardless of what type of backend they connect to
+  - Cookies (signed and safe) are available as a connection
+  - Config files (read/write) are available as a connection
