@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """Test suite for the database abstraction module (model)."""
 
 # Too many public methods
@@ -8,7 +8,7 @@
 import unittest
 
 # Importing uWeb3 makes the SQLTalk library available as a side-effect
-from uweb3.ext_lib.libs.sqltalk import mysql
+from uweb3.libs.sqltalk import mysql
 # Unittest target
 from uweb3 import model
 from pymysql.err import InternalError

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """Test suite for the database abstraction module (model)."""
 
 # Too many public methods
@@ -6,11 +6,8 @@
 
 # Standard modules
 import unittest
-from contextlib import contextmanager
 
-import pymysql
 import sqlalchemy
-from pymysql.err import InternalError
 from sqlalchemy import (Column, ForeignKey, Integer, MetaData, String, Table,
                         create_engine)
 from sqlalchemy.exc import IntegrityError, OperationalError
@@ -19,7 +16,7 @@ from sqlalchemy.orm import lazyload, relationship
 
 import uweb3
 from uweb3.alchemy_model import AlchemyRecord
-from uweb3.ext_lib.libs.sqltalk import mysql
+from uweb3.libs.sqltalk import mysql
 
 # ##############################################################################
 # Record classes for testing

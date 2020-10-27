@@ -72,11 +72,6 @@ dev = True
 ```
 This makes sure that µWeb3 restarts every time you modify something in the core of the framework aswell.
 
-µWeb3 has inbuild XSRF protection. You can import it from uweb3.pagemaker.new_decorators checkxsrf.
-This is a decorator and it will handle validation and generation of the XSRF.
-The only thing you have to do is add the ```{{ xsrf [xsrf]}}``` tag into a form.
-The xsrf token is accessible in any pagemaker with self.xsrf.
-
 # Routing
 The default way to create new routes in µWeb3 is to create a folder called routes.
 In the routes folder create your pagemaker class of choice, the name doesn't matter as long as it inherits from PageMaker.
