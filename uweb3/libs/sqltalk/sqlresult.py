@@ -181,8 +181,7 @@ class ResultSet(object):
     @ charset - str
       Character set used for this connection.
     @ fields - tuple
-      Fields in the ResultSet. Each field is a tuple of 7 elements as specified
-      by the Python DB API (v2).
+      Fields in the ResultSet.
     @ insertid - int
       Auto-increment ID that was generated upon the last insert.
     @ query - str

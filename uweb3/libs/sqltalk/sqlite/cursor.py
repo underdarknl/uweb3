@@ -22,13 +22,14 @@ class Cursor(object):
     except Exception:
       self.connection.logger.exception('Exception during query execution')
       raise
+    fieldnames = list(field[0] for field in result.description)
     return sqlresult.ResultSet(
         affected=result.rowcount,
         charset='utf-8',
-        fields=result.description,
+        fields=fieldnames,
         insertid=result.lastrowid,
         query=(query, tuple(args)),
-        result=result.fetchall())
+        result=list(dict(zip(fieldnames, row)) for row in result.fetchall()))
 
   def Insert(self, table, values):
     if not values:
