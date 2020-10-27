@@ -5,7 +5,10 @@ You can setup a working development environment by issueing:
 
 ```bash
 python3 setup.py develop --user
-cd uweb3/scaffold
+
+# clone the uweb3scaffold project to get started
+git clone git@github.com:underdarknl/uweb3scaffold.git
+cd uweb3scaffold
 
 python3 serve.py
 ```

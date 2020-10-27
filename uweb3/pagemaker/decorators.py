@@ -5,7 +5,7 @@ from datetime import datetime
 import hashlib
 import pickle
 import pytz
-import simplejson
+import json
 import time
 
 import uweb3
@@ -80,8 +80,8 @@ def Cached(maxage=None, verbose=False, handler=None, *t_args, **t_kwargs):
         data = handler.FromSignature(args[0].connection,
                                               maxage,
                                               name, modulename,
-                                              simplejson.dumps(args[1:]),
-                                              simplejson.dumps(kwargs))
+                                              json.dumps(args[1:]),
+                                              json.dumps(kwargs))
         if verbose:
           data = '%s<!-- cached %ds ago -->' % (
                                              pickle.loads(codecs.decode(data['data'].encode(), "base64")),
@@ -97,8 +97,8 @@ def Cached(maxage=None, verbose=False, handler=None, *t_args, **t_kwargs):
             data = handler.FromSignature(args[0].connection,
                                                   maxage,
                                                   name, modulename,
-                                                  simplejson.dumps(args[1:]),
-                                                  simplejson.dumps(kwargs))
+                                                  json.dumps(args[1:]),
+                                                  json.dumps(kwargs))
             break
           except Exception:
             sleep = min(sleep*2, maxsleepinterval)
@@ -117,8 +117,8 @@ def Cached(maxage=None, verbose=False, handler=None, *t_args, **t_kwargs):
           cache = handler.Create(args[0].connection, {
             'name': name,
             'modulename': modulename,
-            'args': simplejson.dumps(args[1:]),
-            'kwargs': simplejson.dumps(kwargs),
+            'args': json.dumps(args[1:]),
+            'kwargs': json.dumps(kwargs),
             'creating': now,
             'created': now
             })

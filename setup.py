@@ -5,12 +5,8 @@ import re
 from setuptools import setup, find_packages
 
 REQUIREMENTS = [
-  'decorator',
   'PyMySQL',
-  'python-magic',
-  'pytz',
-  'simplejson',
-  'bcrypt'
+  'pytz'
 ]
 
 #  'sqlalchemy',
@@ -28,7 +24,7 @@ def version():
 
 
 setup(
-    name='uWeb3 test',
+    name='uWeb3',
     version=version(),
     description='uWeb, python3, uswgi compatible micro web platform',
     long_description_file = 'README.md',
@@ -42,8 +38,8 @@ setup(
     ],
     author='Jan Klopper',
     author_email='jan@underdark.nl',
-    url='https://github.com/underdark.nl/uWeb3',
-    keywords='minimal web framework',
+    url='https://github.com/underdark.nl/uweb3',
+    keywords='minimal python web framework',
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
