@@ -279,7 +279,7 @@ class URLsafestring(Basesafestring):
 
 
 class EmailAddresssafestring(Basesafestring):
-  """This class signals that the content is safe Email address
+  """This class signals that the content is a safe Email address
 
   Its usefull when sending out emails or constructing email headers
   Email Header injection is subverted.
@@ -297,4 +297,18 @@ class EmailAddresssafestring(Basesafestring):
 
   def unescape(self, data):
     """Can't unremove non address elements so we'll just return the string"""
+    return data
+
+
+class EmailHeadersafestring(Basesafestring):
+  """This class signals that the content is a safe Email header
+
+  Its usefull when sending out emails or constructing email headers."""
+
+  def escape(self, data):
+    """Drops everything that does not fit in a email header"""
+    return data.replace("\n", "").replace("\r", "")
+
+  def unescape(self, data):
+    """Can't unremove non header elements so we'll just return the string"""
     return data
