@@ -11,6 +11,7 @@ import smtplib
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from uweb3.libs.safestring import  EmailAddresssafestring, EmailHeadersafestring
 
 
 class MailError(Exception):
@@ -20,7 +21,7 @@ class MailError(Exception):
 class MailSender(object):
   """Easy context-interface for sending mail."""
   def __init__(self, host='localhost', port=25,
-               local_hostname='localhost', timeout=5):
+               local_hostname=None, timeout=5):
     """Sets up the connection to the SMTP server.
 
     Arguments:
@@ -28,14 +29,15 @@ class MailSender(object):
         The SMTP hostname to connect to.
       % port: int ~~ 25
         Port for the SMTP server.
-      % local_hostname: str ~~ 'underdark.nl'
+      % local_hostname: str ~~ from local hostname
         The hostname for which we want to send messages.
       % timeout: int ~~ 5
         Timeout in seconds.
     """
     self.server = None
     self.options = {'host': host, 'port': port,
-                    'local_hostname': local_hostname, 'timeout': timeout}
+                    'local_hostname': local_hostname or os.uname()[1],
+                    'timeout': timeout}
 
   def __enter__(self):
     """Returns a SendMailContext for sending emails."""
@@ -75,9 +77,9 @@ class SendMailContext(object):
         Character set to encode mail to.
     """
     message = MIMEMultipart()
-    message['From'] = sender or self.Noreply()
+    message['From'] = EmailAddresssafestring('') + (sender or self.Noreply())
     message['To'] = self.ParseRecipients(recipients)
-    message['Subject'] = ' '.join(subject.strip().split())
+    message['Subject'] = EmailHeadersafestring('') + ' '.join(subject.strip().split())
     message.attach(MIMEText(content.encode(charset), 'plain', charset))
     if reply_to:
       message['Reply-to'] = self.ParseRecipients(reply_to)
@@ -92,9 +94,9 @@ class SendMailContext(object):
     Content in case of 2-tuple can be `str` or any file-like object.
     """
     message = MIMEMultipart()
-    message['From'] = sender or self.Noreply()
+    message['From'] = EmailAddresssafestring('') + (sender or self.Noreply())
     message['To'] = self.ParseRecipients(recipients)
-    message['Subject'] = ' '.join(subject.strip().split())
+    message['Subject'] = EmailHeadersafestring('') + ' '.join(subject.strip().split())
     if reply_to:
       message['Reply-to'] = self.ParseRecipients(reply_to)
     message.attach(MIMEText(content.encode(charset), 'plain', charset))
@@ -128,19 +130,15 @@ class SendMailContext(object):
 
   @staticmethod
   def ParseRecipients(recipients):
-    """Ensures multiple recipients are returned as a string without newlines."""
+    """Ensures multiple recipients are returned as a safestring without
+    newlines."""
     if isinstance(recipients, str):
-      return StripNewlines(recipients)
-    return ', '.join(map(StripNewlines, recipients))
+      return EmailAddresssafestring('') + recipients
+    return EmailAddresssafestring('') + ', '.join(recipients)
 
   def Noreply(self):
     """Returns the no-reply email address for the configured local hostname."""
     return 'no-reply <no-reply@%s>' % self.server.local_hostname
-
-
-def StripNewlines(text):
-  """Replaces newlines and tabs with a single space."""
-  return ' '.join(text.strip().split())
 
 
 def Wrap(content, cols=76):
