@@ -37,28 +37,49 @@ class PermissionError(Error):
 
 
 class SettingsManager(object):
-  def __init__(self, filename=None, executing_path=None):
+  def __init__(self, filename=None, path=None):
     """Creates a ini file with the child class name
 
     Arguments:
-      % filename: str
-      Name of the file without the extension
+      % filename: str, optional
+      Name of the file, optionally without the extension will default to .ini
+      If not filename is given the class.__name__ will be used to look for the config file in the path
+      % path: str, Optional
+      Path to the config file, will be used if filename is relative, eg does not start with '/'
     """
     self.options = None
+    extension = '' if filename and filename.endswith(('.ini', '.conf')) else '.ini'
 
     if filename:
-      self.FILENAME = f"{filename[:1].lower() + filename[1:]}.ini"
+      self.FILENAME = f"{filename[:1].lower() + filename[1:] + extension}"
     else:
-      self.FILENAME = f"{self.__class__.__name__[:1].lower() + self.__class__.__name__[1:]}.ini"
+      self.FILENAME = self.TableName() + extension
 
-    self.FILE_LOCATION = os.path.join(executing_path, self.FILENAME)
+    if path and not filename.startswith('/'):
+      self.FILE_LOCATION = os.path.join(path, self.FILENAME)
+    else:
+      self.FILE_LOCATION = self.FILENAME
     self.__CheckPermissions()
-
     if not os.path.isfile(self.FILE_LOCATION):
       os.mknod(self.FILE_LOCATION)
 
+    self.mtime = None
     self.config = configparser.ConfigParser()
     self.Read()
+
+  @classmethod
+  def TableName(cls):
+    """Returns the 'database' table name for the SettingsManager class.
+
+    If this is not explicitly defined by the class constant `_TABLE`, the return
+    value will be the class name with the first letter lowercased.
+    We stick to the same naming scheme as for more table like connectors even
+    though we use files instead of tables in this class.
+    """
+    if cls._TABLE:
+      return cls._TABLE
+    name = cls.__name__
+    return name[0].lower() + name[1:]
 
   def __CheckPermissions(self):
     """Checks if SettingsManager can read/write to file."""
@@ -90,10 +111,19 @@ class SettingsManager(object):
 
     self.config.set(section, key, value)
     self._Write(False)
+    self.mtime = None
 
   def Read(self):
-    self.config.read(self.FILE_LOCATION)
-    self.options = self.config._sections
+    """Reads the config file and populates the options member
+    It uses the mtime to see if any re-reading is required"""
+    if not self.mtime:
+      curtime = os.path.getmtime(self.FILE_LOCATION)
+      if self.mtime and self.mtime == curtime:
+        return False
+      self.config.read(self.FILE_LOCATION)
+      self.options = self.config._sections
+    self.mtime = curtime
+    return True
 
   def Update(self, section, key, value):
     """Updates ini file
@@ -111,6 +141,7 @@ class SettingsManager(object):
       self.config.add_section(section)
     self.config.set(section, key, value)
     self._Write()
+    self.mtime = None
 
   def Delete(self, section, key=None):
     """Delete sections/keys from the INI file
@@ -131,6 +162,8 @@ class SettingsManager(object):
     if not key:
       self.config.remove_section(section)
     self._Write()
+    self.mtime = None
+    return True
 
   def _Write(self, reread=True):
     """Internal function to store the current config to file"""
