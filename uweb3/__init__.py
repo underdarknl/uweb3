@@ -166,9 +166,9 @@ class uWeb(object):
   Returns:
     RequestHandler: Configured closure that is ready to process requests.
   """
-  def __init__(self, page_class, routes, executing_path=None):
+  def __init__(self, page_class, routes, executing_path=None, config='config'):
     self.executing_path = executing_path if executing_path else os.path.dirname(__file__)
-    self.config = SettingsManager(filename='config', executing_path=self.executing_path)
+    self.config = SettingsManager(filename=config, path=self.executing_path)
     self.logger = self.setup_logger()
     self.inital_pagemaker = page_class
     self.registry = Registry()
