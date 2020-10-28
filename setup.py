@@ -31,10 +31,12 @@ setup(
     long_description_content_type = 'text/markdown',
     license='ISC',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
+        'Environment :: Web Environment',
         'License :: OSI Approved :: ISC License (ISCL)',
         'Operating System :: POSIX :: Linux',
+        'Programming Language :: Python :: 3',
     ],
     author='Jan Klopper',
     author_email='jan@underdark.nl',
