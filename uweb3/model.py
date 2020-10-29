@@ -4,7 +4,6 @@
 # Standard modules
 import os
 import datetime
-import simplejson
 import sys
 import hashlib
 import pickle

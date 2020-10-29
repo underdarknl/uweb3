@@ -10,7 +10,6 @@ except ImportError:
 import json
 
 from collections import defaultdict
-from .libs.safestring import JSONsafestring
 
 class Response(object):
   """Defines a full HTTP response.
