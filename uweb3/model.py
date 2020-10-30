@@ -121,7 +121,7 @@ class SettingsManager(object):
         return False
       self.config.read(self.FILE_LOCATION)
       self.options = self.config._sections
-    self.mtime = curtime
+      self.mtime = curtime
     return True
 
   def Update(self, section, key, value):
