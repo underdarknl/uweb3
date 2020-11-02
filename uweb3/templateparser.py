@@ -110,8 +110,8 @@ EVALWHITELIST = {
                       "isinstance": isinstance,
                       **{key: value for (key,value) in vars(math).items() if not key.startswith('__')}},
         'operators': (ast.Module, ast.Expr, ast.Load, ast.Expression, ast.Add, ast.And,
-                      ast.Sub, ast.UnaryOp, ast.Num, ast.BinOp, ast.Mult, ast.Gt,
-                      ast.Div, ast.Pow, ast.BitOr, ast.BitAnd, ast.BitXor, ast.Lt,
+                      ast.Sub, ast.UnaryOp, ast.Num, ast.BinOp, ast.Mult, ast.Gt, ast.GtE,
+                      ast.Div, ast.Pow, ast.BitOr, ast.BitAnd, ast.BitXor, ast.Lt, ast.LtE,
                       ast.USub, ast.UAdd, ast.FloorDiv, ast.Mod, ast.LShift,
                       ast.RShift, ast.Invert, ast.Call, ast.Name, ast.Compare,
                       ast.Eq, ast.NotEq, ast.Not, ast.Or, ast.BoolOp, ast.Str)}
