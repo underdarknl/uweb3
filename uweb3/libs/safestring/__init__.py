@@ -86,6 +86,12 @@ class Basesafestring(str):
   def unescape(self, data):
     raise NotImplementedError
 
+  def join(self, items):
+    output = []
+    for item in items:
+      output.append(self.__upgrade__(item))
+    return self.__class__(''.join(output))
+
 
 class SQLSAFE(Basesafestring):
   CHARS_ESCAPE_DICT = {

@@ -70,6 +70,20 @@ class TestHTMLStringMethods(unittest.TestCase):
     testdata = HTMLsafestring('foo<test> {kw} test').format(kw='<b>')
     self.assertEqual(testdata, 'foo<test> &lt;b&gt; test')
 
+  def test_join(self):
+    """Tests to join two already safe list items"""
+    testdata = HTMLsafestring('').join((HTMLsafestring('<b>'),
+                                        HTMLsafestring('<b>')))
+    self.assertEqual(testdata, '<b><b>')
+    self.assertIsInstance(testdata, HTMLsafestring)
+
+  def test_join_unsafe(self):
+    """Test a join over possibly insafe and safe strings combined"""
+    testdata = HTMLsafestring('').join(('<b>',
+                                        HTMLsafestring('<b>')))
+    self.assertEqual(testdata, '&lt;b&gt;<b>')
+    self.assertIsInstance(testdata, HTMLsafestring)
+
 
 class TestJSonStringMethods(unittest.TestCase):
   def test_addition(self):

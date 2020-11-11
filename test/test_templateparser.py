@@ -107,6 +107,18 @@ class TemplateTagBasic(unittest.TestCase):
     result = self.tmpl(template).Parse(single='just one')
     self.assertEqual(result, 'Template with just one tag')
 
+  def testSaveTagTemplate(self):
+    """[BasicTag] Templates with basic tags get returned properly when replacement is already html safe"""
+    template = 'Template with just [single] tag'
+    result = self.tmpl(template).Parse(single=templateparser.HTMLsafestring('<b>a safe</b>'))
+    self.assertEqual(result, 'Template with just <b>a safe</b> tag')
+
+  def testUnsaveTagTemplate(self):
+    """[BasicTag] Templates with basic tags get returned properly when replacement is not html safe"""
+    template = 'Template with just [single] tag'
+    result = self.tmpl(template).Parse(single='<b>an unsafe</b>')
+    self.assertEqual(result, 'Template with just &lt;b&gt;an unsafe&lt;/b&gt; tag')
+
   def testCasedTag(self):
     """[BasicTag] Tag names are case-sensitive"""
     template = 'The parser has no trouble with [cAsE] [case].'
@@ -389,6 +401,7 @@ class TemplateTagFunctions(unittest.TestCase):
     """[TagFunctions] The tag function 'len' is present and works"""
     template = '[numbers|len]'
     self.assertEqual(self.parse(template, numbers=range(12)), "12")
+
 
 class TemplateTagFunctionClosures(unittest.TestCase):
   """Tests the functions that are performed on replaced tags."""

@@ -398,7 +398,7 @@ class Template(list):
 
     The template is parsed by parsing each of its members and combining that.
     """
-    htmlsafe = HTMLsafestring(''.join(tag.Parse(**kwds) for tag in self))
+    htmlsafe = HTMLsafestring('').join(HTMLsafestring(tag.Parse(**kwds)) for tag in self)
     htmlsafe.content_hash = hashlib.md5(htmlsafe.encode()).hexdigest()
     if returnRawTemplate:
       raw = HTMLsafestring(self)
@@ -1056,6 +1056,7 @@ def LimitedEval(expr, astvisitor, evallocals = {}):
 TAG_FUNCTIONS = {
     'default': lambda d: HTMLsafestring('') + d,
     'html': lambda d: HTMLsafestring('') + d,
+    'htmlsource': lambda d: HTMLsafestring(d, unsafe=True),
     'raw': lambda d: Unsafestring(d),
     'url': lambda d: HTMLsafestring(URLqueryargumentsafestring(d, unsafe=True)),
     'type': type,
