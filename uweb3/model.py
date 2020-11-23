@@ -1136,7 +1136,7 @@ class Record(BaseRecord):
   @classmethod
   def List(cls, connection, conditions=None, limit=None, offset=None,
            order=None, yield_unlimited_total_first=False, search=None,
-           tables=None, escape=True, fields=None):
+           tables=None, escape=True, fields=None, distinct=False):
     """Yields a Record object for every table entry.
 
     Arguments:
@@ -1167,6 +1167,8 @@ class Record(BaseRecord):
         Are conditions escaped?
       % fields: str / iterable ~~ *
         Specifies what fields should be returned
+      % distinct: bool (optional).
+        Performs a DISTINCT query if set to True.
 
     Yields:
       Record: Database record abstraction class.
@@ -1199,7 +1201,7 @@ class Record(BaseRecord):
                               table=tables, conditions=conditions,
                               limit=limit, offset=offset, order=order,
                               totalcount=yield_unlimited_total_first,
-                              escape=escape, group=group)
+                              escape=escape, group=group, distinct=distinct)
     if yield_unlimited_total_first:
       yield records.affected
     records = [cls(connection, record) for record in list(records)]

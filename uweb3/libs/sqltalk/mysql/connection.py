@@ -198,13 +198,20 @@ class Connection(pymysql.connections.Connection):
     """Return the name of the currently used database"""
     return self.Query('SELECT DATABASE()')[0]
 
-  def EscapeField(self, field):
-    """Returns a SQL escaped field or table name."""
+  def EscapeField(self, field, multiple=False):
+    """Returns a SQL escaped field or table name.
+
+    Set multiple = True if field is a tuple of names to be escaped.
+    If multiple = False, and a tuple is encountered `field` as `name` will be
+      returned where the second part of the tuple is the `name` part.
+    """
     if not field:
       return ''
     if isinstance(field, str):
       fields = '.'.join('`%s`' % f.replace('`', '``') for f in field.split('.'))
       return fields.replace('`*`', '*')
+    elif not multiple and isinstance(field, tuple):
+      return '%s as %s' % (self.EscapeField(field[0]), self.EscapeField(field[1]))
     return map(self.EscapeField, field)
 
   def EscapeValues(self, obj):
@@ -221,12 +228,16 @@ class Connection(pymysql.connections.Connection):
     """Returns a dictionary of MySQL server info and current active database.
 
     Returns
-      dictionary: keys: 'db', 'charset', 'server'
+      dictionary: keys: 'db', 'charset', 'server', 'debug', 'autocommit',
+                        'querycount', 'transactioncount'
     """
-    # TODO(Elmer): Make this return more useful information and statistics
     return {'db': self.CurrentDatabase(),
-            'charset': self.charset,
-            'server': self.ServerInfo()}
+            'charset': self._GetCharacterSet(),
+            'server': self.ServerInfo(),
+            'debug': self.debug,
+            'autocommit': self.autocommit_mode,
+            'querycount': self.counter_queries,
+            'transactioncount': self.counter_transactions}
 
   def Query(self, query_string, cur=None):
     self.counter_queries += 1

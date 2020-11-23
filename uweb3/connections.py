@@ -77,8 +77,8 @@ class ConnectionManager(object):
         self.__connections[con_type] = self.__connectors[con_type](
             self.config, self.options, request, self.debug)
         return self.__connections[con_type].connection
-      except KeyError:
-        raise TypeError('No connector for: %r, available: %r' % (con_type, self.__connectors))
+      except KeyError as error:
+        raise TypeError('No connector for: %r, available: %r, %r' % (con_type, self.__connectors, error))
 
   def __enter__(self):
     """Proxies the transaction to the underlying relevant connection."""
