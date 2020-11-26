@@ -299,7 +299,7 @@ class TemplateTagFunctions(unittest.TestCase):
     template = 'This tag function is missing [num|zoink].'
     self.assertEqual(self.parse(template), template)
     # Error is only thrown if we actually pass an argument for the tag:
-    self.assertRaises(templateparser.TemplateNameError,
+    self.assertRaises(templateparser.TemplateFunctionError,
                       self.parse, template, num=1)
 
   def testAlwaysString(self):
@@ -457,7 +457,7 @@ class TemplateTagFunctionClosures(unittest.TestCase):
     should never have access to the python scope."""
     test = 20
     template = '[tag|limit(test)]'
-    self.assertRaises(templateparser.TemplateSyntaxError,
+    self.assertRaises(templateparser.TemplateNameError,
         self.parse, template, tag=self.tag)
 
   def testComplexClosureWithoutArguments(self):

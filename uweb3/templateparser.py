@@ -31,7 +31,11 @@ class TemplateKeyError(Error):
 
 
 class TemplateNameError(Error):
-  """The referenced tag or function does not exist."""
+  """The referenced tag does not exist."""
+
+
+class TemplateFunctionError(Error):
+  """The referenced function does not exist."""
 
 
 class TemplateValueError(Error, ValueError):
@@ -372,7 +376,7 @@ class Template(list):
       raise TypeError('The template requires parser for adding template files.')
     return self._AddToOpenScope(self.parser[name])
 
-  def AddString(self, raw_template):
+  def AddString(self, raw_template, filename=None):
     """Extends the Template by adding a raw template string.
 
     The given template is parsed and added to the existing template.
@@ -390,8 +394,8 @@ class Template(list):
     if len(self.scopes) != scope_depth:
       scope_diff = len(self.scopes) - scope_depth
       if scope_diff < 0:
-        raise TemplateSyntaxError('Closed %d scopes too many' % abs(scope_diff))
-      raise TemplateSyntaxError('Template left %d open scopes.' % scope_diff)
+        raise TemplateSyntaxError('Closed %d scopes too many in "%s"' % (abs(scope_diff), filename or raw_template))
+      raise TemplateSyntaxError('TemplateString left %d open scopes in "%s"' % (scope_diff, filename or raw_template))
 
   def Parse(self, returnRawTemplate=False, **kwds):
     """Returns the parsed template as HTMLsafestring.
@@ -445,7 +449,9 @@ class Template(list):
     try:
       getattr(self, '_TemplateConstruct%s' % function.title())(*nodes)
     except AttributeError:
-      raise TemplateSyntaxError('Unknown template function {{ %s }}' % function)
+      raise TemplateSyntaxError('Unknown template function {{ %s }}%s' %
+        (function,
+         ' in template "%s"' % self._template_path if self._template_path else ''))
 
   def _ExtendText(self, node):
     """Processes a text node and adds its tags and texts to the Template."""
@@ -559,7 +565,10 @@ class FileTemplate(Template):
     The template is parsed by parsing each of its members and combining that.
     """
     self.ReloadIfModified()
-    result = super().Parse(**kwds)
+    try:
+      result = super().Parse(**kwds)
+    except TemplateFunctionError as error:
+      raise TemplateFunctionError('%s in %s' % (error, self._template_path))
     if self.parser and self.parser.noparse:
       return {'template': self._templatepath[len(self.parser.template_dir):],
               'replacements': result.tags,
@@ -584,7 +593,7 @@ class FileTemplate(Template):
           template = templatefile.read()
         del self[:]
         self.scopes = [self]
-        self.AddString(template)
+        self.AddString(template, self._file_name)
         self._file_mtime = mtime
     except (IOError, OSError):
       # File cannot be stat'd or read. No longer exists or we lack permissions.
@@ -664,7 +673,9 @@ class TemplateConditional(object):
     try:
       return LimitedEval(''.join(nodes), self.astvisitor, local_vars)
     except NameError as error:
-      raise TemplateNameError(str(error).capitalize() + '. Try it as tagname?')
+      raise TemplateNameError(str(error).capitalize() + '. Try it as [tagname]?')
+    except SyntaxError as error:
+      raise TemplateSyntaxError('%s while evaluating: %s' % (str(error).capitalize(), ''.join(nodes)))
 
   def NewBranch(self, expr):
     """Begins a new branch based on the given expression."""
@@ -872,6 +883,8 @@ class TemplateTag(object):
       return value
     except KeyError:
       raise TemplateNameError('No replacement with name %r' % self.name)
+    except TemplateKeyError as error:
+      raise TemplateKeyError('%s on %r' % (error, self.name))
 
   @classmethod
   def ApplyFunction(cls, func, value):
@@ -891,10 +904,10 @@ class TemplateTag(object):
       raise TemplateTypeError(
           ('Templatefunction raised an TypeError %s(%s) ' % (func, value), err_obj))
     except KeyError as err_obj:
-      raise TemplateNameError(
+      raise TemplateFunctionError(
           'Unknown template tag function %r' % err_obj.args[0])
     except NameError as err_obj:
-      raise TemplateSyntaxError(
+      raise TemplateNameError(
           'Access to scope outside of parser variables is not allowed: %r' % err_obj.args[0])
 
   def Parse(self, **kwds):
@@ -924,7 +937,12 @@ class TemplateTag(object):
     # Process functions, or apply default if value is not Basesafestring
     if self.functions:
       for func in self.functions:
-        value = self.ApplyFunction(func, value)
+        try:
+          value = self.ApplyFunction(func, value)
+        except TemplateFunctionError as error:
+          raise TemplateFunctionError('%s on %s' % (error, self))
+        except TemplateSyntaxError as error:
+          raise TemplateSyntaxError('%s on %s' % (error, self))
     if not isinstance(value, Basesafestring):
       value = TAG_FUNCTIONS['default'](value)
     return value
@@ -976,7 +994,7 @@ class TemplateTag(object):
         # TypeError: `haystack` is no mapping but may have a matching attr.
         return getattr(haystack, needle)
     except (AttributeError, LookupError):
-      raise TemplateKeyError('Item has no index, key or attribute %r.' % needle)
+      raise TemplateKeyError('Item has no index, key or attribute %r' % needle)
 
 
 class TemplateText(str):
