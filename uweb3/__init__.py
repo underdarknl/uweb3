@@ -307,26 +307,36 @@ class uWeb(object):
           logger.exception("UNCAUGHT EXCEPTION:")
       return page_maker.InternalServerError(*sys.exc_info())
 
-  def serve(self, hot_reloading=True):
+  def serve(self):
     """Sets up and starts WSGI development server for the current app."""
     host = 'localhost'
     port = 8001
     hotreload = False
     dev = False
+    interval = None
+    ignored_directories = ['__pycache__',
+                           self.inital_pagemaker.PUBLIC_DIR,
+                           self.inital_pagemaker.TEMPLATE_DIR]
     if self.config.options.get('development', False):
       host = self.config.options['development'].get('host', host)
       port = self.config.options['development'].get('port', port)
-      hotreload = self.config.options['development'].get('reload', False) == 'True'
-      dev = self.config.options['development'].get('dev', False)
+      hotreload = self.config.options['development'].get('reload', False) in ('True', 'true')
+      dev = self.config.options['development'].get('dev', False) in ('True', 'true')
+      interval = int(self.config.options['development'].get('checkinterval', 0))
+      ignored_extensions = self.config.options['development'].get('ignored_extensions', '').split(',')
+      ignored_directories += self.config.options['development'].get('ignored_directories', '').split(',')
     server = make_server(host, int(port), self)
     print(f'Running µWeb3 server on http://{server.server_address[0]}:{server.server_address[1]}')
     print(f'Root dir is: {self.executing_path}')
     try:
       if hotreload:
         print(f'Hot reload is enabled for changes in: {self.executing_path}')
-        HotReload(self.executing_path, uweb_dev=dev)
+        HotReload(self.executing_path, interval=interval, dev=dev,
+            ignored_extensions=ignored_extensions,
+            ignored_directories=ignored_directories)
       server.serve_forever()
-    except:
+    except Exception as error:
+      print(error)
       server.shutdown()
 
   def setup_routing(self):
@@ -350,63 +360,61 @@ class uWeb(object):
 class HotReload(object):
     """This class handles the thread which scans for file changes in the
     execution path and restarts the server if needed"""
-    IGNOREDEXTENSIONS = (".pyc", '.ini', '.md', '.html', '.log')
+    IGNOREDEXTENSIONS = [".pyc", '.ini', '.md', '.html', '.log', '.sql']
 
-    def __init__(self, path, interval=1, uweb_dev=False):
+    def __init__(self, path, interval=None, dev=False, ignored_extensions=None, ignored_directories=None):
       """Takes a path, an optional interval in seconds and an optional flag
-      signalling a development environment"""
+      signaling a development environment which will set the path for new and
+      changed file checking on the parent folder of the serving file."""
       import threading
-      import time
-
       self.running = threading.Event()
-      self.interval = interval
+      self.interval = interval or 1
       self.path = os.path.dirname(path)
-      if uweb_dev in ('True', True):
+      self.ignoredextensions = self.IGNOREDEXTENSIONS + (ignored_extensions or [])
+      self.ignoreddirectories = ignored_directories
+      if dev:
         from pathlib import Path
         self.path = str(Path(self.path).parents[1])
-      self.thread = threading.Thread(target=self.run, args=())
+      self.thread = threading.Thread(target=self.Run)
       self.thread.daemon = True
       self.thread.start()
 
-    def run(self):
-      """ Method runs forever and watches all files in the project folder.
+    def Run(self):
+      """ Method runs forever and watches all files in the project folder."""
+      self.watched_files = self.Files()
+      print(self.watched_files)
+      self.mtimes = [(f, os.path.getmtime(f)) for f in self.watched_files]
 
-      Does not trigger a reload when the following files change:
-      - .pyc
-      - .ini
-      - .md
-      - .html
-      - .log
-
-      Changes in the HTML are noticed by the TemplateParser,
-      which then reloads the HTML file into the object and displays the updated version.
-      """
-      self.WATCHED_FILES = self.getListOfFiles()[1]
-      WATCHED_FILES_MTIMES = [(f, os.path.getmtime(f)) for f in self.WATCHED_FILES]
-
+      import time
       while True:
-        if len(self.WATCHED_FILES) != self.getListOfFiles()[0]:
+        time.sleep(self.interval)
+        new = self.Files(self.watched_files)
+        if new:
           print('{color}New file added or deleted\x1b[0m \nRestarting µWeb3'.format(color='\x1b[7;30;41m'))
-          self.restart()
-        for f, mtime in WATCHED_FILES_MTIMES:
+          self.Restart()
+        for f, mtime in self.mtimes:
           if os.path.getmtime(f) != mtime:
             print('{color}Detected changes in {file}\x1b[0m \nRestarting µWeb3'.format(color='\x1b[7;30;41m', file=f))
-            self.restart()
-        time.sleep(self.interval)
+            self.Restart()
 
-    def getListOfFiles(self):
-      """Returns all files inside the working directory of uweb3.
-      Also returns a count so that we can restart on file add/remove.
-      """
-      watched_files = []
-      for r, d, f in os.walk(self.path):
-        for file in f:
+    def Files(self, current=None):
+      """Returns all files inside the working directory of uweb3."""
+      if not current:
+        current = set()
+      new = set()
+      for dirpath, dirnames, filenames in os.walk(self.path):
+        if any(list(map(lambda dirname: dirname in dirpath, self.ignoreddirectories))):
+          continue
+        for file in filenames:
+          fullname = os.path.join(dirpath, file)
+          if fullname in current or fullname.endswith('~'):
+            continue
           ext = os.path.splitext(file)[1]
-          if ext not in IGNOREDEXTENSIONS:
-            watched_files.append(os.path.join(r, file))
-      return (len(watched_files), watched_files)
+          if ext not in self.ignoredextensions:
+            new.add(fullname)
+      return new
 
-    def restart(self):
+    def Restart(self):
       """Restart uweb3 with all provided system arguments."""
       self.running.clear()
       os.execl(sys.executable, sys.executable, * sys.argv)
