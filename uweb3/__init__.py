@@ -382,7 +382,6 @@ class HotReload(object):
     def Run(self):
       """ Method runs forever and watches all files in the project folder."""
       self.watched_files = self.Files()
-      print(self.watched_files)
       self.mtimes = [(f, os.path.getmtime(f)) for f in self.watched_files]
 
       import time
