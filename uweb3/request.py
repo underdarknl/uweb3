@@ -7,7 +7,7 @@ import cgi
 import sys
 import urllib
 import io
-from cgi import parse_qs
+from urllib.parse import parse_qs
 import io as stringIO
 import http.cookies as cookie
 import re
