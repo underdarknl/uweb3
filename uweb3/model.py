@@ -35,7 +35,7 @@ class PermissionError(Error):
   """The entity has insufficient rights to access the resource."""
 
 
-class SettingsManager(object):
+class SettingsManager:
   def __init__(self, filename=None, path=None):
     """Creates a ini file with the child class name
 
@@ -173,7 +173,7 @@ class SettingsManager(object):
     return True
 
 
-class SecureCookie(object):
+class SecureCookie:
   """The secureCookie class works just like other data abstraction classes,
   except that it stores its data in client side cookies that are signed with a
   server side secret to avoid tampering by the end-user.
@@ -663,20 +663,16 @@ class BaseRecord(dict):
   def _Changes(self):
     """Returns the differences of the current state vs the last stored state."""
     sql_record = self._DataRecord()
-    changes = {}
-    for key, value in sql_record.items():
-      if self._record.get(key) != value:
-        changes[key] = value
-    return changes
+    return {
+        key: value
+        for key, value in sql_record.items() if self._record.get(key) != value
+    }
 
   def _DataRecord(self):
     """Returns a dictionary of the record's database values
     For any Record object present, its primary key value (`Record.key`) is used.
     """
-    sql_record = {}
-    for key, value in super().items():
-      sql_record[key] = self._ValueOrPrimary(value)
-    return sql_record
+    return {key: self._ValueOrPrimary(value) for key, value in super().items()}
 
   @staticmethod
   def _ValueOrPrimary(value):
@@ -1205,8 +1201,9 @@ class Record(BaseRecord):
     if yield_unlimited_total_first:
       yield records.affected
     records = [cls(connection, record) for record in list(records)]
-    for record in records:
-      yield record
+
+    yield from records
+
     if cacheable:
       list(cls._cacheListPreseed(records))
 
@@ -1382,14 +1379,14 @@ class VersionedRecord(Record):
     """
     if not tables:
       tables = [cls.TableName()]
-    if not fields:
-      fields = "%s.*" % cls.TableName()
-    else:
+    if fields:
       if fields != '*':
-        if type(fields) != str:
-          fields = ', '.join(connection.EscapeField(fields))
-        else:
+        if isinstance(fields, str):
           fields = connection.EscapeField(fields)
+        else:
+          fields = ', '.join(connection.EscapeField(fields))
+    else:
+      fields = "%s.*" % cls.TableName()
     if search:
       search = search.strip()
       tables, searchconditions = cls._GetSearchQuery(connection, tables, search)
@@ -1438,8 +1435,7 @@ class VersionedRecord(Record):
       yield records.affected
     # turn sqltalk rows into model
     records = [cls(connection, record) for record in list(records)]
-    for record in records:
-      yield record
+    yield from records
     if cacheable:
       list(cls._cacheListPreseed(records))
 
@@ -1604,8 +1600,7 @@ def RecordTableNames():
       if sub not in seen:
         seen.add(sub)
         yield sub
-        for sub in GetSubTypes(sub, seen):
-          yield sub
+        yield from GetSubTypes(sub, seen)
 
   for cls in GetSubTypes(BaseRecord):
     # Do not yield subclasses defined in this module
@@ -1615,7 +1610,7 @@ def RecordTableNames():
 
 import functools
 
-class CachedPage(object):
+class CachedPage:
   """Abstraction class for the cached Pages table in the database."""
 
   MAXAGE = 61

@@ -49,7 +49,7 @@ class Cookie(cookie.SimpleCookie):
       dict.__setitem__(self, key, morsel)
 
 
-class Request(object):
+class Request:
   def __init__(self, env, registry):
     self.env = env
     self.headers = dict(self.headers_from_env(env))
@@ -58,9 +58,13 @@ class Request(object):
     self._out_status = 200
     self._response = None
     self.method = self.env['REQUEST_METHOD']
-    self.vars = {'cookie': dict((name, value.value) for name, value in
-                                Cookie(self.env.get('HTTP_COOKIE')).items()),
-                 'get': QueryArgsDict(parse_qs(self.env['QUERY_STRING']))}
+    self.vars = {
+        'cookie': {
+            name: value.value
+            for name, value in Cookie(self.env.get('HTTP_COOKIE')).items()
+        },
+        'get': QueryArgsDict(parse_qs(self.env['QUERY_STRING'])),
+    }
     self.env['host'] = self.headers.get('Host', '')
     if self.method in ('POST', 'PUT', 'DELETE'):
       request_body_size = 0
@@ -136,9 +140,8 @@ class Request(object):
         When True, the cookie is only used for http(s) requests, and is not
         accessible through Javascript (DOM).
     """
-    if isinstance(value, (str)):
-      if len(value.encode('utf-8')) >= 4096:
-        raise CookieTooBigError("Cookie is larger than 4096 bytes and wont be set")
+    if isinstance(value, (str)) and len(value.encode('utf-8')) >= 4096:
+      raise CookieTooBigError("Cookie is larger than 4096 bytes and wont be set")
 
     new_cookie = Cookie({key: value})
     if 'max_age' in attrs:
@@ -202,10 +205,10 @@ class IndexedFieldStorage(cgi.FieldStorage):
 
   @property
   def __dict__(self):
-    d = {}
-    for key, value in self.iteritems():
-      d[key] = value if len(value) > 1 else value[0]
-    return d
+    return {
+        key: value if len(value) > 1 else value[0]
+        for key, value in self.iteritems()
+    }
 
 
 class QueryArgsDict(dict):

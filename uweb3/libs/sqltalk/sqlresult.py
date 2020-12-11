@@ -32,7 +32,7 @@ class NotSupportedError(Error, TypeError):
   """Operation is not supported."""
 
 
-class ResultRow(object):
+class ResultRow:
   """SQL Result row - an ordered dictionary-like record abstraction.
 
   ResultRow has two item retrieval interfaces:
@@ -168,7 +168,7 @@ class ResultRow(object):
     return self._fields.pop(), self._values.pop()
 
 
-class ResultSet(object):
+class ResultSet:
   """SQL Result set - stores the query, the returned result, and other info.
 
   ResultSet is created from immutable objects. Once defined, none of its

@@ -18,7 +18,7 @@ class MailError(Exception):
   """Something went wrong sending your email"""
 
 
-class MailSender(object):
+class MailSender:
   """Easy context-interface for sending mail."""
   def __init__(self, host='localhost', port=25,
                local_hostname=None, timeout=5):
@@ -52,7 +52,7 @@ class MailSender(object):
     self.server.quit()
 
 
-class SendMailContext(object):
+class SendMailContext:
   """Context to use for sending emails."""
   def __init__(self, server):
     """Stores the server object locally."""
