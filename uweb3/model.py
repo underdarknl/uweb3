@@ -50,17 +50,17 @@ class SettingsManager(object):
     extension = '' if filename and filename.endswith(('.ini', '.conf')) else '.ini'
 
     if filename:
-      self.FILENAME = f"{filename[:1].lower() + filename[1:] + extension}"
+      self.filename = f"{filename[:1].lower() + filename[1:] + extension}"
     else:
-      self.FILENAME = self.TableName() + extension
+      self.filename = self.TableName() + extension
 
     if path and not filename.startswith('/'):
-      self.FILE_LOCATION = os.path.join(path, self.FILENAME)
+      self.file_location = os.path.join(path, self.filename)
     else:
-      self.FILE_LOCATION = self.FILENAME
+      self.file_location = self.filename
     self.__CheckPermissions()
-    if not os.path.isfile(self.FILE_LOCATION):
-      os.mknod(self.FILE_LOCATION)
+    if not os.path.isfile(self.file_location):
+      os.mknod(self.file_location)
 
     self.mtime = None
     self.config = configparser.ConfigParser()
@@ -82,12 +82,12 @@ class SettingsManager(object):
 
   def __CheckPermissions(self):
     """Checks if SettingsManager can read/write to file."""
-    if not os.path.isfile(self.FILE_LOCATION):
+    if not os.path.isfile(self.file_location):
       return True
-    if not os.access(self.FILE_LOCATION, os.R_OK):
-      raise PermissionError(f"SettingsManager missing permissions to read file: {self.FILE_LOCATION}")
-    if not os.access(self.FILE_LOCATION, os.W_OK):
-      raise PermissionError(f"SettingsManager missing permissions to write to file: {self.FILE_LOCATION}")
+    if not os.access(self.file_location, os.R_OK):
+      raise PermissionError(f"SettingsManager missing permissions to read file: {self.file_location}")
+    if not os.access(self.file_location, os.W_OK):
+      raise PermissionError(f"SettingsManager missing permissions to write to file: {self.file_location}")
 
   def Create(self, section, key, value):
     """Creates a section or/and key = value
@@ -116,10 +116,10 @@ class SettingsManager(object):
     """Reads the config file and populates the options member
     It uses the mtime to see if any re-reading is required"""
     if not self.mtime:
-      curtime = os.path.getmtime(self.FILE_LOCATION)
+      curtime = os.path.getmtime(self.file_location)
       if self.mtime and self.mtime == curtime:
         return False
-      self.config.read(self.FILE_LOCATION)
+      self.config.read(self.file_location)
       self.options = self.config._sections
       self.mtime = curtime
     return True
@@ -166,7 +166,7 @@ class SettingsManager(object):
 
   def _Write(self, reread=True):
     """Internal function to store the current config to file"""
-    with open(self.FILE_LOCATION, 'w') as configfile:
+    with open(self.file_location, 'w') as configfile:
       self.config.write(configfile)
     if reread:
       return self.Read()
