@@ -274,10 +274,7 @@ class Parser(dict):
       @ persistent: bool
         will this tag be present for multiple requests?
     """
-    if persistent:
-      storage = self.tags
-    else:
-      storage = self.requesttags
+    storage = self.tags if persistent else self.requesttags
     if ':' not in tag:
       storage[tag] = value
       return
@@ -826,7 +823,10 @@ class TemplateTag(object):
         Names of template functions that should be applied to the value.
     """
     self.name = name
-    self.indices = indices if self.ALLOWPRIVATE else list(index for index in indices if not index.startswith('_') or not index.endswith('_'))
+    self.indices = (indices if self.ALLOWPRIVATE else [
+        index for index in indices
+        if not index.startswith('_') or not index.endswith('_')
+    ])
     self.functions = functions
 
   def __repr__(self):

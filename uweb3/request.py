@@ -136,9 +136,8 @@ class Request(object):
         When True, the cookie is only used for http(s) requests, and is not
         accessible through Javascript (DOM).
     """
-    if isinstance(value, (str)):
-      if len(value.encode('utf-8')) >= 4096:
-        raise CookieTooBigError("Cookie is larger than 4096 bytes and wont be set")
+    if isinstance(value, (str)) and len(value.encode('utf-8')) >= 4096:
+      raise CookieTooBigError("Cookie is larger than 4096 bytes and wont be set")
 
     new_cookie = Cookie({key: value})
     if 'max_age' in attrs:
@@ -202,10 +201,10 @@ class IndexedFieldStorage(cgi.FieldStorage):
 
   @property
   def __dict__(self):
-    d = {}
-    for key, value in self.iteritems():
-      d[key] = value if len(value) > 1 else value[0]
-    return d
+    return {
+        key: value if len(value) > 1 else value[0]
+        for key, value in self.iteritems()
+    }
 
 
 class QueryArgsDict(dict):
