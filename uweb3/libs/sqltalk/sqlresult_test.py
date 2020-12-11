@@ -22,7 +22,7 @@ __version__ = '0.6'
 import unittest
 
 # Unittest target
-import sqlresult
+from . import sqlresult
 
 
 class ResultRowBasicOperation(unittest.TestCase):
