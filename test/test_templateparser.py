@@ -77,8 +77,8 @@ class ParserPerformance(unittest.TestCase):
   @staticmethod
   def testPerformance():
     """[Parser] Basic performance test for 2 template replacements"""
+    template = 'This [obj:foo] is just a quick [bar]'
     for _template in range(100):
-      template = 'This [obj:foo] is just a quick [bar]'
       tmpl = templateparser.Template(template)
       for _parse in range(100):
         tmpl.Parse(obj={'foo': 'template'}, bar='hack')
@@ -148,7 +148,7 @@ class TemplateTagBasic(unittest.TestCase):
     bad_chars = """ :~!@#$%^&*()+-={}\|;':",./<>? """
     template = ''.join('[%s] [check]' % char for char in bad_chars)
     expected = ''.join('[%s] ..' % char for char in bad_chars)
-    replaces = dict((char, 'FAIL') for char in bad_chars)
+    replaces = {char: 'FAIL' for char in bad_chars}
     replaces['check'] = '..'
     self.assertEqual(self.tmpl(template).Parse(**replaces), expected)
 
@@ -253,7 +253,7 @@ class TemplateTagIndexed(unittest.TestCase):
 
   def testTemplateMissingIndexes(self):
     """[IndexedTag] Tags with bad indexes will be returned verbatim"""
-    class Object(object):
+    class Object:
       """A simple object to store an attribute on."""
       NAME = 'Freeman'
 

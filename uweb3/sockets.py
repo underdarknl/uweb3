@@ -15,7 +15,7 @@ class SocketMiddleWare(socketio.WSGIApp):
                                            socketio_path=socketio_path
                                            )
 
-class Uweb3SocketIO(object):
+class Uweb3SocketIO:
   def __init__(self, app, sio, static_dir=os.path.dirname(os.path.abspath(__file__))):
     if not isinstance(app, uWeb):
       raise Exception("App must be an uWeb3 instance!")

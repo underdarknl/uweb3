@@ -56,7 +56,7 @@ class cached_property(property):
     and then that calculated result is used the next time you access
     the value::
 
-        class Foo(object):
+        class Foo:
 
             @cached_property
             def foo(self):
@@ -97,7 +97,7 @@ class environ_property(_DictAccessorProperty):
     for the Werzeug request object, but also any other class with an
     environ attribute:
 
-    >>> class Test(object):
+    >>> class Test:
     ...     environ = {'key': 'value'}
     ...     test = environ_property('key')
     >>> var = Test()
@@ -126,7 +126,7 @@ class header_property(_DictAccessorProperty):
         return obj.headers
 
 
-class HTMLBuilder(object):
+class HTMLBuilder:
     """Helper object for HTML generation.
 
     Per default there are two instances of that class.  The `html` one, and
@@ -228,7 +228,7 @@ class HTMLBuilder(object):
             buffer += ">"
 
             children_as_string = "".join(
-                [text_type(x) for x in children if x is not None]
+                text_type(x) for x in children if x is not None
             )
 
             if children_as_string:
@@ -590,8 +590,7 @@ def find_modules(import_path, include_packages=False, recursive=False):
             if include_packages:
                 yield modname
             if recursive:
-                for item in find_modules(modname, include_packages, True):
-                    yield item
+                yield from find_modules(modname, include_packages, True)
         else:
             yield modname
 
@@ -671,15 +670,17 @@ def bind_arguments(func, args, kwargs):
         vararg_var,
         kwarg_var,
     ) = _parse_signature(func)(args, kwargs)
-    values = {}
-    for (name, _has_default, _default), value in zip(arg_spec, args):
-        values[name] = value
+    values = {
+        name: value
+        for (name, _has_default, _default), value in zip(arg_spec, args)
+    }
+
     if vararg_var is not None:
         values[vararg_var] = tuple(extra_positional)
     elif extra_positional:
         raise TypeError("too many positional arguments")
     if kwarg_var is not None:
-        multikw = set(extra) & set([x[0] for x in arg_spec])
+        multikw = set(extra) & {x[0] for x in arg_spec}
         if multikw:
             raise TypeError(
                 "got multiple values for keyword argument " + repr(next(iter(multikw)))
@@ -738,7 +739,7 @@ class ImportStringError(ImportError):
             else:
                 track = ["- %r found in %r." % (n, i) for n, i in tracked]
                 track.append("- %r not found." % name)
-                msg = msg % (
+                msg %= (
                     import_name,
                     "\n".join(track),
                     exception.__class__.__name__,

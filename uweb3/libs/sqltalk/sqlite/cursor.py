@@ -8,7 +8,7 @@ __version__ = '0.4'
 from .. import sqlresult
 
 
-class Cursor(object):
+class Cursor:
   def __init__(self, connection):
     self.connection = connection
     self.cursor = connection.cursor()
@@ -22,14 +22,15 @@ class Cursor(object):
     except Exception:
       self.connection.logger.exception('Exception during query execution')
       raise
-    fieldnames = list(field[0] for field in result.description)
+    fieldnames = [field[0] for field in result.description]
     return sqlresult.ResultSet(
         affected=result.rowcount,
         charset='utf-8',
         fields=fieldnames,
         insertid=result.lastrowid,
         query=(query, tuple(args)),
-        result=list(dict(zip(fieldnames, row)) for row in result.fetchall()))
+        result=[dict(zip(fieldnames, row)) for row in result.fetchall()],
+    )
 
   def Insert(self, table, values):
     if not values:

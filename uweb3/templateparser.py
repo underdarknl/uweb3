@@ -58,7 +58,7 @@ class TemplateEvaluationError(Error):
   """Template condition was not within allowed set of operators."""
 
 
-class LazyTagValueRetrieval(object):
+class LazyTagValueRetrieval:
   """Provides a means for lazy tag value retrieval.
 
   This is necessary for instance for TemplateConditional.Expression, where
@@ -598,7 +598,7 @@ class FileTemplate(Template):
       pass
 
 
-class TemplateConditional(object):
+class TemplateConditional:
   """A template construct to control flow based on the value of a tag."""
   def __init__(self, expr, astvisitor):
     self.branches = []
@@ -790,7 +790,7 @@ class TemplateLoop(list):
     return ''.join(output)
 
 
-class TemplateTag(object):
+class TemplateTag:
   """Template tags are used for dynamic placeholders in templates.
 
   Their final value is determined during parsing. For more explanation on this,
@@ -1011,7 +1011,7 @@ class TemplateText(str):
     return str(self)
 
 
-class JITTag(object):
+class JITTag:
   """This is a template Tag which is only evaulated on replacement.
   It is usefull for situations where not all all of this functions input vars
   are available just yet.

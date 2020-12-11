@@ -35,7 +35,7 @@ class PermissionError(Error):
   """The entity has insufficient rights to access the resource."""
 
 
-class SettingsManager(object):
+class SettingsManager:
   def __init__(self, filename=None, path=None):
     """Creates a ini file with the child class name
 
@@ -173,7 +173,7 @@ class SettingsManager(object):
     return True
 
 
-class SecureCookie(object):
+class SecureCookie:
   """The secureCookie class works just like other data abstraction classes,
   except that it stores its data in client side cookies that are signed with a
   server side secret to avoid tampering by the end-user.
@@ -1610,7 +1610,7 @@ def RecordTableNames():
 
 import functools
 
-class CachedPage(object):
+class CachedPage:
   """Abstraction class for the cached Pages table in the database."""
 
   MAXAGE = 61

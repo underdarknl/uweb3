@@ -49,7 +49,7 @@ class Cookie(cookie.SimpleCookie):
       dict.__setitem__(self, key, morsel)
 
 
-class Request(object):
+class Request:
   def __init__(self, env, registry):
     self.env = env
     self.headers = dict(self.headers_from_env(env))
@@ -58,9 +58,13 @@ class Request(object):
     self._out_status = 200
     self._response = None
     self.method = self.env['REQUEST_METHOD']
-    self.vars = {'cookie': dict((name, value.value) for name, value in
-                                Cookie(self.env.get('HTTP_COOKIE')).items()),
-                 'get': QueryArgsDict(cgi.parse_qs(self.env['QUERY_STRING']))}
+    self.vars = {
+        'cookie': {
+            name: value.value
+            for name, value in Cookie(self.env.get('HTTP_COOKIE')).items()
+        },
+        'get': QueryArgsDict(cgi.parse_qs(self.env['QUERY_STRING'])),
+    }
     self.env['host'] = self.headers.get('Host', '')
     if self.method in ('POST', 'PUT', 'DELETE'):
       request_body_size = 0

@@ -37,11 +37,11 @@ class HTTPRequestException(HTTPException):
 class NoRouteError(Error):
   """The server does not know how to route this request"""
 
-class Registry(object):
+class Registry:
   """Something to hook stuff to"""
 
 
-class Router(object):
+class Router:
   def __init__(self, page_class):
     self.pagemakers = page_class.LoadModules()
     self.pagemakers.append(page_class)
@@ -119,9 +119,8 @@ class Router(object):
       for pattern, handler, routemethod, hostpattern, page_maker in req_routes:
         if routemethod != 'ALL':
           # clearly not the route we where looking for
-          if isinstance(routemethod, tuple):
-            if method not in routemethod:
-              continue
+          if isinstance(routemethod, tuple) and method not in routemethod:
+            continue
           if method != routemethod:
             continue
 
@@ -143,7 +142,7 @@ class Router(object):
     return request_router
 
 
-class uWeb(object):
+class uWeb:
   """Returns a configured closure for handling page requests.
 
   This closure is configured with a precomputed set of routes and handlers using
@@ -167,7 +166,7 @@ class uWeb(object):
     RequestHandler: Configured closure that is ready to process requests.
   """
   def __init__(self, page_class, routes, executing_path=None, config='config'):
-    self.executing_path = executing_path if executing_path else os.path.dirname(__file__)
+    self.executing_path = executing_path or os.path.dirname(__file__)
     self.config = SettingsManager(filename=config, path=self.executing_path)
     self.logger = self.setup_logger()
     self.inital_pagemaker = page_class
@@ -269,9 +268,10 @@ class uWeb(object):
     """Logs incoming requests to a logfile.
     This is enabled by default, even if its missing in the config file.
     """
-    if self.config.options.get('development', None):
-      if self.config.options['development'].get('access_logging', True) == 'False':
-        return
+    if (self.config.options.get('development', None)
+        and self.config.options['development'].get('access_logging',
+                                                   True) == 'False'):
+      return
 
     host = req.env['HTTP_HOST'].split(':')[0]
     date = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
@@ -299,12 +299,13 @@ class uWeb(object):
     except ImmediateResponse as err:
       return err[0]
     except Exception:
-      if self.config.options.get('development', False):
-        if self.config.options['development'].get('error_logging', True) == 'True':
-          logger = logging.getLogger('uweb3_exception_logger')
-          fh = logging.FileHandler(os.path.join(self.executing_path, 'uweb3_uncaught_exceptions.log'))
-          logger.addHandler(fh)
-          logger.exception("UNCAUGHT EXCEPTION:")
+      if (self.config.options.get('development', False)
+          and self.config.options['development'].get('error_logging',
+                                                     True) == 'True'):
+        logger = logging.getLogger('uweb3_exception_logger')
+        fh = logging.FileHandler(os.path.join(self.executing_path, 'uweb3_uncaught_exceptions.log'))
+        logger.addHandler(fh)
+        logger.exception("UNCAUGHT EXCEPTION:")
       return page_maker.InternalServerError(*sys.exc_info())
 
   def serve(self):
@@ -341,9 +342,7 @@ class uWeb(object):
 
   def setup_routing(self):
     if isinstance(self.inital_pagemaker, list):
-      routes = []
-      for route in self.inital_pagemaker[1:]:
-        routes.append(route)
+      routes = [route for route in self.inital_pagemaker[1:]]
       self.inital_pagemaker[0].AddRoutes(tuple(routes))
       self.inital_pagemaker = self.inital_pagemaker[0]
 
@@ -357,7 +356,7 @@ class uWeb(object):
       self.inital_pagemaker.LoadModules(routes=default_route)
 
 
-class HotReload(object):
+class HotReload:
     """This class handles the thread which scans for file changes in the
     execution path and restarts the server if needed"""
     IGNOREDEXTENSIONS = [".pyc", '.ini', '.md', '.html', '.log', '.sql']

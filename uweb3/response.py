@@ -11,7 +11,7 @@ import json
 
 from collections import defaultdict
 
-class Response(object):
+class Response:
   """Defines a full HTTP response.
 
   The full response consists of a required content part, and then optional
