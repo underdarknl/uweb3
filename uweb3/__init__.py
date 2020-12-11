@@ -21,6 +21,7 @@ from .response import Response, Redirect
 from .pagemaker import PageMaker, decorators, WebsocketPageMaker, DebuggingPageMaker, LoginMixin
 from .model import SettingsManager
 from .libs.safestring import HTMLsafestring, JSONsafestring, JsonEncoder, Basesafestring
+from importlib import reload
 
 class Error(Exception):
   """Superclass used for inheritance and external exception handling."""
