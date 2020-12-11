@@ -7,7 +7,7 @@ import cgi
 import sys
 import urllib
 import io
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, parse_qsl
 import io as stringIO
 import http.cookies as cookie
 import re
@@ -60,7 +60,7 @@ class Request(object):
     self.method = self.env['REQUEST_METHOD']
     self.vars = {'cookie': dict((name, value.value) for name, value in
                                 Cookie(self.env.get('HTTP_COOKIE')).items()),
-                 'get': QueryArgsDict(cgi.parse_qs(self.env['QUERY_STRING']))}
+                 'get': QueryArgsDict(parse_qs(self.env['QUERY_STRING']))}
     self.env['host'] = self.headers.get('Host', '')
     if self.method in ('POST', 'PUT', 'DELETE'):
       request_body_size = 0
@@ -185,7 +185,7 @@ class IndexedFieldStorage(cgi.FieldStorage):
   def read_urlencoded(self):
     indexed = {}
     self.list = []
-    for field, value in cgi.parse_qsl(self.fp.read(self.length),
+    for field, value in parse_qsl(self.fp.read(self.length),
                                       self.keep_blank_values,
                                       self.strict_parsing):
       if self.FIELD_AS_ARRAY.match(str(field)):
