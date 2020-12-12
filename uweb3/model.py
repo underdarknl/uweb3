@@ -1230,7 +1230,7 @@ class Record(BaseRecord):
   # pylint: enable=W0221
 
   @classmethod
-  def _GetSearchQuery(cls, connetion, tables, search):
+  def _GetSearchQuery(cls, connection, tables, search):
     """Extracts table information from the searchable columns list."""
     conditions = []
     like = 'like "%%%s%%"' % connection.EscapeValues(search.strip())[1:-1]
