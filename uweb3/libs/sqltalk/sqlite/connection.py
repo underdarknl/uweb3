@@ -164,7 +164,7 @@ class ThreadedConnection(threading.Thread):
     return [row[0] for row in result]
 
 
-class SqliteResult(object):
+class SqliteResult:
   def __init__(self, result, description, rowcount, lastrowid):
     self.result = result
     self.description = description

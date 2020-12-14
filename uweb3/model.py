@@ -35,7 +35,7 @@ class PermissionError(Error):
   """The entity has insufficient rights to access the resource."""
 
 
-class SettingsManager(object):
+class SettingsManager:
   def __init__(self, filename=None, path=None):
     """Creates a ini file with the child class name
 
@@ -50,17 +50,17 @@ class SettingsManager(object):
     extension = '' if filename and filename.endswith(('.ini', '.conf')) else '.ini'
 
     if filename:
-      self.FILENAME = f"{filename[:1].lower() + filename[1:] + extension}"
+      self.filename = f"{filename[:1].lower() + filename[1:] + extension}"
     else:
-      self.FILENAME = self.TableName() + extension
+      self.filename = self.TableName() + extension
 
     if path and not filename.startswith('/'):
-      self.FILE_LOCATION = os.path.join(path, self.FILENAME)
+      self.file_location = os.path.join(path, self.filename)
     else:
-      self.FILE_LOCATION = self.FILENAME
+      self.file_location = self.filename
     self.__CheckPermissions()
-    if not os.path.isfile(self.FILE_LOCATION):
-      os.mknod(self.FILE_LOCATION)
+    if not os.path.isfile(self.file_location):
+      os.mknod(self.file_location)
 
     self.mtime = None
     self.config = configparser.ConfigParser()
@@ -82,12 +82,12 @@ class SettingsManager(object):
 
   def __CheckPermissions(self):
     """Checks if SettingsManager can read/write to file."""
-    if not os.path.isfile(self.FILE_LOCATION):
+    if not os.path.isfile(self.file_location):
       return True
-    if not os.access(self.FILE_LOCATION, os.R_OK):
-      raise PermissionError(f"SettingsManager missing permissions to read file: {self.FILE_LOCATION}")
-    if not os.access(self.FILE_LOCATION, os.W_OK):
-      raise PermissionError(f"SettingsManager missing permissions to write to file: {self.FILE_LOCATION}")
+    if not os.access(self.file_location, os.R_OK):
+      raise PermissionError(f"SettingsManager missing permissions to read file: {self.file_location}")
+    if not os.access(self.file_location, os.W_OK):
+      raise PermissionError(f"SettingsManager missing permissions to write to file: {self.file_location}")
 
   def Create(self, section, key, value):
     """Creates a section or/and key = value
@@ -116,10 +116,10 @@ class SettingsManager(object):
     """Reads the config file and populates the options member
     It uses the mtime to see if any re-reading is required"""
     if not self.mtime:
-      curtime = os.path.getmtime(self.FILE_LOCATION)
+      curtime = os.path.getmtime(self.file_location)
       if self.mtime and self.mtime == curtime:
         return False
-      self.config.read(self.FILE_LOCATION)
+      self.config.read(self.file_location)
       self.options = self.config._sections
       self.mtime = curtime
     return True
@@ -166,14 +166,14 @@ class SettingsManager(object):
 
   def _Write(self, reread=True):
     """Internal function to store the current config to file"""
-    with open(self.FILE_LOCATION, 'w') as configfile:
+    with open(self.file_location, 'w') as configfile:
       self.config.write(configfile)
     if reread:
       return self.Read()
     return True
 
 
-class SecureCookie(object):
+class SecureCookie:
   """The secureCookie class works just like other data abstraction classes,
   except that it stores its data in client side cookies that are signed with a
   server side secret to avoid tampering by the end-user.
@@ -663,20 +663,16 @@ class BaseRecord(dict):
   def _Changes(self):
     """Returns the differences of the current state vs the last stored state."""
     sql_record = self._DataRecord()
-    changes = {}
-    for key, value in sql_record.items():
-      if self._record.get(key) != value:
-        changes[key] = value
-    return changes
+    return {
+        key: value
+        for key, value in sql_record.items() if self._record.get(key) != value
+    }
 
   def _DataRecord(self):
     """Returns a dictionary of the record's database values
     For any Record object present, its primary key value (`Record.key`) is used.
     """
-    sql_record = {}
-    for key, value in super().items():
-      sql_record[key] = self._ValueOrPrimary(value)
-    return sql_record
+    return {key: self._ValueOrPrimary(value) for key, value in super().items()}
 
   @staticmethod
   def _ValueOrPrimary(value):
@@ -1205,8 +1201,9 @@ class Record(BaseRecord):
     if yield_unlimited_total_first:
       yield records.affected
     records = [cls(connection, record) for record in list(records)]
-    for record in records:
-      yield record
+
+    yield from records
+
     if cacheable:
       list(cls._cacheListPreseed(records))
 
@@ -1233,7 +1230,7 @@ class Record(BaseRecord):
   # pylint: enable=W0221
 
   @classmethod
-  def _GetSearchQuery(cls, connetion, tables, search):
+  def _GetSearchQuery(cls, connection, tables, search):
     """Extracts table information from the searchable columns list."""
     conditions = []
     like = 'like "%%%s%%"' % connection.EscapeValues(search.strip())[1:-1]
@@ -1382,14 +1379,14 @@ class VersionedRecord(Record):
     """
     if not tables:
       tables = [cls.TableName()]
-    if not fields:
-      fields = "%s.*" % cls.TableName()
-    else:
+    if fields:
       if fields != '*':
-        if type(fields) != str:
-          fields = ', '.join(connection.EscapeField(fields))
-        else:
+        if isinstance(fields, str):
           fields = connection.EscapeField(fields)
+        else:
+          fields = ', '.join(connection.EscapeField(fields))
+    else:
+      fields = "%s.*" % cls.TableName()
     if search:
       search = search.strip()
       tables, searchconditions = cls._GetSearchQuery(connection, tables, search)
@@ -1438,8 +1435,7 @@ class VersionedRecord(Record):
       yield records.affected
     # turn sqltalk rows into model
     records = [cls(connection, record) for record in list(records)]
-    for record in records:
-      yield record
+    yield from records
     if cacheable:
       list(cls._cacheListPreseed(records))
 
@@ -1604,8 +1600,7 @@ def RecordTableNames():
       if sub not in seen:
         seen.add(sub)
         yield sub
-        for sub in GetSubTypes(sub, seen):
-          yield sub
+        yield from GetSubTypes(sub, seen)
 
   for cls in GetSubTypes(BaseRecord):
     # Do not yield subclasses defined in this module
@@ -1615,7 +1610,7 @@ def RecordTableNames():
 
 import functools
 
-class CachedPage(object):
+class CachedPage:
   """Abstraction class for the cached Pages table in the database."""
 
   MAXAGE = 61

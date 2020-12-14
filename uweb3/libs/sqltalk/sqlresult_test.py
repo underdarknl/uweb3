@@ -22,7 +22,7 @@ __version__ = '0.6'
 import unittest
 
 # Unittest target
-import sqlresult
+from . import sqlresult
 
 
 class ResultRowBasicOperation(unittest.TestCase):
@@ -186,8 +186,8 @@ class ResultSetBasicOperation(unittest.TestCase):
   def setUp(self):
     """Set up a persistent test environment."""
     self.fields = ('first', 'second', 'third', 'fourth')
-    self.result = tuple(tuple(2 ** i for i in xrange(j, j + 4))
-                        for j in xrange(0, 13, 4))
+    self.result = tuple(tuple(2 ** i for i in range(j, j + 4))
+                        for j in range(0, 13, 4))
 
   def testFalseWhenEmpty(self):
     """ResultSet is boolean False when there's all but a result."""

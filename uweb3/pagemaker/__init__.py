@@ -25,7 +25,7 @@ class ReloadModules(Exception):
   """Signals the handler that it should reload the pageclass"""
 
 
-class CacheStorage(object):
+class CacheStorage:
   """A (semi) persistent storage for the PageMaker."""
   def __init__(self):
     super(CacheStorage, self).__init__()
@@ -143,7 +143,7 @@ class MimeTypeDict(dict):
       self.update(kwargs)
 
 
-class XSRFToken(object):
+class XSRFToken:
   def __init__(self, seed, remote_addr):
     self.seed = seed
     self.remote_addr = remote_addr
@@ -161,7 +161,7 @@ class XSRFToken(object):
     return h.hexdigest()
 
 
-class Base(object):
+class Base:
   # Constant for persistent storage accross requests. This will be accessible
   # by all threads of the same application (in the same Python process).
   PERSISTENT = CacheStorage()
@@ -209,7 +209,7 @@ class WebsocketPageMaker(Base):
     self.req = env
 
 
-class XSRFMixin(object):
+class XSRFMixin:
   """Provides XSRF protection by enabling setting xsrf token cookies, checking
   them and setting a flag based on their value
 
@@ -262,7 +262,7 @@ class XSRFMixin(object):
       return self._Set_XSRF_cookie()
 
 
-class LoginMixin(object):
+class LoginMixin:
   """This mixin provides a few methods that help with handling logins, sessions
   and related database/cookie interaction"""
 
@@ -336,10 +336,9 @@ class BasePageMaker(Base):
       module = os.path.relpath(os.path.join(os.getcwd(), file[:-3])).replace('/', '.')
       classlist = pyclbr.readmodule_ex(module)
       for name, data in classlist.items():
-        if hasattr(data, 'super'):
-          if 'PageMaker' in data.super[0]:
-            module = __import__(f, fromlist=[name])
-            bases.append(getattr(module, name))
+        if hasattr(data, 'super') and 'PageMaker' in data.super[0]:
+          module = __import__(f, fromlist=[name])
+          bases.append(getattr(module, name))
     return bases
 
   def _PostInit(self):
@@ -450,7 +449,7 @@ class BasePageMaker(Base):
     self.connection.PostRequest()
 
 
-class DebuggerMixin(object):
+class DebuggerMixin:
   """Replaces the default handler for Internal Server Errors.
 
   This one prints a host of debugging and request information, though it still
@@ -537,7 +536,7 @@ class DebuggerMixin(object):
           error_template.Parse(**exception_data), httpcode=500)
 
 
-class CSPMixin(object):
+class CSPMixin:
   """Provides CSP header output.
 
   https://content-security-policy.com/
@@ -596,7 +595,8 @@ class CSPMixin(object):
 
   def _CSPheaders(self):
     """Adds the constructed CSP header to the request"""
-    csp = '; '.join(["%s %s" % (key, ' '.join(value)) for key, value in self._csp.items()])
+    csp = '; '.join(
+        "%s %s" % (key, ' '.join(value)) for key, value in self._csp.items())
     self.req.AddHeader('Content-Security-Policy', csp)
 
 # ##############################################################################

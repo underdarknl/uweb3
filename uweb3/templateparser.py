@@ -58,7 +58,7 @@ class TemplateEvaluationError(Error):
   """Template condition was not within allowed set of operators."""
 
 
-class LazyTagValueRetrieval(object):
+class LazyTagValueRetrieval:
   """Provides a means for lazy tag value retrieval.
 
   This is necessary for instance for TemplateConditional.Expression, where
@@ -274,10 +274,7 @@ class Parser(dict):
       @ persistent: bool
         will this tag be present for multiple requests?
     """
-    if persistent:
-      storage = self.tags
-    else:
-      storage = self.requesttags
+    storage = self.tags if persistent else self.requesttags
     if ':' not in tag:
       storage[tag] = value
       return
@@ -601,7 +598,7 @@ class FileTemplate(Template):
       pass
 
 
-class TemplateConditional(object):
+class TemplateConditional:
   """A template construct to control flow based on the value of a tag."""
   def __init__(self, expr, astvisitor):
     self.branches = []
@@ -793,7 +790,7 @@ class TemplateLoop(list):
     return ''.join(output)
 
 
-class TemplateTag(object):
+class TemplateTag:
   """Template tags are used for dynamic placeholders in templates.
 
   Their final value is determined during parsing. For more explanation on this,
@@ -826,7 +823,10 @@ class TemplateTag(object):
         Names of template functions that should be applied to the value.
     """
     self.name = name
-    self.indices = indices if self.ALLOWPRIVATE else list(index for index in indices if not index.startswith('_') or not index.endswith('_'))
+    self.indices = (indices if self.ALLOWPRIVATE else [
+        index for index in indices
+        if not index.startswith('_') or not index.endswith('_')
+    ])
     self.functions = functions
 
   def __repr__(self):
@@ -1011,7 +1011,7 @@ class TemplateText(str):
     return str(self)
 
 
-class JITTag(object):
+class JITTag:
   """This is a template Tag which is only evaulated on replacement.
   It is usefull for situations where not all all of this functions input vars
   are available just yet.

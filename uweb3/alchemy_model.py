@@ -9,25 +9,26 @@ from sqlalchemy.orm.session import object_session
 from uweb3.model import NotExistError
 
 
-class AlchemyBaseRecord(object):
+class AlchemyBaseRecord:
   def __init__(self, session, record):
     self.session = session
     self._BuildClassFromRecord(record)
 
   def _BuildClassFromRecord(self, record):
-    if isinstance(record, dict):
-      for key, value in record.items():
-        if not key in self.__table__.columns.keys():
-          raise AttributeError(f"Key '{key}' not specified in class '{self.__class__.__name__}'")
-        setattr(self, key, value)
-      if self.session:
-        try:
-          self.session.add(self)
-        except:
-          self.session.rollback()
-          raise
-        else:
-          self.session.commit()
+    if not isinstance(record, dict):
+      return
+    for key, value in record.items():
+      if key not in self.__table__.columns.keys():
+        raise AttributeError(f"Key '{key}' not specified in class '{self.__class__.__name__}'")
+      setattr(self, key, value)
+    if self.session:
+      try:
+        self.session.add(self)
+      except:
+        self.session.rollback()
+        raise
+      else:
+        self.session.commit()
 
   def __hash__(self):
     """Returns the hashed value of the key."""
@@ -71,7 +72,10 @@ class AlchemyBaseRecord(object):
     return not self == other
 
   def __len__(self):
-    return len(dict((col, getattr(self, col)) for col in self.__table__.columns.keys() if getattr(self, col)))
+    return len({
+        col: getattr(self, col)
+        for col in self.__table__.columns.keys() if getattr(self, col)
+    })
 
   def __int__(self):
     """Returns the integer key value of the Record.
@@ -180,7 +184,7 @@ class AlchemyBaseRecord(object):
       None: when record is empty
     """
     if not isinstance(record, type(None)):
-      return dict((col, getattr(record, col)) for col in record.__table__.columns.keys())
+      return {col: getattr(record, col) for col in record.__table__.columns.keys()}
     return None
 
   @reconstructor

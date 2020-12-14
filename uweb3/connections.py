@@ -12,7 +12,7 @@ class ConnectionError(Exception):
   """Error class thrown when the underlying connectors thrown an error on
   connecting."""
 
-class ConnectionManager(object):
+class ConnectionManager:
   """This is the connection manager object that is handled by all Model Objects.
   It finds out which connection was requested by looking at the call stack, and
   figuring out what database type the model class calling it belongs to.
@@ -70,15 +70,14 @@ class ConnectionManager(object):
     if (con_type in self.__connections and
         hasattr(self.__connections[con_type], 'connection')):
       return self.__connections[con_type].connection
-    else:
-      request = sys._getframe(3).f_locals['self'].req
-      try:
-        # instantiate a connection
-        self.__connections[con_type] = self.__connectors[con_type](
-            self.config, self.options, request, self.debug)
-        return self.__connections[con_type].connection
-      except KeyError as error:
-        raise TypeError('No connector for: %r, available: %r, %r' % (con_type, self.__connectors, error))
+    request = sys._getframe(3).f_locals['self'].req
+    try:
+      # instantiate a connection
+      self.__connections[con_type] = self.__connectors[con_type](
+          self.config, self.options, request, self.debug)
+      return self.__connections[con_type].connection
+    except KeyError as error:
+      raise TypeError('No connector for: %r, available: %r, %r' % (con_type, self.__connectors, error))
 
   def __enter__(self):
     """Proxies the transaction to the underlying relevant connection."""
@@ -103,11 +102,11 @@ class ConnectionManager(object):
 
   def PostRequest(self):
     """This cleans up any non persistent connections."""
-    cleanups = []
-    for classname in self.__connections:
-      if (hasattr(self.__connections[classname], 'PERSISTENT') and
-          not self.__connections[classname].PERSISTENT):
-        cleanups.append(classname)
+    cleanups = [
+        classname for classname in self.__connections
+        if (hasattr(self.__connections[classname], 'PERSISTENT')
+            and not self.__connections[classname].PERSISTENT)
+    ]
     for classname in cleanups:
       try:
         self.__connections[classname].Disconnect()
@@ -133,7 +132,7 @@ class ConnectionManager(object):
         pass
 
 
-class Connector(object):
+class Connector:
   """Base Connector class, subclass from this to create your own connectors.
   Usually the name of your class is used to lookup its config in the
   configuration file, or the database or local filename.
