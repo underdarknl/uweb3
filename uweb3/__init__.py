@@ -222,7 +222,11 @@ class uWeb:
                             executing_path=self.executing_path)
       response = pagemaker_instance.InternalServerError(*sys.exc_info())
 
-    if method != 'Static':
+    static = False
+    if method == 'Static':
+      static = True
+
+    if not static:
       if not isinstance(response, Response):
         # print('Upgrade response to Response class: %s' % type(response))
         req.response.text = response
@@ -243,7 +247,7 @@ class uWeb:
       pagemaker_instance._CSPheaders()
 
     # provide users with a _PostRequest method to overide too
-    if method != 'Static' and hasattr(pagemaker_instance, 'PostRequest'):
+    if not static and hasattr(pagemaker_instance, 'PostRequest'):
       response = pagemaker_instance.PostRequest(response)
 
     # we should at least send out something to make sure we are wsgi compliant.
