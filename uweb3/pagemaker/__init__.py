@@ -402,12 +402,9 @@ class BasePageMaker(Base):
       content_type, _encoding = mimetypes.guess_type(abs_path)
       if not content_type:
         content_type = 'text/plain'
-      binary = False
-      if not content_type.startswith('text/'):
-        binary = True
-      with open(abs_path, 'rb' if binary else 'r') as staticfile:
-        mtime = os.path.getmtime(abs_path)
-        length = os.path.getsize(abs_path)
+      mtime = os.path.getmtime(abs_path)
+      length = os.path.getsize(abs_path)
+      with open(abs_path, 'rb') as staticfile:
         cache_days = self.CACHE_DURATION.get(content_type, 0)
         expires = datetime.datetime.utcnow() + datetime.timedelta(cache_days)
         return response.Response(content=staticfile.read(),
