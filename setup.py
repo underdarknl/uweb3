@@ -27,7 +27,7 @@ setup(
     name='uWeb3',
     version=version(),
     description='uWeb, python3, uswgi compatible micro web platform',
-    long_description_file = 'README.md',
+    long_description = 'file: README.md',
     long_description_content_type = 'text/markdown',
     license='ISC',
     classifiers=[
