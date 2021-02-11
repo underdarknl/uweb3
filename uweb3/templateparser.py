@@ -550,7 +550,7 @@ class FileTemplate(Template):
     try:
       self._file_name = os.path.abspath(template_path)
       self._file_mtime = os.path.getmtime(self._file_name)
-      with open(self._file_name) as templatefile:
+      with open(self._file_name, encoding='utf-8') as templatefile:
         raw_template = templatefile.read()
       super(FileTemplate, self).__init__(raw_template, parser=parser)
     except (IOError, OSError):
@@ -586,7 +586,7 @@ class FileTemplate(Template):
     try:
       mtime = os.path.getmtime(self._file_name)
       if mtime > self._file_mtime:
-        with open(self._file_name) as templatefile:
+        with open(self._file_name, encoding='utf-8') as templatefile:
           template = templatefile.read()
         del self[:]
         self.scopes = [self]
