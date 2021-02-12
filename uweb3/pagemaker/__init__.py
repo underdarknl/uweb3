@@ -13,7 +13,7 @@ import hashlib
 import glob
 from base64 import b64encode
 from pymysql import Error as pymysqlerr
-
+from pathlib import Path
 
 import uweb3
 from ..connections import ConnectionManager
@@ -396,8 +396,9 @@ class BasePageMaker(Base):
       Page: contains the content and mimetype of the requested file, or a 404
             page if the file was not available on the local path.
     """
-    rel_path = os.path.abspath(os.path.join(os.path.sep, rel_path))[1:]
-    abs_path = os.path.join(self.PUBLIC_DIR, rel_path)
+
+    rel_path = Path(self.PUBLIC_DIR, rel_path)
+    abs_path = rel_path.absolute()
     try:
       content_type, _encoding = mimetypes.guess_type(abs_path)
       if not content_type:
@@ -406,8 +407,9 @@ class BasePageMaker(Base):
       length = os.path.getsize(abs_path)
       with open(abs_path, 'rb') as staticfile:
         cache_days = self.CACHE_DURATION.get(content_type, 0)
+        x = content=staticfile.read()
         expires = datetime.datetime.utcnow() + datetime.timedelta(cache_days)
-        return response.Response(content=staticfile.read(),
+        return response.Response(content=x,
                         content_type=content_type,
                         headers={'Expires': expires.strftime(RFC_1123_DATE),
                                  'cache-control': 'max-age=%d' %
