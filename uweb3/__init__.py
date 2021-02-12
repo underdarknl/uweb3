@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """µWeb3 Framework"""
 
-__version__ = '3.0'
+__version__ = '3.0.1'
 
 # Standard modules
 import configparser
@@ -225,7 +225,6 @@ class uWeb:
     static = False
     if method == 'Static':
       static = True
-
     if not static:
       if not isinstance(response, Response):
         # print('Upgrade response to Response class: %s' % type(response))
