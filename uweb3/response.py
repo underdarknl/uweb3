@@ -35,9 +35,8 @@ class Response:
       % headers: dict ~~ None
         A dictionary with header names and their associated values.
     """
-    self.charset = kwds.get('charset', 'utf8')
-    self.content = None
-    self.text = content
+    self.charset = kwds.get('charset', 'utf-8')
+    self.content = content
     self.httpcode = httpcode
     self.headers = headers or {}
     if (content_type.startswith('text/') or
