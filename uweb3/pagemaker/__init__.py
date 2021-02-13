@@ -407,9 +407,8 @@ class BasePageMaker(Base):
       length = os.path.getsize(abs_path)
       with open(abs_path, 'rb') as staticfile:
         cache_days = self.CACHE_DURATION.get(content_type, 0)
-        x = content=staticfile.read()
         expires = datetime.datetime.utcnow() + datetime.timedelta(cache_days)
-        return response.Response(content=x,
+        return response.Response(content=staticfile.read(),
                         content_type=content_type,
                         headers={'Expires': expires.strftime(RFC_1123_DATE),
                                  'cache-control': 'max-age=%d' %
