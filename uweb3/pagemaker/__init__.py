@@ -399,6 +399,11 @@ class BasePageMaker(Base):
 
     rel_path = Path(self.PUBLIC_DIR, rel_path)
     abs_path = rel_path.absolute()
+    real_target_path = abs_path.resolve()
+    # if the path is outside of public dir return not found
+    if not self.PUBLIC_DIR == os.path.commonpath((self.PUBLIC_DIR, real_target_path)):
+      return self._StaticNotFound(rel_path)
+
     try:
       content_type, _encoding = mimetypes.guess_type(abs_path)
       if not content_type:
