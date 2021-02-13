@@ -142,7 +142,7 @@ class Parser(dict):
   providing the `RegisterFunction` method to add or replace functions in this
   module constant.
   """
-  def __init__(self, path='.', templates=(), noparse=False):
+  def __init__(self, path='.', templates=(), noparse=False, templateEncoding='utf-8'):
     """Initializes a Parser instance.
 
     This sets up the template directory and preloads any templates given.
@@ -162,6 +162,7 @@ class Parser(dict):
     self.tags = {}
     self.requesttags = {}
     self.astvisitor = AstVisitor(EVALWHITELIST)
+    self.templateEncoding = templateEncoding
 
     for template in templates:
       self.AddTemplate(template)
@@ -550,7 +551,9 @@ class FileTemplate(Template):
     try:
       self._file_name = os.path.abspath(template_path)
       self._file_mtime = os.path.getmtime(self._file_name)
-      with open(self._file_name, encoding='utf-8') as templatefile:
+      #parser can be None in which case we default to utf-8
+      templateEncoding = parser.templateEncoding if parser else 'utf-8'
+      with open(self._file_name, encoding=templateEncoding) as templatefile:
         raw_template = templatefile.read()
       super(FileTemplate, self).__init__(raw_template, parser=parser)
     except (IOError, OSError):
@@ -586,7 +589,8 @@ class FileTemplate(Template):
     try:
       mtime = os.path.getmtime(self._file_name)
       if mtime > self._file_mtime:
-        with open(self._file_name, encoding='utf-8') as templatefile:
+        templateEncoding = parser.templateEncoding if parser else 'utf-8'
+        with open(self._file_name, encoding=templateEncoding) as templatefile:
           template = templatefile.read()
         del self[:]
         self.scopes = [self]
