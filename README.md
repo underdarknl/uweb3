@@ -21,7 +21,9 @@ The following example applications for uWeb3 exist:
 
 # µWeb3 installation
 
-The easiest and quickest way to install µWeb3 is using Python's `virtualenv`. Install using the setuptools installation script, which will automatically gather dependencies.
+The easiest and quickest way to install µWeb3 is by running pip3 install uwebthree.
+
+For a development version using Python's `virtualenv`. Install using the setuptools installation script, which will automatically gather dependencies.
 
 ```bash
 # Set up the Python3 virtualenv
