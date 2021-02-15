@@ -9,26 +9,25 @@ REQUIREMENTS = [
   'pytz'
 ]
 
-#  'sqlalchemy',
-#  'werkzeug',
-
 def description():
+  """Returns the contents of the README.md file as description information."""
   with open(os.path.join(os.path.dirname(__file__), 'README.md')) as r_file:
     return r_file.read()
 
 
 def version():
+  """Returns the version of the library as read from the __init__.py file"""
   main_lib = os.path.join(os.path.dirname(__file__), 'uweb3', '__init__.py')
   with open(main_lib) as v_file:
     return re.match(".*__version__ = '(.*?)'", v_file.read(), re.S).group(1)
 
 
 setup(
-    name='uWeb3',
+    name='uWebthree',
     version=version(),
     description='uWeb, python3, uswgi compatible micro web platform',
-    long_description = 'file: README.md',
-    long_description_content_type = 'text/markdown',
+    long_description=description(),
+    long_description_content_type='text/markdown',
     license='ISC',
     classifiers=[
         'Development Status :: 4 - Beta',
@@ -36,6 +35,7 @@ setup(
         'Environment :: Web Environment',
         'License :: OSI Approved :: ISC License (ISCL)',
         'Operating System :: POSIX :: Linux',
+        'Programming Language :: Python',
         'Programming Language :: Python :: 3',
     ],
     author='Jan Klopper',
@@ -44,6 +44,5 @@ setup(
     keywords='minimal python web framework',
     packages=find_packages(),
     include_package_data=True,
-    zip_safe=False,
     install_requires=REQUIREMENTS,
     python_requires='>=3.5')

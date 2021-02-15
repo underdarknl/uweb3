@@ -171,7 +171,9 @@ class Base:
 
   def __init__(self):
     self.persistent = self.PERSISTENT
-    # clean up any request tags in the template parser
+    # clean up any request tags in the template parser, We do this in the init
+    # because due to crashes we might not have triggered any __del__ or similar
+    # end of request code.
     if '__parser' in self.persistent:
       self.persistent.Get('__parser').ClearRequestTags()
 
@@ -356,27 +358,10 @@ class BasePageMaker(Base):
     directory is used as the working directory. Then, the module constant
     TEMPLATE_DIR is used to define class constants from.
     """
-    # Unfortunately, mod_python does not always support retrieving the caller
-    # filename using sys.modules. In those cases we need to query the stack.
-    # pylint: disable=W0212
-    try:
-      local_file = os.path.abspath(sys.modules[cls.__module__].__file__)
-    except KeyError:
-      # This happens for old-style mod_python solutions: The pages file is
-      # imported through the mechanics of mod_pythoif '__mysql' not in self.persistent: (not package imports) and
-      # isn't known in sys modules. We use the CPython implementation details
-      # to get the correct executing file.
-      frame = sys._getframe()
-      initial = frame.f_code.co_filename
-      # pylint: enable=W0212
-      while initial == frame.f_code.co_filename:
-        if not frame.f_back:
-          break  # This happens during exception handling of DebuggingPageMaker
-        frame = frame.f_back
-      local_file = frame.f_code.co_filename
+    local_file = os.path.abspath(sys.modules[cls.__module__].__file__)
     cls.LOCAL_DIR = cls_dir = executing_path
-    cls.PUBLIC_DIR = os.path.join(cls_dir, cls.PUBLIC_DIR)
-    cls.TEMPLATE_DIR = os.path.join(cls_dir, cls.TEMPLATE_DIR)
+    cls.PUBLIC_DIR = os.path.realpath(os.path.join(cls_dir, cls.PUBLIC_DIR))
+    cls.TEMPLATE_DIR = os.path.realpath(os.path.join(cls_dir, cls.TEMPLATE_DIR))
 
   def Static(self, rel_path):
     """Provides a handler for static content.
@@ -396,8 +381,10 @@ class BasePageMaker(Base):
       Page: contains the content and mimetype of the requested file, or a 404
             page if the file was not available on the local path.
     """
-    rel_path = os.path.abspath(os.path.join(os.path.sep, rel_path))[1:]
-    abs_path = os.path.join(self.PUBLIC_DIR, rel_path)
+
+    abs_path = os.path.realpath(os.path.join(self.PUBLIC_DIR, rel_path))
+    if os.path.commonprefix((abs_path, self.PUBLIC_DIR)) != self.PUBLIC_DIR:
+      return self._StaticNotFound(rel_path)
     try:
       content_type, _encoding = mimetypes.guess_type(abs_path)
       if not content_type:

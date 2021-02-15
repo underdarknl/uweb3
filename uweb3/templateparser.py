@@ -142,7 +142,7 @@ class Parser(dict):
   providing the `RegisterFunction` method to add or replace functions in this
   module constant.
   """
-  def __init__(self, path='.', templates=(), noparse=False):
+  def __init__(self, path='.', templates=(), noparse=False, templateEncoding='utf-8'):
     """Initializes a Parser instance.
 
     This sets up the template directory and preloads any templates given.
@@ -156,12 +156,13 @@ class Parser(dict):
         Skip parsing the templates to output, instead return their
         structure and replaced values
     """
-    super(Parser, self).__init__()
+    super().__init__()
     self.template_dir = path
     self.noparse = noparse
     self.tags = {}
     self.requesttags = {}
     self.astvisitor = AstVisitor(EVALWHITELIST)
+    self.templateEncoding = templateEncoding
 
     for template in templates:
       self.AddTemplate(template)
@@ -204,9 +205,11 @@ class Parser(dict):
     Raises:
       TemplateReadError: When the template file cannot be read
     """
+    template_path = os.path.realpath(os.path.join(self.template_dir, location))
+    if os.path.commonprefix((template_path, self.template_dir)) != self.template_dir:
+      raise TemplateReadError('Could not load template %r' % template_path)
     try:
-      template_path = os.path.join(self.template_dir, location)
-      self[name or location] = FileTemplate(template_path, parser=self)
+      self[name or location] = FileTemplate(template_path, parser=self, encoding=None)
     except IOError:
       raise TemplateReadError('Could not load template %r' % template_path)
 
@@ -306,6 +309,18 @@ class Parser(dict):
     """Resets the non persistent tags to None, is to be called after each
     completed request"""
     self.requesttags = {}
+
+  def SetTemplateEncoding(self, templateEncoding='utf-8'):
+    """Allows the user to set the templateEncoding for this parser instance's
+    templates. Any template reads, and reloads will be attempted with this
+    encoding."""
+    self.templateEncoding = templateEncoding
+
+  def SetEvalWhitelist(self, evalwhitelist=None):
+    """Allows the user to set the Eval Whitelist which limits the python
+    operations allowed within this templateParsers Context. These are usually
+    triggered by If/Elif conditions and the like."""
+    self.astvisitor = AstVisitor(evalwhitelist)
 
   TemplateReadError = TemplateReadError
 
@@ -535,7 +550,7 @@ class Template(list):
 
 class FileTemplate(Template):
   """Template class that loads from file."""
-  def __init__(self, template_path, parser=None):
+  def __init__(self, template_path, parser=None, encoding='utf-8'):
     """Initializes a FileTemplate based on a given template path.
 
     Arguments:
@@ -547,12 +562,15 @@ class FileTemplate(Template):
         adding files to the current template. This is used by {{ inline }}.
     """
     self._template_path = template_path
+    self.parser = parser
+    self.templateEncoding = encoding or (self.parser.templateEncoding if self.parser else 'utf-8')
     try:
       self._file_name = os.path.abspath(template_path)
       self._file_mtime = os.path.getmtime(self._file_name)
-      with open(self._file_name) as templatefile:
+      # self.parser can be None in which case we default to utf-8
+      with open(self._file_name, encoding=self.templateEncoding) as templatefile:
         raw_template = templatefile.read()
-      super(FileTemplate, self).__init__(raw_template, parser=parser)
+      super().__init__(raw_template, parser=parser)
     except (IOError, OSError):
       raise TemplateReadError('Cannot open: %r' % template_path)
 
@@ -586,7 +604,7 @@ class FileTemplate(Template):
     try:
       mtime = os.path.getmtime(self._file_name)
       if mtime > self._file_mtime:
-        with open(self._file_name) as templatefile:
+        with open(self._file_name, encoding=self.templateEncoding) as templatefile:
           template = templatefile.read()
         del self[:]
         self.scopes = [self]
@@ -753,7 +771,7 @@ class TemplateLoop(list):
     except TemplateSyntaxError:
       raise TemplateSyntaxError('Tag %r in {{ for }} loop is not valid' % tag)
 
-    super(TemplateLoop, self).__init__()
+    super().__init__()
     self.aliases = ''.join(aliases).split(',')
     self.aliascount = len(self.aliases)
     self.tag = tag

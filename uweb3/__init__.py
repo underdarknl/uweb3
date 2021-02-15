@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """µWeb3 Framework"""
 
-__version__ = '3.0'
+__version__ = '3.0.1'
 
 # Standard modules
 import configparser
