@@ -1,4 +1,4 @@
-#!/usr/bin/python2.5
+#!/usr/bin/python3
 """SQL result abstraction module.
 
 Classes:
@@ -32,7 +32,7 @@ class NotSupportedError(Error, TypeError):
   """Operation is not supported."""
 
 
-class ResultRow:
+class ResultRow(object):
   """SQL Result row - an ordered dictionary-like record abstraction.
 
   ResultRow has two item retrieval interfaces:
@@ -168,7 +168,7 @@ class ResultRow:
     return self._fields.pop(), self._values.pop()
 
 
-class ResultSet:
+class ResultSet(object):
   """SQL Result set - stores the query, the returned result, and other info.
 
   ResultSet is created from immutable objects. Once defined, none of its

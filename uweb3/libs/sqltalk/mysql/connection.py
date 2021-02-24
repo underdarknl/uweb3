@@ -1,4 +1,4 @@
-#!/usr/bin/python2.5
+#!/usr/bin/python3
 """This module implements the Connection class, which sets up a connection to
 a MySQL database. From this connection, cursor objects can be created, which
 use the escaping and character encoding facilities offered by the connection.

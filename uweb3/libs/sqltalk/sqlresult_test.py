@@ -1,4 +1,4 @@
-#!/usr/bin/python2.5
+#!/usr/bin/python3
 """Testsuite for the SQL Result abstraction module."""
 __author__ = 'Elmer de Looff <elmer@underdark.nl>'
 __version__ = '0.6'

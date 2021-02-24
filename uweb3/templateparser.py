@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """uWeb TemplateParser
 
 Classes:
@@ -616,7 +616,7 @@ class FileTemplate(Template):
       pass
 
 
-class TemplateConditional:
+class TemplateConditional(object):
   """A template construct to control flow based on the value of a tag."""
   def __init__(self, expr, astvisitor):
     self.branches = []
@@ -808,7 +808,7 @@ class TemplateLoop(list):
     return ''.join(output)
 
 
-class TemplateTag:
+class TemplateTag(object):
   """Template tags are used for dynamic placeholders in templates.
 
   Their final value is determined during parsing. For more explanation on this,
@@ -1029,7 +1029,7 @@ class TemplateText(str):
     return str(self)
 
 
-class JITTag:
+class JITTag(object):
   """This is a template Tag which is only evaulated on replacement.
   It is usefull for situations where not all all of this functions input vars
   are available just yet.
