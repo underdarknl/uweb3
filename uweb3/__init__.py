@@ -178,7 +178,8 @@ class uWeb:
     self.encoders = {
         'text/html': lambda x: HTMLsafestring(x, unsafe=True),
         'text/plain': str,
-        'application/json': lambda x: JSONsafestring(x, unsafe=True)}
+        'application/json': lambda x: JSONsafestring(x, unsafe=True),
+        'default': str,}
 
   def __call__(self, env, start_response):
     """WSGI request handler.
@@ -233,10 +234,9 @@ class uWeb:
         response = req.response
 
       if not isinstance(response.text, Basesafestring):
-        # make sure we always output Safe HTML if our content type is something we should encode
-        encoder = self.encoders.get(response.clean_content_type(), None)
-        if encoder:
-          response.text = encoder(response.text)
+        # make sure we always output Safe Strings for our known content-types
+        encoder = self.encoders.get(response.clean_content_type(), self.encoders['default'])
+        response.text = encoder(response.text)
 
       if hasattr(pagemaker_instance, '_PostRequest'):
         pagemaker_instance._PostRequest()
@@ -273,9 +273,8 @@ class uWeb:
     """Logs incoming requests to a logfile.
     This is enabled by default, even if its missing in the config file.
     """
-    if (self.config.options.get('development', None)
-        and self.config.options['development'].get('access_logging',
-                                                   True) == 'False'):
+    if (self.config.options.get('development', None) and
+        self.config.options['development'].get('access_logging', True) == 'False'):
       return
 
     host = req.env['HTTP_HOST'].split(':')[0]
@@ -304,9 +303,8 @@ class uWeb:
     except ImmediateResponse as err:
       return err[0]
     except Exception:
-      if (self.config.options.get('development', False)
-          and self.config.options['development'].get('error_logging',
-                                                     True) == 'True'):
+      if (self.config.options.get('development', False) and
+          self.config.options['development'].get('error_logging', False) == 'True'):
         logger = logging.getLogger('uweb3_exception_logger')
         fh = logging.FileHandler(os.path.join(self.executing_path, 'uweb3_uncaught_exceptions.log'))
         logger.addHandler(fh)
@@ -327,7 +325,6 @@ class uWeb:
       host = self.config.options['development'].get('host', host)
       port = self.config.options['development'].get('port', port)
       hotreload = self.config.options['development'].get('reload', False) in ('True', 'true')
-      dev = self.config.options['development'].get('dev', False) in ('True', 'true')
       interval = int(self.config.options['development'].get('checkinterval', 0))
       ignored_extensions = self.config.options['development'].get('ignored_extensions', '').split(',')
       ignored_directories += self.config.options['development'].get('ignored_directories', '').split(',')
@@ -366,7 +363,7 @@ class HotReload:
     execution path and restarts the server if needed"""
     IGNOREDEXTENSIONS = [".pyc", '.ini', '.md', '.html', '.log', '.sql']
 
-    def __init__(self, path, interval=None, dev=False, ignored_extensions=None, ignored_directories=None):
+    def __init__(self, path, interval=None, ignored_extensions=None, ignored_directories=None):
       """Takes a path, an optional interval in seconds and an optional flag
       signaling a development environment which will set the path for new and
       changed file checking on the parent folder of the serving file."""
@@ -376,9 +373,6 @@ class HotReload:
       self.path = os.path.dirname(path)
       self.ignoredextensions = self.IGNOREDEXTENSIONS + (ignored_extensions or [])
       self.ignoreddirectories = ignored_directories
-      if dev:
-        from pathlib import Path
-        self.path = str(Path(self.path).parents[1])
       self.thread = threading.Thread(target=self.Run)
       self.thread.daemon = True
       self.thread.start()
