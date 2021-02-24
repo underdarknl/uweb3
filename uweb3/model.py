@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """uWeb3 model base classes."""
 
 # Standard modules
@@ -35,7 +35,7 @@ class PermissionError(Error):
   """The entity has insufficient rights to access the resource."""
 
 
-class SettingsManager:
+class SettingsManager(object):
   def __init__(self, filename=None, path=None):
     """Creates a ini file with the child class name
 
@@ -173,7 +173,7 @@ class SettingsManager:
     return True
 
 
-class SecureCookie:
+class SecureCookie(object):
   """The secureCookie class works just like other data abstraction classes,
   except that it stores its data in client side cookies that are signed with a
   server side secret to avoid tampering by the end-user.
@@ -189,11 +189,11 @@ class SecureCookie:
   def __init__(self, connection):
     """Create a new SecureCookie instance."""
     self.connection = connection
-    self.req, self.cookies, self.cookie_salt = self.connection
-    self.rawcookie = self.__GetCookie()
+    self.request, self.cookies, self.cookie_salt = self.connection
     self.debug = self.connection.debug
+    self._rawcookie = None
     if self.debug:
-      print(self.cookies)
+      print('current cookies (unvalidated) for request:', self.cookies)
 
   def __str__(self):
     """Returns the cookie's value if it was valid and untampered with."""
@@ -213,19 +213,24 @@ class SecureCookie:
     name = cls.__name__
     return name[0].lower() + name[1:]
 
-  def __GetCookie(self):
+  @property
+  def rawcookie(self):
     """Reads the request cookie, checks if it was signed correctly and return
     the value, or returns False"""
+    if not self._rawcookie is None:
+      return self._rawcookie
     name = self.TableName()
     if name in self.cookies and self.cookies[name]:
       isValid, value = self.__ValidateCookieHash(self.cookies[name])
       if isValid:
+        self._rawcookie = value
         return value
       if self.debug:
-        print('Secure cookie "%s" was tampered with and thus invalid.' % name)
+        print('Secure cookie "%s" was tampered with and thus invalid. content was: %s ' % (name, self.cookies[name]))
     if self.debug:
       print('Secure cookie "%s" was not present.' % name)
-    return ''
+    self._rawcookie = ''
+    return self._rawcookie
 
   @classmethod
   def Create(cls, connection, data, **attrs):
@@ -266,13 +271,13 @@ class SecureCookie:
       ValueError: When cookie with name already exists
     """
     cls.connection = connection
-    cls.req, cls.cookies, cls.cookie_salt = connection
+    cls.request, cls.cookies, cls.cookie_salt = connection
     name = cls.TableName()
-    cls.rawcookie = data
+    cls._rawcookie = data
 
     hashed = cls.__CreateCookieHash(cls, data)
     cls.cookies[name] = hashed
-    cls.req.AddCookie(name, hashed, **attrs)
+    cls.request.AddCookie(name, hashed, **attrs)
     return cls
 
   def Update(self, data, **attrs):
@@ -318,16 +323,16 @@ class SecureCookie:
     name = self.TableName()
     if not self.rawcookie:
       raise ValueError("No valid cookie with name `{}` found".format(name))
-    self.rawcookie = data
-    self.req.AddCookie(name,  self.__CreateCookieHash(data), **attrs)
+    self._rawcookie = data
+    self.request.AddCookie(name,  self.__CreateCookieHash(data), **attrs)
 
   def Delete(self):
     """Deletes cookie based on name
     The cookie is no longer in the session after calling this method
     """
     name = self.TableName()
-    self.req.DeleteCookie(name)
-    self.rawcookie = None
+    self.request.DeleteCookie(name)
+    self._rawcookie = None
 
   def __CreateCookieHash(self, data):
     hex_string = pickle.dumps(data).hex()
@@ -1611,7 +1616,7 @@ def RecordTableNames():
 
 import functools
 
-class CachedPage:
+class CachedPage(object):
   """Abstraction class for the cached Pages table in the database."""
 
   MAXAGE = 61
