@@ -2,7 +2,7 @@
 """This file contains the Base connector for model connections and imports all
 available connectors."""
 
-__author__ = 'Jan Klopper (janunderdark.nl)'
+__author__ = 'Jan Klopper (jan@underdark.nl)'
 __version__ = 0.1
 
 class Connector(object):
@@ -42,4 +42,3 @@ from .Mysql import Mysql
 from .Mongo import Mongo
 from .Sqlite import Sqlite
 from .SqlAlchemy import SqlAlchemy
-from .Restfulljson import Restfulljson
