@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """uWeb3 response classes."""
 
 # Standard modules
@@ -7,11 +7,7 @@ try:
 except ImportError:
   import http.client as httplib
 
-import json
-
-from collections import defaultdict
-
-class Response:
+class Response(object):
   """Defines a full HTTP response.
 
   The full response consists of a required content part, and then optional
@@ -29,7 +25,7 @@ class Response:
         The content to return to the client. This can be either plain text, html
         or the contents of a file (images for example).
       % content_type: str ~~ CONTENT_TYPE ('text/html' by default)
-        The content type of the response. This should NOT be set in headers.
+        The Content-Type of the response. This should NOT be set in headers.
       % httpcode: int ~~ 200
         The HTTP response code to attach to the response.
       % headers: dict ~~ None
@@ -39,24 +35,34 @@ class Response:
     self.content = content
     self.httpcode = httpcode
     self.headers = headers or {}
-    if (content_type.startswith('text/') or
-        content_type.startswith('application/json')) and ';' not in content_type:
+    if (';' not in content_type and
+        (content_type.startswith('text/') or
+         content_type.startswith('application/json'))):
       content_type = '{!s}; charset={!s}'.format(content_type, self.charset)
     self.content_type = content_type
 
   # Get and set content-type header
   @property
   def content_type(self):
-    return self.headers['Content-Type']
+    """Returns the current Content-Type or None if not set"""
+    return self.headers.get('Content-Type', None)
 
   @content_type.setter
   def content_type(self, content_type):
+    """Sets the Content-Type of the response
+
+    Arguments:
+      @ content_type: str ~~ CONTENT_TYPE
+        The content type of the response.
+    """
     current = self.headers.get('Content-Type', '')
     if ';' in current:
-      content_type = '{!s}; {!s}'.format(content_type, current.split(';', 1)[-1])
+      content_type = '{!s}; {!s}'.format(content_type,
+                                         current.split(';', 1)[-1])
     self.headers['Content-Type'] = content_type
 
   def clean_content_type(self):
+    """Returns the Content-Type, cleaned from any characters set information."""
     if ';' not in self.headers['Content-Type']:
       return self.headers['Content-Type']
     return self.headers['Content-Type'].split(';')[0]
@@ -64,20 +70,34 @@ class Response:
   # Get and set body text
   @property
   def text(self):
+    """Returns the content of this response"""
     return self.content
 
   @text.setter
   def text(self, content):
+    """Sets the content of this response.
+
+    Arguments:
+      @ content: str
+        The content to return to the client. This can be either plain text, html
+        or the contents of a file (images for example).
+    """
     self.content = content
 
   # Retrieve a header list
   @property
   def headerlist(self):
+    """Returns the current headers as a list of tuples
+
+    each tuple contains the header key, and its value.
+    """
     tuple_list = []
     for key, val in self.headers.items():
       if key == 'Set-Cookie':
         for cookie in val:
-          tuple_list.append((key, cookie.encode('ascii', 'ignore').decode('ascii')))
+          tuple_list.append(
+              (key, cookie.encode('ascii', 'ignore').decode('ascii'))
+          )
         continue
       if not isinstance(val, str):
         val = str(val)
@@ -86,6 +106,7 @@ class Response:
 
   @property
   def status(self):
+    """Returns the current http status code for this response."""
     if not self.httpcode:
       return '%d %s' % (500, httplib.responses[500])
     return '%d %s' % (self.httpcode, httplib.responses[self.httpcode])
