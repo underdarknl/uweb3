@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """uWeb3 installer."""
 
 import os
@@ -5,17 +6,17 @@ import re
 from setuptools import setup, find_packages
 
 REQUIREMENTS = [
-  'PyMySQL',
-  'pytz'
+    'PyMySQL',
+    'pytz'
 ]
 
-def description():
+def Description():
   """Returns the contents of the README.md file as description information."""
   with open(os.path.join(os.path.dirname(__file__), 'README.md')) as r_file:
     return r_file.read()
 
 
-def version():
+def Version():
   """Returns the version of the library as read from the __init__.py file"""
   main_lib = os.path.join(os.path.dirname(__file__), 'uweb3', '__init__.py')
   with open(main_lib) as v_file:
@@ -24,9 +25,9 @@ def version():
 
 setup(
     name='uWebthree',
-    version=version(),
+    version=Version(),
     description='uWeb, python3, uswgi compatible micro web platform',
-    long_description=description(),
+    long_description=Description(),
     long_description_content_type='text/markdown',
     license='ISC',
     classifiers=[
