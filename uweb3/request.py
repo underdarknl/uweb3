@@ -74,7 +74,7 @@ class Request:
         pass
       request_payload = self.env['wsgi.input'].read(request_body_size)
       self.input = request_payload
-      if self.env['CONTENT_TYPE'] == 'application/json':
+      if self.env.get('CONTENT_TYPE', '') == 'application/json':
         self.vars[self.method.lower()] = json.loads(request_payload)
       else:
         self.vars[self.method.lower()] = IndexedFieldStorage(stringIO.StringIO(request_payload.decode("utf-8")),
