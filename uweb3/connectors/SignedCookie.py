@@ -26,7 +26,6 @@ class SignedCookie(Connector):
       if self.debug:
         print('SignedCookie: Wrote new secret random to config.')
       self.secure_cookie_secret = secret
-    print('SignedCookie INIT', request.vars)
     self.connection = (request, request.vars['cookie'], self.secure_cookie_secret)
 
   @staticmethod
