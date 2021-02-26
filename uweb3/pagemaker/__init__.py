@@ -382,7 +382,9 @@ class BasePageMaker(Base):
             page if the file was not available on the local path.
     """
 
-    abs_path = os.path.realpath(os.path.join(self.PUBLIC_DIR, rel_path))
+    abs_path = os.path.realpath(os.path.join(self.PUBLIC_DIR, rel_path.lstrip('/')))
+    print(abs_path, self.PUBLIC_DIR)
+
     if os.path.commonprefix((abs_path, self.PUBLIC_DIR)) != self.PUBLIC_DIR:
       return self._StaticNotFound(rel_path)
     try:
