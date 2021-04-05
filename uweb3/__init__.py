@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """µWeb3 Framework"""
 
-__version__ = '3.0.3'
+__version__ = '3.0.4'
 
 # Standard modules
 import configparser
@@ -316,25 +316,27 @@ class uWeb:
     host = 'localhost'
     port = 8001
     hotreload = False
-    dev = False
     interval = None
     ignored_directories = ['__pycache__',
                            self.inital_pagemaker.PUBLIC_DIR,
                            self.inital_pagemaker.TEMPLATE_DIR]
+    ignored_extensions = []
     if self.config.options.get('development', False):
       host = self.config.options['development'].get('host', host)
       port = self.config.options['development'].get('port', port)
       hotreload = self.config.options['development'].get('reload', False) in ('True', 'true')
       interval = int(self.config.options['development'].get('checkinterval', 0))
-      ignored_extensions = self.config.options['development'].get('ignored_extensions', '').split(',')
-      ignored_directories += self.config.options['development'].get('ignored_directories', '').split(',')
+      if 'ignored_extensions' in self.config.options['development']:
+        ignored_extensions = self.config.options['development'].get('ignored_extensions', '').split(',')
+      if 'ignored_directories' in self.config.options['development']:
+        ignored_directories += self.config.options['development'].get('ignored_directories', '').split(',')
     server = make_server(host, int(port), self)
     print(f'Running µWeb3 server on http://{server.server_address[0]}:{server.server_address[1]}')
     print(f'Root dir is: {self.executing_path}')
     try:
       if hotreload:
         print(f'Hot reload is enabled for changes in: {self.executing_path}')
-        HotReload(self.executing_path, interval=interval, dev=dev,
+        HotReload(self.executing_path, interval=interval,
             ignored_extensions=ignored_extensions,
             ignored_directories=ignored_directories)
       server.serve_forever()
