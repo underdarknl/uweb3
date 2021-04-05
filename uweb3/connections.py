@@ -4,9 +4,7 @@ databases, restfull apis, secure cookies, config files etc."""
 __author__ = 'Jan Klopper (janunderdark.nl)'
 __version__ = 0.2
 
-import os
 import sys
-from base64 import b64encode
 
 import uweb3
 

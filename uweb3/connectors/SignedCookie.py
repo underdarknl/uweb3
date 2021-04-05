@@ -3,6 +3,9 @@
 __author__ = 'Jan Klopper (janunderdark.nl)'
 __version__ = 0.1
 
+import os
+from base64 import b64encode
+
 from . import Connector
 
 class SignedCookie(Connector):
