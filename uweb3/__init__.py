@@ -16,6 +16,7 @@ from importlib import reload
 from wsgiref.simple_server import make_server
 
 from typing import Optional, Tuple, Generator, Pattern, Callable
+from typing import Optional, Tuple, Generator, Pattern, Callable, Any
 # Package modules
 from . import pagemaker, request
 
@@ -180,7 +181,7 @@ class uWeb:
   Returns:
     RequestHandler: Configured closure that is ready to process requests.
   """
-  def __init__(self, page_class, routes, executing_path=None, config='config'):
+  def __init__(self, page_class: PageMaker, routes: Tuple[str, ...], executing_path: str=None, config: str='config'):
     self.executing_path = executing_path or os.path.dirname(__file__)
     self.config = SettingsManager(filename=config, path=self.executing_path)
     self._accesslogger = None
@@ -203,7 +204,7 @@ class uWeb:
     errorlogging = self.config.options.get('development', {'error_logging': 'False'}).get('error_logging', 'True') == 'True'
     self._logerror = self.logerror if errorlogging else lambda *args: None
 
-  def __call__(self, env, start_response):
+  def __call__(self, env: dict, start_response: Response):
     """WSGI request handler.
     Accepts the WSGI `environment` dictionary and a function to start the
     response and returns a response iterator.
@@ -281,36 +282,22 @@ class uWeb:
     except AttributeError:
       yield response.text
 
-  @property
-  def logger(self):
-    if not self._accesslogger:
-      logger = logging.getLogger('uweb3_logger')
-      logger.setLevel(logging.INFO)
-      logpath = os.path.join(self.executing_path, self.config.options.get('log', {}).get('acces_log', 'access_log.log'))
-      delay = self.config.options.get('log', {}).get('acces_log_delay', False) != False
-      encoding = self.config.options.get('log', {}).get('acces_log_encoding', None)
-      fh = logging.FileHandler(logpath, encoding=encoding, delay=delay)
-      fh.setLevel(logging.INFO)
-      logger.addHandler(fh)
-      self._accesslogger = logger
-    return self._accesslogger
+  def setup_logger(self):
+    logger = logging.getLogger('uweb3_logger')
+    logger.setLevel(logging.INFO)
+    fh = logging.FileHandler(os.path.join(self.executing_path, 'access_logging.log'))
+    fh.setLevel(logging.INFO)
+    logger.addHandler(fh)
+    return logger
 
-  @property
-  def errorlogger(self):
-    if not self._errorlogger:
-      logger = logging.getLogger('uweb3_exception_logger')
-      logger.setLevel(logging.INFO)
-      logpath = os.path.join(self.executing_path, self.config.options.get('log', {}).get('exception_log', 'uweb3_exceptions.log'))
-      delay = self.config.options.get('log', {}).get('exception_log_delay', False) != False
-      encoding = self.config.options.get('log', {}).get('exception_log_encoding', None)
-      fh = logging.FileHandler(logpath, encoding=encoding, delay=delay)
-      fh.setLevel(logging.INFO)
-      logger.addHandler(fh)
-      self._errorlogger = logger
-    return self._errorlogger
+  def _logging(self, req: request.Request, response: Response):
+    """Logs incoming requests to a logfile.
+    This is enabled by default, even if its missing in the config file.
+    """
+    if (self.config.options.get('development', None) and
+        self.config.options['development'].get('access_logging', True) == 'False'):
+      return
 
-  def logrequest(self, req, response):
-    """Logs incoming requests to the logfile."""
     host = req.env['HTTP_HOST'].split(':')[0]
     date = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
     method = req.method
@@ -323,17 +310,7 @@ class uWeb:
     data = response.log
     return self.logger.info(f"""{host} - - [{date}] \"{method} {path} {get} {status} {protocol} {data}\"""")
 
-  def logerror(self, req, page_maker, pythonmethod, args):
-    """Logs errors and exceptions to the logfile."""
-    host = req.env['HTTP_HOST'].split(':')[0]
-    date = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-    method = req.method
-    path = req.path
-    protocol = req.env.get('SERVER_PROTOCOL')
-    args = [str(arg) for arg in args]
-    return self.errorlogger.exception(f"""{host} - - [{date}] \"{method} {path} {protocol} {page_maker}.{pythonmethod}({args})\"""")
-
-  def get_response(self, req, page_maker, method, args):
+  def get_response(self, page_maker: PageMaker, method: str, args: Any):
     try:
       if method != 'Static':
         # We're specifically calling _PostInit here as promised in documentation.
