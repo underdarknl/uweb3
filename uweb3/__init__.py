@@ -310,7 +310,26 @@ class uWeb:
         logger.exception("UNCAUGHT EXCEPTION:")
       return page_maker.InternalServerError(*sys.exc_info())
 
-  def _configure_setup(self):
+  def serve(self):
+    """Sets up and starts WSGI development server for the current app."""
+    host, port, hotreload, interval, ignored_extensions, ignored_directories = self._configure_setup()
+
+    server = make_server(host, int(port), self)
+    print(f'Running µWeb3 server on http://{server.server_address[0]}:{server.server_address[1]}')
+    print(f'Root dir is: {self.executing_path}')
+
+    try:
+      if hotreload:
+        print(f'Hot reload is enabled for changes in: {self.executing_path}')
+        HotReload(self.executing_path, interval=interval,
+            ignored_extensions=ignored_extensions,
+            ignored_directories=ignored_directories)
+      server.serve_forever()
+    except Exception as error:
+      print(error)
+      server.shutdown()
+
+   def _configure_setup(self):
     """Sets up a default configuration for the uWeb3 server even when no config is provided.
 
     Returns:
@@ -341,25 +360,6 @@ class uWeb:
         ignored_directories += self.config.options['development'].get('ignored_directories', '').split(',')
 
     return host, port, hotreload, interval, ignored_extensions, ignored_directories
-
-  def serve(self):
-    """Sets up and starts WSGI development server for the current app."""
-    host, port, hotreload, interval, ignored_extensions, ignored_directories = self._configure_setup()
-
-    server = make_server(host, int(port), self)
-    print(f'Running µWeb3 server on http://{server.server_address[0]}:{server.server_address[1]}')
-    print(f'Root dir is: {self.executing_path}')
-
-    try:
-      if hotreload:
-        print(f'Hot reload is enabled for changes in: {self.executing_path}')
-        HotReload(self.executing_path, interval=interval,
-            ignored_extensions=ignored_extensions,
-            ignored_directories=ignored_directories)
-      server.serve_forever()
-    except Exception as error:
-      print(error)
-      server.shutdown()
 
   def setup_routing(self):
     if isinstance(self.initial_pagemaker, list):
