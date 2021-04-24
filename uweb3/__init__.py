@@ -41,12 +41,11 @@ class NoRouteError(Error):
 
 class Registry:
   """Something to hook stuff to"""
-
-
 class Router:
   def __init__(self, page_class):
     self.pagemakers = page_class.LoadModules()
     self.pagemakers.append(page_class)
+
 
   def router(self, routes):
     """Returns the first request handler that matches the request URL.
@@ -70,12 +69,8 @@ class Router:
     # To prevent creating the same instance for each route we store them in a dict
     websocket_pagemaker = {}
     for pattern, *details in routes:
-      page_maker = None
-      for pm in self.pagemakers:
-        # Check if the page_maker has the method/handler we are looking for
-        if hasattr(pm, details[0]):
-          page_maker = pm
-          break
+      page_maker = self._find_pagemaker(*details)
+
       if callable(pattern):
         # Check if the page_maker is already in the dict, if not instantiate
         # if so just use that one. This prevents creating multiple instances for one route.
@@ -91,6 +86,7 @@ class Router:
                         details[2].lower() if len(details) > 2 else '*', #host
                         page_maker #pagemaker class
                         ))
+
 
     def request_router(url, method, host):
       """Returns the appropriate handler and arguments for the given `url`.
@@ -143,6 +139,21 @@ class Router:
       raise NoRouteError(url +' cannot be handled')
     return request_router
 
+  def _find_pagemaker(self, *details):
+    """Attempts to find the target pagemarker in all available pagemakers.
+
+    Arguments:
+      details (Tuple[str]): all arguments passed to the uWeb3 regex router
+
+    Returns:
+      PageMaker: One of the uWeb3 available PageMaker classes
+      None: If no matching PageMaker is found.
+    """
+    for page_maker in self.pagemakers:
+      # Check if the page_maker has the method/handler we are looking for
+      if hasattr(page_maker, details[0]):
+        return page_maker
+    return None
 
 class uWeb:
   """Returns a configured closure for handling page requests.
