@@ -320,7 +320,7 @@ class uWeb:
       interval (int): The interval that is used to check for file changes for the HotReload module.
       ignored_extensions (list[str]): Containins a list of ignored fileextensions to be excluded from the HotReload watchlist.
       ignored_directories (list[str]): Contains a list of the ignored directories to be excluded from the HotReload watchlist.
-    """"
+    """
     host = 'localhost'
     port = 8001
     hotreload = False
@@ -349,6 +349,7 @@ class uWeb:
     server = make_server(host, int(port), self)
     print(f'Running µWeb3 server on http://{server.server_address[0]}:{server.server_address[1]}')
     print(f'Root dir is: {self.executing_path}')
+
     try:
       if hotreload:
         print(f'Hot reload is enabled for changes in: {self.executing_path}')
