@@ -12,7 +12,7 @@ import re
 import sys
 from wsgiref.simple_server import make_server
 import datetime
-from typing import Optional, Tuple, Generator, Pattern, Callable
+from typing import Optional, Tuple, Generator, Pattern, Callable, Any
 # Package modules
 from . import pagemaker, request
 
@@ -178,7 +178,7 @@ class uWeb:
   Returns:
     RequestHandler: Configured closure that is ready to process requests.
   """
-  def __init__(self, page_class, routes, executing_path=None, config='config'):
+  def __init__(self, page_class: PageMaker, routes: Tuple[str, ...], executing_path: str=None, config: str='config'):
     self.executing_path = executing_path or os.path.dirname(__file__)
     self.config = SettingsManager(filename=config, path=self.executing_path)
     self.logger = self.setup_logger()
@@ -193,7 +193,7 @@ class uWeb:
         'application/json': lambda x: JSONsafestring(x, unsafe=True),
         'default': str,}
 
-  def __call__(self, env, start_response):
+  def __call__(self, env: dict, start_response: Response):
     """WSGI request handler.
     Accepts the WSGI `environment` dictionary and a function to start the
     response and returns a response iterator.
@@ -281,7 +281,7 @@ class uWeb:
     logger.addHandler(fh)
     return logger
 
-  def _logging(self, req, response):
+  def _logging(self, req: request.Request, response: Response):
     """Logs incoming requests to a logfile.
     This is enabled by default, even if its missing in the config file.
     """
@@ -297,7 +297,7 @@ class uWeb:
     protocol = req.env.get('SERVER_PROTOCOL')
     self.logger.info(f"""{host} - - [{date}] \"{method} {path} {status} {protocol}\"""")
 
-  def get_response(self, page_maker, method, args):
+  def get_response(self, page_maker: PageMaker, method: str, args: Any):
     try:
       if method != 'Static':
         # We're specifically calling _PostInit here as promised in documentation.
