@@ -15,6 +15,7 @@ import time
 from importlib import reload
 from wsgiref.simple_server import make_server
 
+from typing import Optional, Tuple, Generator, Pattern, Callable
 # Package modules
 from . import pagemaker, request
 
@@ -47,7 +48,7 @@ class Router:
     self.pagemakers.append(page_class)
 
 
-  def router(self, routes):
+  def router(self, routes) -> Callable[[str, str, str], Tuple[str, Generator, Pattern, PageMaker]]:
     """Returns the first request handler that matches the request URL.
 
     The `routes` argument is an iterable of 2-tuples, each of which contain a
@@ -78,6 +79,7 @@ class Router:
           websocket_pagemaker[page_maker.__name__] = page_maker()
         pattern(getattr(websocket_pagemaker[page_maker.__name__], details[0]))
         continue
+
       if not page_maker:
         raise NoRouteError(f"µWeb3 could not find a route handler called '{details[0]}' in any of the PageMakers, your application will not start.")
       req_routes.append((re.compile(pattern + '$', re.UNICODE),
@@ -88,7 +90,7 @@ class Router:
                         ))
 
 
-    def request_router(url, method, host):
+    def request_router(url: str, method: str, host: str) -> Tuple[str, Generator, Pattern, PageMaker]:
       """Returns the appropriate handler and arguments for the given `url`.
 
       The`url` is matched against the compiled patterns in the `req_routes`
@@ -139,7 +141,7 @@ class Router:
       raise NoRouteError(url +' cannot be handled')
     return request_router
 
-  def _find_pagemaker(self, *details):
+  def _find_pagemaker(self, *details: Tuple[str]) -> Optional[PageMaker]:
     """Attempts to find the target pagemarker in all available pagemakers.
 
     Arguments:
