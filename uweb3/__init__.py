@@ -340,36 +340,49 @@ class uWeb:
       self._logerror(req, page_maker, method, args)
       return page_maker.InternalServerError(*sys.exc_info())
 
-  def serve(self):
-    """Sets up and starts WSGI development server for the current app."""
+  def _configure_setup(self):
+    """Sets up a default configuration for the uWeb3 server even when no config is provided.
+
+    Returns:
+      host (str): The address of the host.
+      port (int): The port for the server to run on.
+      hotreload (bool): Determines whether or not to use the HotReload module.
+      interval (int): The interval that is used to check for file changes for the HotReload module.
+      ignored_extensions (list[str]): Containins a list of ignored fileextensions to be excluded from the HotReload watchlist.
+      ignored_directories (list[str]): Contains a list of the ignored directories to be excluded from the HotReload watchlist.
+    """
     host = 'localhost'
     port = 8001
     hotreload = False
     interval = None
+    devconfig = None
+    ignored_extensions = []
     ignored_directories = ['__pycache__',
                            self.initial_pagemaker.PUBLIC_DIR,
                            self.initial_pagemaker.TEMPLATE_DIR]
-    ignored_extensions = []
+
+
     if self.config.options.get('development', False):
       devconfig = self.config.options['development']
       host = devconfig.get('host', host)
       port = devconfig.get('port', port)
       hotreload = devconfig.get('reload', False) in ('True', 'true')
-
-    server = make_server(host, int(port), self)
-    print(f'Running µWeb3 server on http://{server.server_address[0]}:{server.server_address[1]}')
-    print(f'Root dir is: {self.executing_path}')
-    if hotreload:
-      ignored_directories = ['__pycache__',
-                             self.initial_pagemaker.PUBLIC_DIR,
-                             self.initial_pagemaker.TEMPLATE_DIR]
-      ignored_extensions = []
       interval = int(devconfig.get('checkinterval', 0))
       if 'ignored_extensions' in devconfig:
         ignored_extensions = devconfig.get('ignored_extensions', '').split(',')
       if 'ignored_directories' in devconfig:
         ignored_directories += devconfig.get('ignored_directories', '').split(',')
 
+    return host, port, hotreload, interval, ignored_extensions, ignored_directories
+
+  def serve(self):
+    """Sets up and starts WSGI development server for the current app."""
+    host, port, hotreload, interval, ignored_extensions, ignored_directories = self._configure_setup()
+    server = make_server(host, int(port), self)
+
+    print(f'Running µWeb3 server on http://{server.server_address[0]}:{server.server_address[1]}')
+    print(f'Root dir is: {self.executing_path}')
+    if hotreload:
       print(f'Hot reload is enabled for changes in: {self.executing_path}')
       HotReload(self.executing_path, interval=interval,
           ignored_extensions=ignored_extensions,
