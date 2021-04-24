@@ -191,7 +191,6 @@ class uWeb:
     response = None
     method = '_NotFound'
     args = None
-    rollback = False
     try:
       method, args, hostargs, page_maker = self.router(req.path,
                                             req.env['REQUEST_METHOD'],
