@@ -347,7 +347,10 @@ class uWeb:
     port = 8001
     hotreload = False
     interval = None
-
+    ignored_directories = ['__pycache__',
+                           self.initial_pagemaker.PUBLIC_DIR,
+                           self.initial_pagemaker.TEMPLATE_DIR]
+    ignored_extensions = []
     if self.config.options.get('development', False):
       devconfig = self.config.options['development']
       host = devconfig.get('host', host)
