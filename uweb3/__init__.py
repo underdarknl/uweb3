@@ -15,7 +15,6 @@ import time
 from importlib import reload
 from wsgiref.simple_server import make_server
 
-from typing import Optional, Tuple, Generator, Pattern, Callable
 from typing import Optional, Tuple, Generator, Pattern, Callable, Any
 # Package modules
 from . import pagemaker, request
@@ -211,19 +210,41 @@ class uWeb:
     """
     req = request.Request(env, self.registry)
     req.env['REAL_REMOTE_ADDR'] = request.return_real_remote_addr(req.env)
-    response = None
-    method = '_NotFound'
-    args = None
-    rollback = False
+
+    method, args, page_maker = self._get_route_details(req)
+    response, pagemaker_instance = self._prepare_response(page_maker, method, args, req)
+    req, response = self._handle_static(req, response, pagemaker_instance, method)
+
+    self._logging(req, response)
+    start_response(response.status, response.headerlist)
     try:
-      method, args, hostargs, page_maker = self.router(req.path,
+      yield response.text.encode(response.charset)
+    except AttributeError:
+      yield response.text
+
+  def _get_route_details(self, req: request.Request) -> Tuple[str, Generator, PageMaker]:
+    """
+    Returns:
+      tuple[str, generator, PageMaker]
+    """
+    # TODO: More fitting method name?
+    args = None
+    method = '_NotFound'
+    try:
+      method, args, _, page_maker = self.router(req.path,
                                             req.env['REQUEST_METHOD'],
                                             req.env['host'])
     except NoRouteError:
       # When we catch this error this means there is no method for the route in the currently selected pagemaker.
       # If this happens we default to the initial pagemaker because we don't know what the target pagemaker should be.
       # Then we set an internalservererror and move on
-      page_maker = self.initial_pagemaker
+      page_maker = self.inital_pagemaker
+    return method, args, page_maker
+
+  def _prepare_response(self, page_maker: PageMaker, method: str, args: Generator, req: request.Request):
+    # TODO: More fitting method name?
+    response = None
+
     try:
       # instantiate the pagemaker for this request
       pagemaker_instance = page_maker(req,
@@ -245,7 +266,11 @@ class uWeb:
                             config=self.config,
                             executing_path=self.executing_path)
       response = pagemaker_instance.InternalServerError(*sys.exc_info())
+    return response, pagemaker_instance
 
+
+  def _handle_static(self, req: request.Request, response: Response, pagemaker_instance: PageMaker, method: str):
+    # TODO: More fitting method name?
     static = False
     if method == 'Static':
       static = True
@@ -275,12 +300,7 @@ class uWeb:
     if not response.text:
       response.text = ''
 
-    self._logrequest(req, response)
-    start_response(response.status, response.headerlist)
-    try:
-      yield response.text.encode(response.charset)
-    except AttributeError:
-      yield response.text
+    return req, response
 
   def setup_logger(self):
     logger = logging.getLogger('uweb3_logger')
