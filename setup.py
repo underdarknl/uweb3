@@ -7,7 +7,8 @@ from setuptools import setup, find_packages
 
 REQUIREMENTS = [
     'PyMySQL',
-    'pytz'
+    'pytz',
+    'cryptography'
 ]
 
 def Description():
