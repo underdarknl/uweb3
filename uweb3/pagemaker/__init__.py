@@ -3,6 +3,7 @@
 
 import datetime
 import logging
+import magic
 import mimetypes
 import os
 import pyclbr
@@ -314,6 +315,7 @@ class BasePageMaker(Base):
     self.post = req.vars['post'] if 'post' in req.vars else {}
     self.put = req.vars['put'] if 'put' in req.vars else {}
     self.delete = req.vars['delete'] if 'delete' in req.vars else {}
+    self.files = req.vars['files'] if 'files' in req.vars else {}
     self.config = config or None
     self.options = config.options if config else {}
     self.debug = DebuggerMixin in self.__class__.__mro__
@@ -322,6 +324,9 @@ class BasePageMaker(Base):
     except KeyError:
       self.persistent.Set('connection', ConnectionManager(self.config, self.options, self.debug))
       self.connection = self.persistent.Get('connection')
+
+  def __str__(self):
+    return str(type(self))
 
   @classmethod
   def LoadModules(cls, routes='routes/*.py'):
@@ -383,14 +388,17 @@ class BasePageMaker(Base):
     """
 
     abs_path = os.path.realpath(os.path.join(self.PUBLIC_DIR, rel_path.lstrip('/')))
-    print(abs_path, self.PUBLIC_DIR)
+    if self.debug:
+      print('Serving static file:', abs_path)
 
     if os.path.commonprefix((abs_path, self.PUBLIC_DIR)) != self.PUBLIC_DIR:
       return self._StaticNotFound(rel_path)
     try:
       content_type, _encoding = mimetypes.guess_type(abs_path)
       if not content_type:
-        content_type = 'text/plain'
+        content_type = magic.from_file(abs_path, mime=True)
+        if not content_type:
+          content_type = 'text/plain'
       mtime = os.path.getmtime(abs_path)
       length = os.path.getsize(abs_path)
       with open(abs_path, 'rb') as staticfile:
