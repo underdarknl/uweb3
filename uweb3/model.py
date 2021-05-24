@@ -6,11 +6,9 @@ import os
 import datetime
 import sys
 import hashlib
-import pickle
+import json
 import secrets
 import configparser
-
-from contextlib import contextmanager
 
 
 class Error(Exception):
@@ -114,7 +112,9 @@ class SettingsManager(object):
 
   def Read(self):
     """Reads the config file and populates the options member
-    It uses the mtime to see if any re-reading is required"""
+    It uses the mtime to see if any re-reading is required
+
+    Returns True if changes where detected, False if no re-read was needed."""
     if not self.mtime:
       curtime = os.path.getmtime(self.file_location)
       if self.mtime and self.mtime == curtime:
@@ -335,12 +335,10 @@ class SecureCookie(object):
     self._rawcookie = None
 
   def __CreateCookieHash(self, data):
-    hex_string = pickle.dumps(data).hex()
-
-    hashed = (hex_string + self.cookie_salt).encode('utf-8')
+    datastring = json.dumps(data)
     h = hashlib.new(self.HASHTYPE)
-    h.update(hashed)
-    return '{}+{}'.format(h.hexdigest(), hex_string)
+    h.update((datastring + self.cookie_salt).encode('utf-8'))
+    return '{}+{}'.format(h.hexdigest(), datastring)
 
   def __ValidateCookieHash(self, cookie):
     """Takes a cookie and validates it
@@ -351,8 +349,7 @@ class SecureCookie(object):
     if not cookie:
       return None
     try:
-      data = cookie.rsplit('+', 1)[1]
-      data = pickle.loads(bytes.fromhex(data))
+      data = json.loads(cookie.rsplit('+', 1)[1])
     except Exception:
       return (False, None)
 
