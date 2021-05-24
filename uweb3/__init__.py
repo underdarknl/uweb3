@@ -2,16 +2,18 @@
 # -*- coding: utf-8 -*-
 """µWeb3 Framework"""
 
-__version__ = '3.0.4'
+__version__ = '3.0.5'
 
 # Standard modules
 import configparser
+import datetime
 import logging
 import os
 import re
 import sys
+import time
+from importlib import reload
 from wsgiref.simple_server import make_server
-import datetime
 
 # Package modules
 from . import pagemaker, request
@@ -21,7 +23,6 @@ from .response import Response, Redirect
 from .pagemaker import PageMaker, decorators, WebsocketPageMaker, DebuggingPageMaker, LoginMixin
 from .model import SettingsManager
 from .libs.safestring import HTMLsafestring, JSONsafestring, JsonEncoder, Basesafestring
-from importlib import reload
 
 class Error(Exception):
   """Superclass used for inheritance and external exception handling."""
@@ -169,7 +170,8 @@ class uWeb:
   def __init__(self, page_class, routes, executing_path=None, config='config'):
     self.executing_path = executing_path or os.path.dirname(__file__)
     self.config = SettingsManager(filename=config, path=self.executing_path)
-    self.logger = self.setup_logger()
+    self._accesslogger = None
+    self._errorlogger = None
     self.inital_pagemaker = page_class
     self.registry = Registry()
     self.registry.logger = logging.getLogger('root')
@@ -180,6 +182,12 @@ class uWeb:
         'text/plain': str,
         'application/json': lambda x: JSONsafestring(x, unsafe=True),
         'default': str,}
+
+    accesslogging = self.config.options.get('log', {}).get('access_logging', True) != 'False'
+    self._logrequest = self.logrequest if accesslogging else lambda *args: None
+    # log exceptions even when development is present, but error_logging was not disabled specifically
+    errorlogging = self.config.options.get('development', {'error_logging': 'False'}).get('error_logging', 'True') == 'True'
+    self._logerror = self.logerror if errorlogging else lambda *args: None
 
   def __call__(self, env, start_response):
     """WSGI request handler.
@@ -208,9 +216,9 @@ class uWeb:
                             executing_path=self.executing_path)
       # specifically call _PreRequest as promised in documentation
       if hasattr(pagemaker_instance, '_PreRequest'):
-        pagemaker_instance = pagemaker_instance._PreRequest()
+        pagemaker_instance = pagemaker_instance._PreRequest() or pagemaker_instance
 
-      response = self.get_response(pagemaker_instance, method, args)
+      response = self.get_response(req, pagemaker_instance, method, args)
     except Exception:
       # something broke in our pagemaker_instance, lets fall back to the most basic pagemaker for error output
       if hasattr(pagemaker_instance, '_ConnectionRollback'):
@@ -238,9 +246,6 @@ class uWeb:
         encoder = self.encoders.get(response.clean_content_type(), self.encoders['default'])
         response.text = encoder(response.text)
 
-      if hasattr(pagemaker_instance, '_PostRequest'):
-        pagemaker_instance._PostRequest()
-
     # CSP might be unneeded for some static content,
     # https://github.com/w3c/webappsec/issues/520
     if hasattr(pagemaker_instance, '_CSPheaders'):
@@ -248,44 +253,72 @@ class uWeb:
 
     # provide users with a _PostRequest method to overide too
     if not static and hasattr(pagemaker_instance, 'PostRequest'):
-      response = pagemaker_instance.PostRequest(response)
+      response = pagemaker_instance.PostRequest(response) or response
 
     # we should at least send out something to make sure we are wsgi compliant.
     if not response.text:
       response.text = ''
 
-    self._logging(req, response)
+    self._logrequest(req, response)
     start_response(response.status, response.headerlist)
     try:
       yield response.text.encode(response.charset)
     except AttributeError:
       yield response.text
 
-  def setup_logger(self):
-    logger = logging.getLogger('uweb3_logger')
-    logger.setLevel(logging.INFO)
-    fh = logging.FileHandler(os.path.join(self.executing_path, 'access_logging.log'))
-    fh.setLevel(logging.INFO)
-    logger.addHandler(fh)
-    return logger
+  @property
+  def logger(self):
+    if not self._accesslogger:
+      logger = logging.getLogger('uweb3_logger')
+      logger.setLevel(logging.INFO)
+      logpath = os.path.join(self.executing_path, self.config.options.get('log', {}).get('acces_log', 'access_log.log'))
+      delay = self.config.options.get('log', {}).get('acces_log_delay', False) != False
+      encoding = self.config.options.get('log', {}).get('acces_log_encoding', None)
+      fh = logging.FileHandler(logpath, encoding=encoding, delay=delay)
+      fh.setLevel(logging.INFO)
+      logger.addHandler(fh)
+      self._accesslogger = logger
+    return self._accesslogger
 
-  def _logging(self, req, response):
-    """Logs incoming requests to a logfile.
-    This is enabled by default, even if its missing in the config file.
-    """
-    if (self.config.options.get('development', None) and
-        self.config.options['development'].get('access_logging', True) == 'False'):
-      return
+  @property
+  def errorlogger(self):
+    if not self._errorlogger:
+      logger = logging.getLogger('uweb3_exception_logger')
+      logger.setLevel(logging.INFO)
+      logpath = os.path.join(self.executing_path, self.config.options.get('log', {}).get('exception_log', 'uweb3_exceptions.log'))
+      delay = self.config.options.get('log', {}).get('exception_log_delay', False) != False
+      encoding = self.config.options.get('log', {}).get('exception_log_encoding', None)
+      fh = logging.FileHandler(logpath, encoding=encoding, delay=delay)
+      fh.setLevel(logging.INFO)
+      logger.addHandler(fh)
+      self._errorlogger = logger
+    return self._errorlogger
 
+  def logrequest(self, req, response):
+    """Logs incoming requests to the logfile."""
     host = req.env['HTTP_HOST'].split(':')[0]
     date = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
     method = req.method
     path = req.path
+    get = req.vars['get']
     status = response.httpcode
     protocol = req.env.get('SERVER_PROTOCOL')
-    self.logger.info(f"""{host} - - [{date}] \"{method} {path} {status} {protocol}\"""")
+    if not response.log:
+      return self.logger.info(f"""{host} - - [{date}] \"{method} {path} {get} {status} {protocol}\"""")
+    data = response.log
+    return self.logger.info(f"""{host} - - [{date}] \"{method} {path} {get} {status} {protocol} {data}\"""")
 
-  def get_response(self, page_maker, method, args):
+  def logerror(self, req, page_maker, pythonmethod, args):
+    """Logs errors and exceptions to the logfile."""
+    host = req.env['HTTP_HOST'].split(':')[0]
+    date = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+    method = req.method
+    path = req.path
+    protocol = req.env.get('SERVER_PROTOCOL')
+    args = [str(arg) for arg in args]
+    return self.errorlogger.exception(f"""{host} - - [{date}] \"{method} {path} {protocol} {page_maker}.{pythonmethod}({args})\"""")
+
+  def get_response(self, req, page_maker, method, args):
     try:
       if method != 'Static':
         # We're specifically calling _PostInit here as promised in documentation.
@@ -303,12 +336,7 @@ class uWeb:
     except ImmediateResponse as err:
       return err[0]
     except Exception:
-      if (self.config.options.get('development', False) and
-          self.config.options['development'].get('error_logging', False) == 'True'):
-        logger = logging.getLogger('uweb3_exception_logger')
-        fh = logging.FileHandler(os.path.join(self.executing_path, 'uweb3_uncaught_exceptions.log'))
-        logger.addHandler(fh)
-        logger.exception("UNCAUGHT EXCEPTION:")
+      self._logerror(req, page_maker, method, args)
       return page_maker.InternalServerError(*sys.exc_info())
 
   def serve(self):
@@ -317,28 +345,32 @@ class uWeb:
     port = 8001
     hotreload = False
     interval = None
-    ignored_directories = ['__pycache__',
-                           self.inital_pagemaker.PUBLIC_DIR,
-                           self.inital_pagemaker.TEMPLATE_DIR]
-    ignored_extensions = []
+
     if self.config.options.get('development', False):
-      host = self.config.options['development'].get('host', host)
-      port = self.config.options['development'].get('port', port)
-      hotreload = self.config.options['development'].get('reload', False) in ('True', 'true')
-      interval = int(self.config.options['development'].get('checkinterval', 0))
-      if 'ignored_extensions' in self.config.options['development']:
-        ignored_extensions = self.config.options['development'].get('ignored_extensions', '').split(',')
-      if 'ignored_directories' in self.config.options['development']:
-        ignored_directories += self.config.options['development'].get('ignored_directories', '').split(',')
+      devconfig = self.config.options['development']
+      host = devconfig.get('host', host)
+      port = devconfig.get('port', port)
+      hotreload = devconfig.get('reload', False) in ('True', 'true')
+
     server = make_server(host, int(port), self)
     print(f'Running µWeb3 server on http://{server.server_address[0]}:{server.server_address[1]}')
     print(f'Root dir is: {self.executing_path}')
+    if hotreload:
+      ignored_directories = ['__pycache__',
+                             self.inital_pagemaker.PUBLIC_DIR,
+                             self.inital_pagemaker.TEMPLATE_DIR]
+      ignored_extensions = []
+      interval = int(devconfig.get('checkinterval', 0))
+      if 'ignored_extensions' in devconfig:
+        ignored_extensions = devconfig.get('ignored_extensions', '').split(',')
+      if 'ignored_directories' in devconfig:
+        ignored_directories += devconfig.get('ignored_directories', '').split(',')
+
+      print(f'Hot reload is enabled for changes in: {self.executing_path}')
+      HotReload(self.executing_path, interval=interval,
+          ignored_extensions=ignored_extensions,
+          ignored_directories=ignored_directories)
     try:
-      if hotreload:
-        print(f'Hot reload is enabled for changes in: {self.executing_path}')
-        HotReload(self.executing_path, interval=interval,
-            ignored_extensions=ignored_extensions,
-            ignored_directories=ignored_directories)
       server.serve_forever()
     except Exception as error:
       print(error)
@@ -365,18 +397,17 @@ class HotReload:
     execution path and restarts the server if needed"""
     IGNOREDEXTENSIONS = [".pyc", '.ini', '.md', '.html', '.log', '.sql']
 
-    def __init__(self, path, interval=None, ignored_extensions=None, ignored_directories=None):
+    def __init__(self, path, interval=1, ignored_extensions=None, ignored_directories=None):
       """Takes a path, an optional interval in seconds and an optional flag
       signaling a development environment which will set the path for new and
       changed file checking on the parent folder of the serving file."""
       import threading
       self.running = threading.Event()
-      self.interval = interval or 1
+      self.interval = interval
       self.path = os.path.dirname(path)
       self.ignoredextensions = self.IGNOREDEXTENSIONS + (ignored_extensions or [])
       self.ignoreddirectories = ignored_directories
-      self.thread = threading.Thread(target=self.Run)
-      self.thread.daemon = True
+      self.thread = threading.Thread(target=self.Run, daemon=True)
       self.thread.start()
 
     def Run(self):
@@ -384,7 +415,6 @@ class HotReload:
       self.watched_files = self.Files()
       self.mtimes = [(f, os.path.getmtime(f)) for f in self.watched_files]
 
-      import time
       while True:
         time.sleep(self.interval)
         new = self.Files(self.watched_files)
@@ -397,7 +427,7 @@ class HotReload:
             self.Restart()
 
     def Files(self, current=None):
-      """Returns all files inside the working directory of uweb3."""
+      """Returns all files inside the working directory of µWeb3."""
       if not current:
         current = set()
       new = set()
@@ -414,6 +444,6 @@ class HotReload:
       return new
 
     def Restart(self):
-      """Restart uweb3 with all provided system arguments."""
+      """Restart µWeb3 with all provided system arguments."""
       self.running.clear()
       os.execl(sys.executable, sys.executable, * sys.argv)
