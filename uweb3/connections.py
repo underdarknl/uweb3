@@ -130,10 +130,7 @@ class ConnectionManager(object):
       try:
         parent = sys._getframe(requestdepth).f_locals['self']
         if isinstance(parent, uweb3.PageMaker) and hasattr(parent, 'req'):
-          request = parent.req
-          if self.debug:
-            print('request object found at stack level %d' % requestdepth)
-          return request
+          return parent.req
       except (KeyError, AttributeError, ValueError):
         pass
       requestdepth = requestdepth + 1
