@@ -374,7 +374,6 @@ class uWeb:
     port = 8001
     hotreload = False
     interval = None
-    devconfig = None
     ignored_extensions = []
     ignored_directories = ['__pycache__',
                            self.initial_pagemaker.PUBLIC_DIR,
