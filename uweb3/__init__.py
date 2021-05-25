@@ -359,7 +359,7 @@ class uWeb:
       print(error)
       server.shutdown()
 
-   def _configure_setup(self):
+  def _configure_setup(self):
     """Sets up a default configuration for the uWeb3 server even when no config is provided.
 
     Returns:
