@@ -172,7 +172,7 @@ class uWeb:
     self.config = SettingsManager(filename=config, path=self.executing_path)
     self._accesslogger = None
     self._errorlogger = None
-    self.inital_pagemaker = page_class
+    self.initial_pagemaker = page_class
     self.registry = Registry()
     self.registry.logger = logging.getLogger('root')
     self.router = Router(page_class).router(routes)
@@ -209,7 +209,7 @@ class uWeb:
       # When we catch this error this means there is no method for the route in the currently selected pagemaker.
       # If this happens we default to the initial pagemaker because we don't know what the target pagemaker should be.
       # Then we set an internalservererror and move on
-      page_maker = self.inital_pagemaker
+      page_maker = self.initial_pagemaker
     try:
       # instantiate the pagemaker for this request
       pagemaker_instance = page_maker(req,
@@ -333,7 +333,7 @@ class uWeb:
       # pylint: enable=W0212
       return getattr(page_maker, method)(*args)
     except pagemaker.ReloadModules as message:
-      reload_message = reload(sys.modules[self.inital_pagemaker.__module__])
+      reload_message = reload(sys.modules[self.initial_pagemaker.__module__])
       return Response(content='%s\n%s' % (message, reload_message))
     except ImmediateResponse as err:
       return err[0]
@@ -359,8 +359,8 @@ class uWeb:
     print(f'Root dir is: {self.executing_path}')
     if hotreload:
       ignored_directories = ['__pycache__',
-                             self.inital_pagemaker.PUBLIC_DIR,
-                             self.inital_pagemaker.TEMPLATE_DIR]
+                             self.initial_pagemaker.PUBLIC_DIR,
+                             self.initial_pagemaker.TEMPLATE_DIR]
       ignored_extensions = []
       interval = int(devconfig.get('checkinterval', 0))
       if 'ignored_extensions' in devconfig:
@@ -379,10 +379,10 @@ class uWeb:
       server.shutdown()
 
   def setup_routing(self):
-    if isinstance(self.inital_pagemaker, list):
-      routes = [route for route in self.inital_pagemaker[1:]]
-      self.inital_pagemaker[0].AddRoutes(tuple(routes))
-      self.inital_pagemaker = self.inital_pagemaker[0]
+    if isinstance(self.initial_pagemaker, list):
+      routes = [route for route in self.initial_pagemaker[1:]]
+      self.initial_pagemaker[0].AddRoutes(tuple(routes))
+      self.initial_pagemaker = self.initial_pagemaker[0]
 
     default_route = "routes"
     automatic_detection = True
@@ -391,7 +391,7 @@ class uWeb:
       automatic_detection = self.config.options['routing'].get('disable_automatic_route_detection', 'False') != 'True'
 
     if automatic_detection:
-      self.inital_pagemaker.LoadModules(routes=default_route)
+      self.initial_pagemaker.LoadModules(routes=default_route)
 
 
 class HotReload:
