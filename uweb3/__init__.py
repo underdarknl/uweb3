@@ -343,17 +343,16 @@ class uWeb:
   def serve(self):
     """Sets up and starts WSGI development server for the current app."""
     host, port, hotreload, interval, ignored_extensions, ignored_directories = self._configure_setup()
-
     server = make_server(host, int(port), self)
+
     print(f'Running µWeb3 server on http://{server.server_address[0]}:{server.server_address[1]}')
     print(f'Root dir is: {self.executing_path}')
-
+    if hotreload:
+      print(f'Hot reload is enabled for changes in: {self.executing_path}')
+      HotReload(self.executing_path, interval=interval,
+          ignored_extensions=ignored_extensions,
+          ignored_directories=ignored_directories)
     try:
-      if hotreload:
-        print(f'Hot reload is enabled for changes in: {self.executing_path}')
-        HotReload(self.executing_path, interval=interval,
-            ignored_extensions=ignored_extensions,
-            ignored_directories=ignored_directories)
       server.serve_forever()
     except Exception as error:
       print(error)
@@ -376,8 +375,8 @@ class uWeb:
     interval = None
     ignored_extensions = []
     ignored_directories = ['__pycache__',
-                           self.initial_pagemaker.PUBLIC_DIR,
-                           self.initial_pagemaker.TEMPLATE_DIR]
+                            self.initial_pagemaker.PUBLIC_DIR,
+                            self.initial_pagemaker.TEMPLATE_DIR]
 
 
     if self.config.options.get('development', False):
@@ -393,24 +392,6 @@ class uWeb:
 
     return host, port, hotreload, interval, ignored_extensions, ignored_directories
 
-  def serve(self):
-    """Sets up and starts WSGI development server for the current app."""
-    host, port, hotreload, interval, ignored_extensions, ignored_directories = self._configure_setup()
-    server = make_server(host, int(port), self)
-
-    print(f'Running µWeb3 server on http://{server.server_address[0]}:{server.server_address[1]}')
-    print(f'Root dir is: {self.executing_path}')
-    if hotreload:
-      print(f'Hot reload is enabled for changes in: {self.executing_path}')
-      HotReload(self.executing_path, interval=interval,
-          ignored_extensions=ignored_extensions,
-          ignored_directories=ignored_directories)
-    try:
-      server.serve_forever()
-    except Exception as error:
-      print(error)
-      server.shutdown()
-
   def setup_routing(self):
     if isinstance(self.initial_pagemaker, list):
       routes = [route for route in self.initial_pagemaker[1:]]
@@ -425,6 +406,8 @@ class uWeb:
 
     if automatic_detection:
       self.initial_pagemaker.LoadModules(routes=default_route)
+
+
 
 
 class HotReload:
