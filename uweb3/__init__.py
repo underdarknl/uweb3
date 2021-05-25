@@ -230,7 +230,7 @@ class uWeb:
     args = None
     method = '_NotFound'
     try:
-      method, args, _, page_maker = self.router(req.path,
+      method, args, hostargs, page_maker = self.router(req.path,
                                             req.env['REQUEST_METHOD'],
                                             req.env['host'])
     except NoRouteError:
