@@ -42,6 +42,7 @@ class NoRouteError(Error):
 
 class Registry:
   """Something to hook stuff to"""
+
 class Router:
   def __init__(self, page_class):
     self.pagemakers = page_class.LoadModules()
@@ -429,57 +430,57 @@ class uWeb:
 
 
 class HotReload:
-    """This class handles the thread which scans for file changes in the
-    execution path and restarts the server if needed"""
-    IGNOREDEXTENSIONS = [".pyc", '.ini', '.md', '.html', '.log', '.sql']
+  """This class handles the thread which scans for file changes in the
+  execution path and restarts the server if needed"""
+  IGNOREDEXTENSIONS = [".pyc", '.ini', '.md', '.html', '.log', '.sql']
 
-    def __init__(self, path, interval=1, ignored_extensions=None, ignored_directories=None):
-      """Takes a path, an optional interval in seconds and an optional flag
-      signaling a development environment which will set the path for new and
-      changed file checking on the parent folder of the serving file."""
-      import threading
-      self.running = threading.Event()
-      self.interval = interval
-      self.path = os.path.dirname(path)
-      self.ignoredextensions = self.IGNOREDEXTENSIONS + (ignored_extensions or [])
-      self.ignoreddirectories = ignored_directories
-      self.thread = threading.Thread(target=self.Run, daemon=True)
-      self.thread.start()
+  def __init__(self, path, interval=1, ignored_extensions=None, ignored_directories=None):
+    """Takes a path, an optional interval in seconds and an optional flag
+    signaling a development environment which will set the path for new and
+    changed file checking on the parent folder of the serving file."""
+    import threading
+    self.running = threading.Event()
+    self.interval = interval
+    self.path = os.path.dirname(path)
+    self.ignoredextensions = self.IGNOREDEXTENSIONS + (ignored_extensions or [])
+    self.ignoreddirectories = ignored_directories
+    self.thread = threading.Thread(target=self.Run, daemon=True)
+    self.thread.start()
 
-    def Run(self):
-      """ Method runs forever and watches all files in the project folder."""
-      self.watched_files = self.Files()
-      self.mtimes = [(f, os.path.getmtime(f)) for f in self.watched_files]
+  def Run(self):
+    """ Method runs forever and watches all files in the project folder."""
+    self.watched_files = self.Files()
+    self.mtimes = [(f, os.path.getmtime(f)) for f in self.watched_files]
 
-      while True:
-        time.sleep(self.interval)
-        new = self.Files(self.watched_files)
-        if new:
-          print('{color}New file added or deleted\x1b[0m \nRestarting µWeb3'.format(color='\x1b[7;30;41m'))
+    while True:
+      time.sleep(self.interval)
+      new = self.Files(self.watched_files)
+      if new:
+        print('{color}New file added or deleted\x1b[0m \nRestarting µWeb3'.format(color='\x1b[7;30;41m'))
+        self.Restart()
+      for f, mtime in self.mtimes:
+        if os.path.getmtime(f) != mtime:
+          print('{color}Detected changes in {file}\x1b[0m \nRestarting µWeb3'.format(color='\x1b[7;30;41m', file=f))
           self.Restart()
-        for f, mtime in self.mtimes:
-          if os.path.getmtime(f) != mtime:
-            print('{color}Detected changes in {file}\x1b[0m \nRestarting µWeb3'.format(color='\x1b[7;30;41m', file=f))
-            self.Restart()
 
-    def Files(self, current=None):
-      """Returns all files inside the working directory of µWeb3."""
-      if not current:
-        current = set()
-      new = set()
-      for dirpath, dirnames, filenames in os.walk(self.path):
-        if any(list(map(lambda dirname: dirname in dirpath, self.ignoreddirectories))):
+  def Files(self, current=None):
+    """Returns all files inside the working directory of µWeb3."""
+    if not current:
+      current = set()
+    new = set()
+    for dirpath, dirnames, filenames in os.walk(self.path):
+      if any(list(map(lambda dirname: dirname in dirpath, self.ignoreddirectories))):
+        continue
+      for file in filenames:
+        fullname = os.path.join(dirpath, file)
+        if fullname in current or fullname.endswith('~'):
           continue
-        for file in filenames:
-          fullname = os.path.join(dirpath, file)
-          if fullname in current or fullname.endswith('~'):
-            continue
-          ext = os.path.splitext(file)[1]
-          if ext not in self.ignoredextensions:
-            new.add(fullname)
-      return new
+        ext = os.path.splitext(file)[1]
+        if ext not in self.ignoredextensions:
+          new.add(fullname)
+    return new
 
-    def Restart(self):
-      """Restart µWeb3 with all provided system arguments."""
-      self.running.clear()
-      os.execl(sys.executable, sys.executable, * sys.argv)
+  def Restart(self):
+    """Restart µWeb3 with all provided system arguments."""
+    self.running.clear()
+    os.execl(sys.executable, sys.executable, * sys.argv)
