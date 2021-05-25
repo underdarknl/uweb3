@@ -5,15 +5,16 @@ import os
 import re
 from setuptools import setup, find_packages
 
-def Requirements():
-  """Returns the contents of the Requirements.txt file."""
-  with open(os.path.join(os.path.dirname(__file__), 'requirements.txt')) as r_file:
-    return r_file.read()
+REQUIREMENTS = [
+    'PyMySQL',
+    'pytz'
+]
 
 def Description():
   """Returns the contents of the README.md file as description information."""
   with open(os.path.join(os.path.dirname(__file__), 'README.md')) as r_file:
     return r_file.read()
+
 
 def Version():
   """Returns the version of the library as read from the __init__.py file"""
@@ -44,5 +45,5 @@ setup(
     keywords='minimal python web framework',
     packages=find_packages(),
     include_package_data=True,
-    install_requires=Requirements(),
+    install_requires=REQUIREMENTS,
     python_requires='>=3.5')

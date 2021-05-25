@@ -11,7 +11,7 @@ Error classes:
 """
 __author__ = ('Elmer de Looff <elmer@underdark.nl>',
               'Jan Klopper <jan@underdark.nl>')
-__version__ = '1.7'
+__version__ = '1.6'
 
 # Standard modules
 import os
@@ -111,7 +111,7 @@ class LazyTagValueRetrieval:
 EVALWHITELIST = {
         'functions': {"abs": abs, "complex": complex, "min": min, "max": max,
                       "pow": pow, "round": round, "len": len, "type": type,
-                      "isinstance": isinstance, "list": list,
+                      "isinstance": isinstance,
                       **{key: value for (key,value) in vars(math).items() if not key.startswith('__')}},
         'operators': (ast.Module, ast.Expr, ast.Load, ast.Expression, ast.Add, ast.And,
                       ast.Sub, ast.UnaryOp, ast.Num, ast.BinOp, ast.Mult, ast.Gt, ast.GtE,
@@ -142,7 +142,7 @@ class Parser(dict):
   providing the `RegisterFunction` method to add or replace functions in this
   module constant.
   """
-  def __init__(self, path=None, templates=(), noparse=False, templateEncoding='utf-8'):
+  def __init__(self, path='.', templates=(), noparse=False, templateEncoding='utf-8'):
     """Initializes a Parser instance.
 
     This sets up the template directory and preloads any templates given.
@@ -205,12 +205,9 @@ class Parser(dict):
     Raises:
       TemplateReadError: When the template file cannot be read
     """
-    if self.template_dir:
-      template_path = os.path.realpath(os.path.join(self.template_dir, location))
-      if os.path.commonprefix((template_path, self.template_dir)) != self.template_dir:
-        raise TemplateReadError('Could not load template %r, not in %r' % (template_path, self.template_dir))
-    else:
-      template_path = location
+    template_path = os.path.realpath(os.path.join(self.template_dir, location))
+    if os.path.commonprefix((template_path, self.template_dir)) != self.template_dir:
+      raise TemplateReadError('Could not load template %r' % template_path)
     try:
       self[name or location] = FileTemplate(template_path, parser=self, encoding=None)
     except IOError:
@@ -574,8 +571,8 @@ class FileTemplate(Template):
       with open(self._file_name, encoding=self.templateEncoding) as templatefile:
         raw_template = templatefile.read()
       super().__init__(raw_template, parser=parser)
-    except (IOError, OSError) as error:
-      raise TemplateReadError('Cannot open: %r %r' % (template_path, error))
+    except (IOError, OSError):
+      raise TemplateReadError('Cannot open: %r' % template_path)
 
   def Parse(self, **kwds):
     """Returns the parsed template as SafeString.
@@ -769,14 +766,15 @@ class TemplateLoop(list):
       @ aliases: *str
         The alias(es) under which the loop variable should be made available.
     """
+    try:
+      tag = TemplateTag.FromString(tag)
+    except TemplateSyntaxError:
+      raise TemplateSyntaxError('Tag %r in {{ for }} loop is not valid' % tag)
+
     super().__init__()
     self.aliases = ''.join(aliases).split(',')
     self.aliascount = len(self.aliases)
-    try:
-      self.tag = TemplateTag.FromString(tag)
-    except TemplateSyntaxError:
-      self.tag = tag
-      raise TemplateSyntaxError('Tag %r in {{ for }} loop is not valid' % tag)
+    self.tag = tag
 
   def __repr__(self):
     return '%s(%s)' % (type(self).__name__, list(self))

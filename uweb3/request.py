@@ -16,7 +16,6 @@ import json
 # uWeb modules
 from . import response
 
-MAX_COOKIE_LENGTH = 4096
 
 class CookieTooBigError(Exception):
   """Error class for cookie when size is bigger than 4096 bytes"""
@@ -58,7 +57,6 @@ class Request:
     self._out_headers = []
     self._out_status = 200
     self._response = None
-    self.charset = "utf-8"
     self.method = self.env['REQUEST_METHOD']
     self.vars = {
         'cookie': {
@@ -67,7 +65,7 @@ class Request:
         },
         'get': QueryArgsDict(parse_qs(self.env['QUERY_STRING'])),
     }
-    self.env['host'] = self.headers.get('Host', '').strip().lower()
+    self.env['host'] = self.headers.get('Host', '')
     if self.method in ('POST', 'PUT', 'DELETE'):
       request_body_size = 0
       try:
@@ -76,66 +74,10 @@ class Request:
         pass
       request_payload = self.env['wsgi.input'].read(request_body_size)
       self.input = request_payload
-      self.env['mimetype'] = self.env.get('CONTENT_TYPE', '').split(';')[0]
-
-      if self.env['mimetype'] == 'application/json':
-        try:
-          self.vars[self.method.lower()] = json.loads(request_payload)
-        except json.JSONDecodeError:
-          pass
-      elif self.env['mimetype'] == 'multipart/form-data':
-        boundary = self.env.get('CONTENT_TYPE', '').split(';')[1].strip().split('=')[1]
-        request_payload = request_payload.split(b'--%s' % boundary.encode(self.charset))
-        self.vars['files'] = {}
-        fields = []
-        for item in request_payload:
-          item = item.lstrip()
-          if item.startswith(b'Content-Disposition: form-data'):
-            nl = 0
-            prevnl = 0
-            itemlength = len(item)
-            name = filename = ContentType = charset = None
-            while nl < itemlength:
-              nl = item.index(b"\n", prevnl+len(b"\n"))
-              header = item[prevnl:nl]
-              prevnl = nl
-              if not header.strip():
-                content = item[nl:].strip()
-                break
-              directives = header.strip().split(b';')
-              for directive in directives:
-                directive = directive.lstrip()
-                if directive.startswith(b'name='):
-                  name = directive.split(b'=', 1)[1][1:-1].decode(self.charset)
-                  if name == '_charset_': # default charset default case
-                    self.charset = item[nl:].strip()
-                    break
-                if directive.startswith(b'filename='):
-                  filename = directive.split(b'=', 1)[1][1:-1].decode(self.charset)
-                if directive.startswith(b'Content-Type='):
-                  ContentType = directive.split(b'=', 1)[1].decode(self.charset).split(";")
-                  if len(ContentType) > 1:
-                    if ContentType[1].startswith('charset'):
-                      charset = ContentType[1].split('=')[1]
-                    if ContentType[0].startswith('content-type'):
-                      contenttype = ContentType[0].split(':')[1].strip()
-            if charset:
-              content = content.decode(charset)
-            elif not ContentType:
-              try:
-                content = content.decode(charset or self.charset)
-              except:
-                pass
-            if filename:
-              self.vars['files'][name] = {'filename': filename,
-                                          'ContentType': ContentType,
-                                          'content': content}
-            else:
-              fields.append('%s=%s' % (name, content))
-        self.vars[self.method.lower()] = IndexedFieldStorage(stringIO.StringIO('&'.join(fields)),
-             environ={'REQUEST_METHOD': 'POST'})
+      if self.env.get('CONTENT_TYPE', '') == 'application/json':
+        self.vars[self.method.lower()] = json.loads(request_payload)
       else:
-        self.vars[self.method.lower()] = IndexedFieldStorage(stringIO.StringIO(request_payload.decode(self.charset)),
+        self.vars[self.method.lower()] = IndexedFieldStorage(stringIO.StringIO(request_payload.decode("utf-8")),
              environ={'REQUEST_METHOD': 'POST'})
 
   @property
@@ -198,18 +140,13 @@ class Request:
         When True, the cookie is only used for http(s) requests, and is not
         accessible through Javascript (DOM).
     """
-    if isinstance(value, (str)) and len(value.encode('utf-8')) >= MAX_COOKIE_LENGTH:
-      raise CookieTooBigError("Cookie is larger than %d bytes and wont be set" % MAX_COOKIE_LENGTH)
+    if isinstance(value, (str)) and len(value.encode('utf-8')) >= 4096:
+      raise CookieTooBigError("Cookie is larger than 4096 bytes and wont be set")
 
     new_cookie = Cookie({key: value})
     if 'max_age' in attrs:
       attrs['max-age'] = attrs.pop('max_age')
     new_cookie[key].update(attrs)
-    if 'samesite' not in attrs and 'secure' not in attrs:
-      try: # only supported from python 3.8 and up
-        attrs['samesite'] = 'Lax' # set default to LAX for no secure (eg, local) sessions.
-      except http.cookies.CookieError:
-        pass
     self.AddHeader('Set-Cookie', new_cookie[key].OutputString())
 
   def AddHeader(self, name, value):
@@ -254,8 +191,8 @@ class IndexedFieldStorage(cgi.FieldStorage):
     indexed = {}
     self.list = []
     for field, value in parse_qsl(self.fp.read(self.length),
-                                  self.keep_blank_values,
-                                  self.strict_parsing):
+                                      self.keep_blank_values,
+                                      self.strict_parsing):
       if self.FIELD_AS_ARRAY.match(str(field)):
         field_group, field_key = self.FIELD_AS_ARRAY.match(field).groups()
         indexed.setdefault(field_group, cgi.MiniFieldStorage(field_group, {}))

@@ -2,15 +2,15 @@
 """uWeb3 model base classes."""
 
 # Standard modules
-import base64
-import configparser
-import datetime
 import os
+import datetime
 import sys
 import hashlib
-import json
+import pickle
 import secrets
+import configparser
 
+from contextlib import contextmanager
 
 
 class Error(Exception):
@@ -114,9 +114,7 @@ class SettingsManager(object):
 
   def Read(self):
     """Reads the config file and populates the options member
-    It uses the mtime to see if any re-reading is required
-
-    Returns True if changes where detected, False if no re-read was needed."""
+    It uses the mtime to see if any re-reading is required"""
     if not self.mtime:
       curtime = os.path.getmtime(self.file_location)
       if self.mtime and self.mtime == curtime:
@@ -326,9 +324,7 @@ class SecureCookie(object):
     if not self.rawcookie:
       raise ValueError("No valid cookie with name `{}` found".format(name))
     self._rawcookie = data
-    hashed = self.__CreateCookieHash(data)
-    self.cookies[name] = hashed
-    self.request.AddCookie(name,  hashed, **attrs)
+    self.request.AddCookie(name,  self.__CreateCookieHash(data), **attrs)
 
   def Delete(self):
     """Deletes cookie based on name
@@ -339,10 +335,12 @@ class SecureCookie(object):
     self._rawcookie = None
 
   def __CreateCookieHash(self, data):
-    data = str(json.dumps(data))
+    hex_string = pickle.dumps(data).hex()
+
+    hashed = (hex_string + self.cookie_salt).encode('utf-8')
     h = hashlib.new(self.HASHTYPE)
-    h.update((data + self.cookie_salt).encode('utf-8'))
-    return '{}+{}'.format(h.hexdigest(), self._encode(data))
+    h.update(hashed)
+    return '{}+{}'.format(h.hexdigest(), hex_string)
 
   def __ValidateCookieHash(self, cookie):
     """Takes a cookie and validates it
@@ -353,35 +351,15 @@ class SecureCookie(object):
     if not cookie:
       return None
     try:
-      data = json.loads(self._decode(cookie.rsplit('+', 1)[1]))
+      data = cookie.rsplit('+', 1)[1]
+      data = pickle.loads(bytes.fromhex(data))
     except Exception:
-      print('Cookie contents could not be loaded as Json')
       return (False, None)
 
     if cookie == self.__CreateCookieHash(data):
       return (True, data)
-    print('Cookie contents could not be verified as hash is different')
     return (False, None)
 
-  @staticmethod
-  def _encode(data):
-    """Encode cookie values per RFC 6265
-    http://www.ietf.org/rfc/rfc6265.txt
-
-    We elect to only encode the control chars for the cookie spec, and not the
-    whole cookie content.
-    """
-    return data.replace('%', "%25").replace('"', "%22").replace(",", "%27").replace('{', "%7B").replace('}', "%7D").replace('=', "%3D")
-
-  @staticmethod
-  def _decode(data):
-    """decode cookie values per RFC 6265
-    http://www.ietf.org/rfc/rfc6265.txt
-
-    We elect to only decode the control chars for the cookie spec, and not the
-    whole cookie content.
-    """
-    return data.replace("%22", '"').replace("%27", ",").replace("%7B", '{').replace("%7D", '}').replace("%3D", '=').replace("%25", '%')
 
 # Record classes have many methods, this is not an actual problem.
 # pylint: disable=R0904

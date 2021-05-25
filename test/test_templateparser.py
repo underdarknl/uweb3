@@ -217,8 +217,8 @@ class TemplateTagIndexed(unittest.TestCase):
     they should however not start and end with _ to avoid access to
     private vars.
     _ is allowed elsewhere in the string."""
-    good_chars = "aAzZ0123-."
-    bad_chars = """ :~!@#$%^&*()+={}\|;':",/<>? """
+    good_chars = "aAzZ0123-"
+    bad_chars = """ :~!@#$%^&*()+={}\|;':",./<>? """
     for index in good_chars:
       tag = {index: 'SUCCESS'}
       template = '[tag:%s]' % index
@@ -229,8 +229,8 @@ class TemplateTagIndexed(unittest.TestCase):
       self.assertEqual(self.tmpl(template).Parse(tag=tag), template)
 
   def testTemplateUnderscoreCharacters(self):
-    """[IndexedTag] Tags indexes may be made of word chars and dashes and dots
-    only, they should however not start and end with _ to avoid access to
+    """[IndexedTag] Tags indexes may be made of word chars and dashes only,
+    they should however not start and end with _ to avoid access to
     private vars.
     _ is allowed elsewhere in the string."""
     # see if objects with underscores are reachable

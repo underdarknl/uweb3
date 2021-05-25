@@ -23,7 +23,7 @@ def loggedin(f):
 def checkxsrf(f):
   """Decorator that checks the user's XSRF.
   The function will compare the XSRF in the user's cookie and in the
-  (post) request.
+  (post) request. Make sure to have xsrf_enabled = True in the config.ini
   """
   def _clear_form_data(pagemaker):
     method = pagemaker.req.method.lower()
@@ -33,8 +33,6 @@ def checkxsrf(f):
     setattr(pagemaker, method, IndexedFieldStorage())
     # Remove the form data from the Request class
     pagemaker.req.vars[method] = IndexedFieldStorage()
-    if 'files' in pagemaker.req.vars:
-      pagemaker.req.vars['files'] = {}
     return pagemaker
 
   def wrapper(*args, **kwargs):
