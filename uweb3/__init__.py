@@ -215,7 +215,7 @@ class uWeb:
     response, pagemaker_instance = self._prepare_response(page_maker, method, args, req)
     req, response = self._handle_static(req, response, pagemaker_instance, method)
 
-    self._logging(req, response)
+    self._logrequest(req, response)
     start_response(response.status, response.headerlist)
     try:
       yield response.text.encode(response.charset)
