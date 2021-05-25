@@ -302,22 +302,36 @@ class uWeb:
 
     return req, response
 
-  def setup_logger(self):
-    logger = logging.getLogger('uweb3_logger')
-    logger.setLevel(logging.INFO)
-    fh = logging.FileHandler(os.path.join(self.executing_path, 'access_logging.log'))
-    fh.setLevel(logging.INFO)
-    logger.addHandler(fh)
-    return logger
+  @property
+  def logger(self):
+    if not self._accesslogger:
+      logger = logging.getLogger('uweb3_logger')
+      logger.setLevel(logging.INFO)
+      logpath = os.path.join(self.executing_path, self.config.options.get('log', {}).get('acces_log', 'access_log.log'))
+      delay = self.config.options.get('log', {}).get('acces_log_delay', False) != False
+      encoding = self.config.options.get('log', {}).get('acces_log_encoding', None)
+      fh = logging.FileHandler(logpath, encoding=encoding, delay=delay)
+      fh.setLevel(logging.INFO)
+      logger.addHandler(fh)
+      self._accesslogger = logger
+    return self._accesslogger
 
-  def _logging(self, req: request.Request, response: Response):
-    """Logs incoming requests to a logfile.
-    This is enabled by default, even if its missing in the config file.
-    """
-    if (self.config.options.get('development', None) and
-        self.config.options['development'].get('access_logging', True) == 'False'):
-      return
+  @property
+  def errorlogger(self):
+    if not self._errorlogger:
+      logger = logging.getLogger('uweb3_exception_logger')
+      logger.setLevel(logging.INFO)
+      logpath = os.path.join(self.executing_path, self.config.options.get('log', {}).get('exception_log', 'uweb3_exceptions.log'))
+      delay = self.config.options.get('log', {}).get('exception_log_delay', False) != False
+      encoding = self.config.options.get('log', {}).get('exception_log_encoding', None)
+      fh = logging.FileHandler(logpath, encoding=encoding, delay=delay)
+      fh.setLevel(logging.INFO)
+      logger.addHandler(fh)
+      self._errorlogger = logger
+    return self._errorlogger
 
+  def logrequest(self, req, response):
+    """Logs incoming requests to the logfile."""
     host = req.env['HTTP_HOST'].split(':')[0]
     date = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
     method = req.method
@@ -329,6 +343,16 @@ class uWeb:
       return self.logger.info(f"""{host} - - [{date}] \"{method} {path} {get} {status} {protocol}\"""")
     data = response.log
     return self.logger.info(f"""{host} - - [{date}] \"{method} {path} {get} {status} {protocol} {data}\"""")
+
+  def logerror(self, req, page_maker, pythonmethod, args):
+    """Logs errors and exceptions to the logfile."""
+    host = req.env['HTTP_HOST'].split(':')[0]
+    date = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+    method = req.method
+    path = req.path
+    protocol = req.env.get('SERVER_PROTOCOL')
+    args = [str(arg) for arg in args]
+    return self.errorlogger.exception(f"""{host} - - [{date}] \"{method} {path} {protocol} {page_maker}.{pythonmethod}({args})\"""")
 
   def get_response(self, page_maker: PageMaker, method: str, args: Any):
     try:
