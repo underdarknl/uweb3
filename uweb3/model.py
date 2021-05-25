@@ -2,13 +2,15 @@
 """uWeb3 model base classes."""
 
 # Standard modules
-import os
+import base64
+import configparser
 import datetime
+import os
 import sys
 import hashlib
 import json
 import secrets
-import configparser
+
 
 
 class Error(Exception):
@@ -324,7 +326,9 @@ class SecureCookie(object):
     if not self.rawcookie:
       raise ValueError("No valid cookie with name `{}` found".format(name))
     self._rawcookie = data
-    self.request.AddCookie(name,  self.__CreateCookieHash(data), **attrs)
+    hashed = self.__CreateCookieHash(data)
+    self.cookies[name] = hashed
+    self.request.AddCookie(name,  hashed, **attrs)
 
   def Delete(self):
     """Deletes cookie based on name
@@ -335,10 +339,10 @@ class SecureCookie(object):
     self._rawcookie = None
 
   def __CreateCookieHash(self, data):
-    datastring = json.dumps(data)
+    data = str(json.dumps(data))
     h = hashlib.new(self.HASHTYPE)
-    h.update((datastring + self.cookie_salt).encode('utf-8'))
-    return '{}+{}'.format(h.hexdigest(), datastring)
+    h.update((data + self.cookie_salt).encode('utf-8'))
+    return '{}+{}'.format(h.hexdigest(), self._encode(data))
 
   def __ValidateCookieHash(self, cookie):
     """Takes a cookie and validates it
@@ -349,14 +353,35 @@ class SecureCookie(object):
     if not cookie:
       return None
     try:
-      data = json.loads(cookie.rsplit('+', 1)[1])
+      data = json.loads(self._decode(cookie.rsplit('+', 1)[1]))
     except Exception:
+      print('Cookie contents could not be loaded as Json')
       return (False, None)
 
     if cookie == self.__CreateCookieHash(data):
       return (True, data)
+    print('Cookie contents could not be verified as hash is different')
     return (False, None)
 
+  @staticmethod
+  def _encode(data):
+    """Encode cookie values per RFC 6265
+    http://www.ietf.org/rfc/rfc6265.txt
+
+    We elect to only encode the control chars for the cookie spec, and not the
+    whole cookie content.
+    """
+    return data.replace('%', "%25").replace('"', "%22").replace(",", "%27").replace('{', "%7B").replace('}', "%7D").replace('=', "%3D")
+
+  @staticmethod
+  def _decode(data):
+    """decode cookie values per RFC 6265
+    http://www.ietf.org/rfc/rfc6265.txt
+
+    We elect to only decode the control chars for the cookie spec, and not the
+    whole cookie content.
+    """
+    return data.replace("%22", '"').replace("%27", ",").replace("%7B", '{').replace("%7D", '}').replace("%3D", '=').replace("%25", '%')
 
 # Record classes have many methods, this is not an actual problem.
 # pylint: disable=R0904
