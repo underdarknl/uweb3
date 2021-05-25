@@ -34,6 +34,7 @@ class Response(object):
     self.charset = kwds.get('charset', 'utf-8')
     self.content = content
     self.httpcode = httpcode
+    self.log = None
     self.headers = headers or {}
     if (';' not in content_type and
         (content_type.startswith('text/') or
