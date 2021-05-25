@@ -180,8 +180,9 @@ class uWeb:
     self.encoders = {
         'text/html': lambda x: HTMLsafestring(x, unsafe=True),
         'text/plain': str,
+        'text/csv': str,
         'application/json': lambda x: JSONsafestring(x, unsafe=True),
-        'default': str,}
+        'default': lambda x: HTMLsafestring(x, unsafe=True) if str(x).endswith('xml') else str(x)}
 
     accesslogging = self.config.options.get('log', {}).get('access_logging', True) != 'False'
     self._logrequest = self.logrequest if accesslogging else lambda *args: None
@@ -251,9 +252,10 @@ class uWeb:
     if hasattr(pagemaker_instance, '_CSPheaders'):
       pagemaker_instance._CSPheaders()
 
-    # provide users with a _PostRequest method to overide too
+    # provide users with a PostRequest method to overide too
     if not static and hasattr(pagemaker_instance, 'PostRequest'):
       response = pagemaker_instance.PostRequest(response) or response
+    pagemaker_instance.CloseRequestConnections()
 
     # we should at least send out something to make sure we are wsgi compliant.
     if not response.text:

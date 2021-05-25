@@ -368,19 +368,23 @@ class BasePageMaker(Base):
     cls.PUBLIC_DIR = os.path.realpath(os.path.join(cls_dir, cls.PUBLIC_DIR))
     cls.TEMPLATE_DIR = os.path.realpath(os.path.join(cls_dir, cls.TEMPLATE_DIR))
 
-  def Static(self, rel_path):
+  def Static(self, rel_path, content_type=None):
     """Provides a handler for static content.
 
     The requested `path` is truncated against a root (removing any uplevels),
     and then added to the working dir + PUBLIC_DIR. If the request file exists,
-    then the requested file is retrieved, its mimetype guessed, and returned
-    to the client performing the request.
+    then the requested file is retrieved, if needed mimetype guessed, and
+    returned to the client performing the request.
 
     Should the requested file not exist, a 404 page is returned instead.
 
     Arguments:
       @ rel_path: str
         The filename relative to the working directory of the webserver.
+      @ content_type: str
+        The content_type we will send to the client, If None it will be guessed
+        based on the extention or by the contents of the file (in that order).
+        If no guess can be made, text/plain will be used.
 
     Returns:
       Page: contains the content and mimetype of the requested file, or a 404
@@ -394,14 +398,17 @@ class BasePageMaker(Base):
     if os.path.commonprefix((abs_path, self.PUBLIC_DIR)) != self.PUBLIC_DIR:
       return self._StaticNotFound(rel_path)
     try:
-      content_type, _encoding = mimetypes.guess_type(abs_path)
+      if not content_type:
+        content_type, _encoding = mimetypes.guess_type(abs_path)
       if not content_type:
         content_type = magic.from_file(abs_path, mime=True)
-        if not content_type:
-          content_type = 'text/plain'
+      if not content_type:
+        content_type = 'text/plain'
       mtime = os.path.getmtime(abs_path)
       length = os.path.getsize(abs_path)
-      with open(abs_path, 'rb') as staticfile:
+      readtype = 'r' if content_type.startswith('text/') else 'rb'
+
+      with open(abs_path, readtype) as staticfile:
         cache_days = self.CACHE_DURATION.get(content_type, 0)
         expires = datetime.datetime.utcnow() + datetime.timedelta(cache_days)
         return response.Response(content=staticfile.read(),
@@ -438,8 +445,9 @@ class BasePageMaker(Base):
     """Raises `ReloadModules`, telling the Handler() to reload its pageclass."""
     raise ReloadModules('Reloading ... ')
 
-  def _PostRequest(self):
-    """Method that gets called after each request"""
+  def CloseRequestConnections(self):
+    """Method that gets called after each request to close 'request' based
+    connections like signedcookieStores"""
     self.connection.PostRequest()
 
 
