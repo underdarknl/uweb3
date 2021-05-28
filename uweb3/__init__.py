@@ -187,7 +187,7 @@ class uWeb:
     accesslogging = self.config.options.get('log', {}).get('access_logging', True) != 'False'
     self._logrequest = self.logrequest if accesslogging else lambda *args: None
     # log exceptions even when development is present, but error_logging was not disabled specifically
-    errorlogging = self.config.options.get('development', {'error_logging': 'False'}).get('error_logging', 'True') == 'True'
+    errorlogging = self.config.options.get('log', {'error_logging': 'False'}).get('error_logging', 'True') == 'True'
     self._logerror = self.logerror if errorlogging else lambda *args: None
 
   def __call__(self, env, start_response):
@@ -232,9 +232,7 @@ class uWeb:
                             executing_path=self.executing_path)
       response = pagemaker_instance.InternalServerError(*sys.exc_info())
 
-    static = False
-    if method == 'Static':
-      static = True
+    static = (method == 'Static')
 
     if not static:
       if not isinstance(response, Response):
