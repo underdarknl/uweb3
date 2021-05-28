@@ -285,7 +285,6 @@ class LoginMixin:
 
 class BasePageMaker(Base):
   """Provides the base pagemaker methods for all the html generators."""
-  _registery = []
 
   # Default Static() handler cache durations, per MIMEtype, in days
   PUBLIC_DIR = 'static'
@@ -435,8 +434,6 @@ class BasePageMaker(Base):
     """Returns a plain text notification about an internal server error."""
     error = 'INTERNAL SERVER ERROR (HTTP 500) DURING PROCESSING OF %r' % (
                 self.req.path)
-    self.req.registry.logger.error(
-        error, exc_info=(exc_type, exc_value, traceback))
     return response.Response(
         content=error, content_type='text/plain', httpcode=500)
 
