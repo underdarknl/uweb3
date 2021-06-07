@@ -288,8 +288,11 @@ class BasePageMaker(Base):
 
   # Default Static() handler cache durations, per MIMEtype, in days
   PUBLIC_DIR = 'static'
-  CACHE_DURATION = MimeTypeDict({'text': 7, 'image': 30, 'application': 7,
-      'text/css': 7})
+  CACHE_DURATION = MimeTypeDict(
+    {'text': 7,
+     'image': 30,
+     'application': 7,
+     'text/css': 7})
 
   def __init__(self,
               req,
@@ -505,7 +508,7 @@ class DebuggerMixin:
 
   def InternalServerError(self, exc_type, exc_value, traceback):
     """Returns a HTTP 500 response with detailed failure analysis."""
-    self.req.registry.logger.error(
+    self.req.errorlogger.error(
         'INTERNAL SERVER ERROR (HTTP 500) DURING PROCESSING OF %r',
         self.req.path, exc_info=(exc_type, exc_value, traceback))
     exception_data = {
@@ -524,7 +527,7 @@ class DebuggerMixin:
           error_template.Parse(**exception_data), httpcode=500)
     except Exception:
       exc_type, exc_value, traceback = sys.exc_info()
-      self.req.registry.logger.critical(
+      self.req.errorlogger.criticals(
           'INTERNAL SERVER ERROR (HTTP 500) DURING PROCESSING OF ERROR PAGE',
           exc_info=(exc_type, exc_value, traceback))
       exception_data['error_for_error'] = True

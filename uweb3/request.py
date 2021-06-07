@@ -17,6 +17,7 @@ import json
 from . import response
 
 MAX_COOKIE_LENGTH = 4096
+MAX_REQUEST_BODY_SIZE = 20000000 #20MB
 
 class CookieTooBigError(Exception):
   """Error class for cookie when size is bigger than 4096 bytes"""
@@ -51,10 +52,9 @@ class Cookie(cookie.SimpleCookie):
 
 
 class Request:
-  def __init__(self, env, registry):
+  def __init__(self, env, logger, errorlogger):
     self.env = env
     self.headers = dict(self.headers_from_env(env))
-    self.registry = registry
     self._out_headers = []
     self._out_status = 200
     self._response = None
@@ -68,20 +68,22 @@ class Request:
         'get': QueryArgsDict(parse_qs(self.env['QUERY_STRING'])),
     }
     self.env['host'] = self.headers.get('Host', '').strip().lower()
+    self.logger = logger
+    self.errorlogger = errorlogger
     if self.method in ('POST', 'PUT', 'DELETE'):
       request_body_size = 0
       try:
         request_body_size = int(self.env.get('CONTENT_LENGTH', 0))
       except Exception:
         pass
-      request_payload = self.env['wsgi.input'].read(request_body_size)
+      request_payload = self.env['wsgi.input'].read(min(request_body_size, MAX_REQUEST_BODY_SIZE))
       self.input = request_payload
       self.env['mimetype'] = self.env.get('CONTENT_TYPE', '').split(';')[0]
 
       if self.env['mimetype'] == 'application/json':
         try:
           self.vars[self.method.lower()] = json.loads(request_payload)
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, ValueError):
           pass
       elif self.env['mimetype'] == 'multipart/form-data':
         boundary = self.env.get('CONTENT_TYPE', '').split(';')[1].strip().split('=')[1]

@@ -39,9 +39,6 @@ class HTTPRequestException(HTTPException):
 class NoRouteError(Error):
   """The server does not know how to route this request"""
 
-class Registry:
-  """Something to hook stuff to"""
-
 
 class Router:
   def __init__(self, page_class):
@@ -173,8 +170,6 @@ class uWeb:
     self._accesslogger = None
     self._errorlogger = None
     self.initial_pagemaker = page_class
-    self.registry = Registry()
-    self.registry.logger = logging.getLogger('root')
     self.router = Router(page_class).router(routes)
     self.setup_routing()
     self.encoders = {
@@ -195,7 +190,7 @@ class uWeb:
     Accepts the WSGI `environment` dictionary and a function to start the
     response and returns a response iterator.
     """
-    req = request.Request(env, self.registry)
+    req = request.Request(env, self.logger, self.errorlogger)
     req.env['REAL_REMOTE_ADDR'] = request.return_real_remote_addr(req.env)
     response = None
     method = '_NotFound'
@@ -284,7 +279,7 @@ class uWeb:
   def errorlogger(self):
     if not self._errorlogger:
       logger = logging.getLogger('uweb3_exception_logger')
-      logger.setLevel(logging.INFO)
+      logger.setLevel(logging.ERROR)
       logpath = os.path.join(self.executing_path, self.config.options.get('log', {}).get('exception_log', 'uweb3_exceptions.log'))
       delay = self.config.options.get('log', {}).get('exception_log_delay', False) != False
       encoding = self.config.options.get('log', {}).get('exception_log_encoding', None)
