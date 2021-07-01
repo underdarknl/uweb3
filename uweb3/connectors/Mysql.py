@@ -11,10 +11,12 @@ class Mysql(Connector):
   def __init__(self, config, options, request, debug=False):
     """Returns a MySQL database connection."""
     self.debug = debug
-    self.options = {'host': 'localhost',
-                   'user': None,
-                   'password': None,
-                   'database': ''}
+    self.options = {
+      'host': 'localhost',
+      'user': None,
+      'password': None,
+      'database': '',
+                   }
     try:
       from ..libs.sqltalk import mysql
       try:
@@ -27,6 +29,7 @@ class Mysql(Connector):
         passwd=self.options.get('password'),
         db=self.options.get('database'),
         charset=self.options.get('charset', 'utf8'),
+        ssl=options.get('ssl'),
         debug=self.debug)
     except Exception as e:
       raise ConnectionError('Connection to "%s" of type "%s" resulted in: %r' % (self.Name(), type(self), e))
