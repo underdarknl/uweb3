@@ -11,12 +11,10 @@ class Mysql(Connector):
   def __init__(self, config, options, request, debug=False):
     """Returns a MySQL database connection."""
     self.debug = debug
-    self.options = {
-      'host': 'localhost',
-      'user': None,
-      'password': None,
-      'database': '',
-                   }
+    self.options = {'host': 'localhost',
+                   'user': None,
+                   'password': None,
+                   'database': ''}
     try:
       from ..libs.sqltalk import mysql
       try:
