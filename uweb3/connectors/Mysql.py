@@ -22,7 +22,7 @@ class Mysql(Connector):
       except KeyError:
         pass
       # SSL support for mysql
-      ssl = self.sslconfig()
+      ssl = self.SSLConfig()
       self.connection = mysql.Connect(
         host=self.options.get('host', 'localhost'),
         user=self.options.get('user'),
@@ -34,7 +34,7 @@ class Mysql(Connector):
     except Exception as e:
       raise ConnectionError('Connection to "%s" of type "%s" resulted in: %r' % (self.Name(), type(self), e))
 
-  def SSLConfig():
+  def SSLConfig(self):
     ssl = None
     if any((self.options.get('ssl_ca'),
             self.options.get('ssl_key'),
