@@ -99,7 +99,6 @@ class Connection(pymysql.connections.Connection):
     autocommit = kwargs.pop('autocommit', None)
     charset = kwargs.pop('charset', 'utf8')
     sql_mode = kwargs.pop('sql_mode', None)
-    # use_unicode = kwargs.pop('use_unicode', False) or bool(charset)
 
     # The following voodoo is necessary to avoid double references that would
     # prevent a connection object from being finalized and collected properly.
@@ -121,13 +120,6 @@ class Connection(pymysql.connections.Connection):
     converts = {}
     conversions = converters.conversions
     self.string_decoder = _GetStringDecoder()
-
-    # if use_unicode:
-    #   decoder = self.string_decoder
-    #   conversions[constants.FIELD_TYPE.STRING] = decoder
-    #   conversions[constants.FIELD_TYPE.VAR_STRING] = decoder
-    #   conversions[constants.FIELD_TYPE.VARCHAR] = decoder
-    #   conversions[constants.FIELD_TYPE.BLOB] = decoder
 
     for key, value in conversions.items():
       if not isinstance(key, int):

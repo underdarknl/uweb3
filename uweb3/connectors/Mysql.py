@@ -27,6 +27,11 @@ class Mysql(Connector):
         passwd=self.options.get('password'),
         db=self.options.get('database'),
         charset=self.options.get('charset', 'utf8'),
+        ssl_ca=self.options.get('ssl_ca'),
+        ssl_cert=self.options.get('ssl_cert'),
+        ssl_key=self.options.get('ssl_key'),
+        ssl_verify_cert=self.options.get('ssl_verify_cert'),
+        ssl_verify_identity=self.options.get('ssl_verify_identity'),
         debug=self.debug)
     except Exception as e:
       raise ConnectionError('Connection to "%s" of type "%s" resulted in: %r' % (self.Name(), type(self), e))
