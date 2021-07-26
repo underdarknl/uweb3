@@ -108,6 +108,7 @@ class LazyTagValueRetrieval:
     """Returns a list with the values of the LazyTagValueRetrieval dict."""
     return list(self.itervalues())
 
+
 EVALWHITELIST = {
         'functions': {"abs": abs, "complex": complex, "min": min, "max": max,
                       "pow": pow, "round": round, "len": len, "type": type,
@@ -119,6 +120,7 @@ EVALWHITELIST = {
                       ast.USub, ast.UAdd, ast.FloorDiv, ast.Mod, ast.In, ast.LShift,
                       ast.RShift, ast.Invert, ast.Call, ast.Name, ast.Compare,
                       ast.Eq, ast.NotEq, ast.Not, ast.Or, ast.BoolOp, ast.Str)}
+
 
 class Parser(dict):
   """A template parser that loads and caches templates and parses them by name.
@@ -155,6 +157,8 @@ class Parser(dict):
       % noparse: Bool ~~ False
         Skip parsing the templates to output, instead return their
         structure and replaced values
+      % templateEncoding: str ~~ utf-8
+        Encoding of the template, used when reading the file.
     """
     super().__init__()
     self.template_dir = path
@@ -208,7 +212,7 @@ class Parser(dict):
     if self.template_dir:
       template_path = os.path.realpath(os.path.join(self.template_dir, location))
       if os.path.commonprefix((template_path, self.template_dir)) != self.template_dir:
-        raise TemplateReadError('Could not load template %r, not in %r' % (template_path, self.template_dir))
+        raise TemplateReadError('Could not load template %r, not in template dir' % template_path)
     else:
       template_path = location
     try:
@@ -306,6 +310,12 @@ class Parser(dict):
 
   @classmethod
   def JITTag(cls, function):
+    """Creates a JITTag instance of the given function
+
+    Arguments:
+      % function: reference
+        Reference to the function
+    """
     return JITTag(function)
 
   def ClearRequestTags(self):
@@ -316,13 +326,27 @@ class Parser(dict):
   def SetTemplateEncoding(self, templateEncoding='utf-8'):
     """Allows the user to set the templateEncoding for this parser instance's
     templates. Any template reads, and reloads will be attempted with this
-    encoding."""
+    encoding.
+
+    Arguments:
+      % templateEncoding: str ~~ utf-8
+        Encoding of the template, used when reading the file.
+    """
     self.templateEncoding = templateEncoding
 
-  def SetEvalWhitelist(self, evalwhitelist=None):
+  def SetEvalWhitelist(self, evalwhitelist=None, append=False):
     """Allows the user to set the Eval Whitelist which limits the python
     operations allowed within this templateParsers Context. These are usually
-    triggered by If/Elif conditions and the like."""
+    triggered by If/Elif conditions and the like.
+
+    Arguments:
+      % evalwhitelist: Dict ~~ None
+        The new Dict of whitelisted eval AST items.
+      % append: bool ~~ False
+        When true, add the new items to the current list, else overwrite.
+    """
+    if append:
+      evalwhitelist = EVALWHITELIST.update(evalwhitelist)
     self.astvisitor = AstVisitor(evalwhitelist)
 
   TemplateReadError = TemplateReadError
@@ -412,19 +436,20 @@ class Template(list):
         raise TemplateSyntaxError('Closed %d scopes too many in "%s"' % (abs(scope_diff), filename or raw_template))
       raise TemplateSyntaxError('TemplateString left %d open scopes in "%s"' % (scope_diff, filename or raw_template))
 
-  def Parse(self, returnRawTemplate=False, **kwds):
+  def Parse(self, **kwds):
     """Returns the parsed template as HTMLsafestring.
 
     The template is parsed by parsing each of its members and combining that.
     """
+    noparse = False
+    if self.parser and self.parser.noparse:
+      noparse = True
+
     htmlsafe = HTMLsafestring('').join(HTMLsafestring(tag.Parse(**kwds)) for tag in self)
     htmlsafe.content_hash = hashlib.md5(htmlsafe.encode()).hexdigest()
-    if returnRawTemplate:
-      raw = HTMLsafestring(self)
-      raw.content_hash = htmlsafe.content_hash
-      return raw
 
-    if self.parser and self.parser.noparse:
+    if noparse:
+
       # Hash the page so that we can compare on the frontend if the html has changed
       htmlsafe.page_hash = hashlib.md5(HTMLsafestring(self).encode()).hexdigest()
       # Hashes the page and the content so we can know if we need to refresh the page on the frontend
@@ -588,9 +613,9 @@ class FileTemplate(Template):
     except TemplateFunctionError as error:
       raise TemplateFunctionError('%s in %s' % (error, self._template_path))
     if self.parser and self.parser.noparse:
-      return {'template': self._templatepath[len(self.parser.template_dir):],
+      return {'template': self._template_path[len(self.parser.template_dir):],
               'replacements': result.tags,
-              'content_hash':result.content_hash,
+              'content_hash': result.content_hash,
               'page_hash': result.page_hash}
     return result
 
