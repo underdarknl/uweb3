@@ -192,7 +192,9 @@ class Base:
     if '__parser' not in self.persistent:
       self.persistent.Set('__parser', templateparser.Parser(
           self.options.get('templates', {}).get('path', self.TEMPLATE_DIR)))
-    return self.persistent.Get('__parser')
+    parser = self.persistent.Get('__parser')
+    parser.noparse = (self.req.headers.get('uweb-noparse', None) == 'true')
+    return parser
 
 
 class WebsocketPageMaker(Base):
@@ -286,8 +288,8 @@ class LoginMixin:
 class BasePageMaker(Base):
   """Provides the base pagemaker methods for all the html generators."""
 
-  # Default Static() handler cache durations, per MIMEtype, in days
   PUBLIC_DIR = 'static'
+  # Default Static() handler cache durations, per MIMEtype, in days
   CACHE_DURATION = MimeTypeDict(
     {'text': 7,
      'image': 30,
