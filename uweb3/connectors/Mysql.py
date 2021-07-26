@@ -21,20 +21,33 @@ class Mysql(Connector):
         self.options = options[self.Name()]
       except KeyError:
         pass
+      # SSL support for mysql
+      ssl = self.sslconfig()
       self.connection = mysql.Connect(
         host=self.options.get('host', 'localhost'),
         user=self.options.get('user'),
         passwd=self.options.get('password'),
         db=self.options.get('database'),
         charset=self.options.get('charset', 'utf8'),
-        ssl_ca=self.options.get('ssl_ca'),
-        ssl_cert=self.options.get('ssl_cert'),
-        ssl_key=self.options.get('ssl_key'),
-        ssl_verify_cert=self.options.get('ssl_verify_cert'),
-        ssl_verify_identity=self.options.get('ssl_verify_identity'),
+        ssl=ssl,
         debug=self.debug)
     except Exception as e:
       raise ConnectionError('Connection to "%s" of type "%s" resulted in: %r' % (self.Name(), type(self), e))
+
+  def SSLConfig():
+    ssl = None
+    if any((self.options.get('ssl_ca'),
+            self.options.get('ssl_key'),
+            self.options.get('ssl_cert'))):
+      ssl = {'ca': self.options.get('ssl_ca'),
+             'capath': self.options.get('ssl_capath'),
+             'check_hostname': self.options.get('ssl_check_hostname')}
+      if 'ssl_cipher' in self.options:
+        ssl['cipher'] = self.options.get('ssl_cipher')
+      if 'ssl_cert' in self.options:
+        ssl['key'] = self.options.get('ssl_key'),
+        ssl['cert'] = self.options.get('ssl_cert')
+    return ssl
 
   def Rollback(self):
     with self.connection as cursor:
