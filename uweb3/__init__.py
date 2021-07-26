@@ -231,9 +231,11 @@ class uWeb:
 
     if not static:
       if not isinstance(response, Response):
-        # print('Upgrade response to Response class: %s' % type(response))
         req.response.text = response
         response = req.response
+
+      if req.headers.get('uweb-noparse', None) == 'true':
+        response.content_type = 'application/json'
 
       if not isinstance(response.text, Basesafestring):
         # make sure we always output Safe Strings for our known content-types
