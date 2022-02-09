@@ -69,14 +69,6 @@ database = 'dbname'
 ```
 To access your database connection simply use the connection attribute in any class that inherits from PageMaker.
 
-# Config settings
-If you are working on µWeb3 core make sure to enable the following setting in the config:
-```
-[development]
-dev = True
-```
-This makes sure that µWeb3 restarts every time you modify something in the core of the framework aswell.
-
 # Routing
 The default way to create new routes in µWeb3 is to create a folder called routes.
 In the routes folder create your pagemaker class of choice, the name doesn't matter as long as it inherits from PageMaker.

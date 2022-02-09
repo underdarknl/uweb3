@@ -20,7 +20,7 @@ from . import pagemaker, request
 
 # Package classes
 from .response import Response, Redirect
-from .pagemaker import PageMaker, decorators, WebsocketPageMaker, DebuggingPageMaker, LoginMixin
+from .pagemaker import PageMaker, decorators, WebsocketPageMaker, DebuggingPageMaker, LoginMixin, SparseAsyncPages
 from .model import SettingsManager
 from .libs.safestring import HTMLsafestring, JSONsafestring, JsonEncoder, Basesafestring
 
@@ -212,9 +212,14 @@ class uWeb:
                             executing_path=self.executing_path)
       # specifically call _PreRequest as promised in documentation
       if hasattr(pagemaker_instance, '_PreRequest'):
-        pagemaker_instance = pagemaker_instance._PreRequest() or pagemaker_instance
-
-      response = self.get_response(req, pagemaker_instance, method, args)
+        try:
+          # we handle the preRequest seperately because otherwise we cannot show debugging info
+          pagemaker_instance = pagemaker_instance._PreRequest() or pagemaker_instance
+        except Exception:
+          # lets use the intended pagemaker, but skip prerequest as it crashes, this enabled rich debugging info if enabled.
+          response = pagemaker_instance.InternalServerError(*sys.exc_info())
+      if not response:
+        response = self.get_response(req, pagemaker_instance, method, args)
     except Exception:
       # something broke in our pagemaker_instance, lets fall back to the most basic pagemaker for error output
       if hasattr(pagemaker_instance, '_ConnectionRollback'):
@@ -234,7 +239,7 @@ class uWeb:
         req.response.text = response
         response = req.response
 
-      if req.headers.get('uweb-noparse', None) == 'true':
+      if req.noparse:
         response.content_type = 'application/json'
 
       if not isinstance(response.text, Basesafestring):

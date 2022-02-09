@@ -70,6 +70,8 @@ class Request:
     self.env['host'] = self.headers.get('Host', '').strip().lower()
     self.logger = logger
     self.errorlogger = errorlogger
+    self.noparse = self.headers.get('accept', '').lower() == 'application/json'
+
     if self.method in ('POST', 'PUT', 'DELETE'):
       request_body_size = 0
       try:
