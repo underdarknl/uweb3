@@ -192,7 +192,9 @@ class Base:
     if '__parser' not in self.persistent:
       self.persistent.Set('__parser', templateparser.Parser(
           self.options.get('templates', {}).get('path', self.TEMPLATE_DIR)))
-    return self.persistent.Get('__parser')
+    parser = self.persistent.Get('__parser')
+    parser.dictoutput = self.req.noparse
+    return parser
 
 
 class WebsocketPageMaker(Base):
@@ -286,8 +288,8 @@ class LoginMixin:
 class BasePageMaker(Base):
   """Provides the base pagemaker methods for all the html generators."""
 
-  # Default Static() handler cache durations, per MIMEtype, in days
   PUBLIC_DIR = 'static'
+  # Default Static() handler cache durations, per MIMEtype, in days
   CACHE_DURATION = MimeTypeDict(
     {'text': 7,
      'image': 30,
@@ -435,6 +437,9 @@ class BasePageMaker(Base):
 
   def InternalServerError(self, exc_type, exc_value, traceback):
     """Returns a plain text notification about an internal server error."""
+    self.req.errorlogger.error(
+        'INTERNAL SERVER ERROR (HTTP 500) DURING PROCESSING OF %r',
+        self.req.path, exc_info=(exc_type, exc_value, traceback))
     error = 'INTERNAL SERVER ERROR (HTTP 500) DURING PROCESSING OF %r' % (
                 self.req.path)
     return response.Response(
@@ -527,7 +532,7 @@ class DebuggerMixin:
           error_template.Parse(**exception_data), httpcode=500)
     except Exception:
       exc_type, exc_value, traceback = sys.exc_info()
-      self.req.errorlogger.criticals(
+      self.req.errorlogger.error(
           'INTERNAL SERVER ERROR (HTTP 500) DURING PROCESSING OF ERROR PAGE',
           exc_info=(exc_type, exc_value, traceback))
       exception_data['error_for_error'] = True
@@ -600,6 +605,32 @@ class CSPMixin:
     csp = '; '.join(
         "%s %s" % (key, ' '.join(value)) for key, value in self._csp.items())
     self.req.AddHeader('Content-Security-Policy', csp)
+
+
+class SparseAsyncPages(BasePageMaker):
+  """This mixin provides the template download functionality for client side
+  parsing based on the sparse json output functionality in the templateparser.
+
+  The client is to download the template, (and cache them themselves, and do
+  replacements on their own based on the sparse page output they received.
+  """
+  def SparseTemplateProvider(self, content_hash, path):
+    """This provides the client with the raw template as used by the server side
+    templateparser."""
+    try:
+      template = self.parser[path]
+    except IOError:
+      return response.Response("This template does not exists",
+                               content_type='text/plain', httpcode=404)
+    if template._template_hash != content_hash:
+      return response.Response("This template does not exists anymore. %s %s" % (template._template_hash, content_hash),
+                               content_type='text/plain', httpcode=404)
+    return response.Response(template, content_type='text/plain')
+
+  def SparseRenderedProvider(self):
+    return response.Response(templateparser.FileTemplate(os.path.join(
+        os.path.dirname(__file__), 'sparserenderer.js')),
+        content_type='application/javascript')
 
 # ##############################################################################
 # Classes for public use (wildcard import)

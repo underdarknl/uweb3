@@ -985,5 +985,136 @@ class TemplateReloading(unittest.TestCase):
     self.assertEqual(self.parser[self.simple].Parse(), self.simple_raw)
 
 
+class DictTemplateTagBasic(unittest.TestCase):
+  """Tests validity and parsing of simple tags with dict output."""
+  def setUp(self):
+    """Makes the Template class available on the instance."""
+    self.tmpl = templateparser.Template
+
+  def testTaglessTemplate(self):
+    """[BasicTag] Templates without tags get returned verbatim as SafeString"""
+    template = 'Template without any tags'
+    output = {'tags': {}, 'templatecontent': template}
+    self.assertEqual(self.tmpl(template, dictoutput=True).Parse(), output)
+
+  def testSingleTagTemplate(self):
+    """[BasicTag] Templates with basic tags get returned proper"""
+    template = 'Template with [single] tag'
+    output = {'tags': {
+                  '[single]': 'just one'
+                },
+              'templatecontent': template}
+    result = self.tmpl(template, dictoutput=True).Parse(single='just one')
+    self.assertEqual(result, output)
+
+  def testSaveTagTemplate(self):
+    """[BasicTag] Templates with basic tags get returned properly when replacement is already html safe"""
+    template = 'Template with just [single] tag'
+    output = {'tags': {
+                  '[single]': '<b>a safe</b>'
+                },
+              'templatecontent': template}
+    result = self.tmpl(template, dictoutput=True).Parse(single=templateparser.HTMLsafestring('<b>a safe</b>'))
+    self.assertEqual(result, output)
+
+  def testUnsaveTagTemplate(self):
+    """[BasicTag] Templates with basic tags get returned properly when replacement is not html safe"""
+    template = 'Template with just [single] tag'
+    output = {'tags': {
+                  '[single]': '&lt;b&gt;an unsafe&lt;/b&gt;'
+                },
+              'templatecontent': template}
+    result = self.tmpl(template, dictoutput=True).Parse(single='<b>an unsafe</b>')
+    self.assertEqual(result, output)
+
+  def testCasedTag(self):
+    """[BasicTag] Tag names are case-sensitive"""
+    template = 'The parser has no trouble with [cAsE] [case].'
+    output = {'tags': {
+                  '[cAsE]': 'mixed',
+                  '[case]': '[case]'
+                },
+              'templatecontent': template}
+
+    result = self.tmpl(template, dictoutput=True).Parse(cAsE='mixed')
+    self.assertEqual(result, output)
+
+  def testUnderscoredTag(self):
+    """[BasicTag] Tag names may contain underscores"""
+    template = 'The template may contain [under_scored] tags.'
+    output = {'tags': {
+                  '[under_scored]': 'underscored'
+                },
+              'templatecontent': template}
+    result = self.tmpl(template, dictoutput=True).Parse(under_scored='underscored')
+    self.assertEqual(result, output)
+
+  def testMultiTagTemplate(self):
+    """[BasicTag] Multiple instances of a tag will all be replaced"""
+    template = '[adjective] [noun] are better than other [noun].'
+    output = {'tags': {
+                  '[noun]': 'cows',
+                  '[adjective]': 'Beefy'
+                },
+              'templatecontent': template}
+    result = self.tmpl(template, dictoutput=True).Parse(noun='cows', adjective='Beefy')
+    self.assertEqual(result, output)
+
+  def testEmptyOrWhitespace(self):
+    """[BasicTag] Empty tags or tags containing whitespace aren't actual tags"""
+    template = 'This [is a] broken [] template, really'
+    output = {'tags': {},
+              'templatecontent': template}
+    result = self.tmpl(template, dictoutput=True).Parse(**{'is a': 'HORRIBLY', '': ', NASTY'})
+    self.assertEqual(result, output)
+
+  def testBadCharacterTags(self):
+    """[BasicTag] Tags containing bad characters are not considered tags"""
+    bad_chars = """ :~!@#$%^&*()+-={}\|;':",./<>? """
+    template = ''.join('[%s] [check]' % char for char in bad_chars)
+    tags = {'[check]': '..'}
+    replaces = {char: 'FAIL' for char in bad_chars}
+    replaces['check'] = '..'
+    output = {'tags': tags,
+              'templatecontent': template}
+    self.assertEqual(self.tmpl(template, dictoutput=True).Parse(**replaces), output)
+
+  def testUnreplacedTag(self):
+    """[BasicTag] Template tags without replacement are returned verbatim"""
+    template = 'Template with an [undefined] tag.'
+    output = {'tags': {},
+              'templatecontent': template}
+    self.assertEqual(self.tmpl(template, dictoutput=True).Parse(), output)
+
+  def testUnreplacedTag(self):
+    """[BasicTag] Access to private members is not allowed"""
+    template = 'Template with an [private.__class__] tag.'
+    output = {'tags': {},
+              'templatecontent': template}
+    self.assertEqual(self.tmpl(template, dictoutput=True).Parse(), output)
+
+  def testBracketsInsideTag(self):
+    """[BasicTag] Innermost bracket pair are the tag's delimiters"""
+    template = 'Template tags may not contain [[spam][eggs]].'
+    expected = 'Template tags may not contain [opening or closing brackets].'
+    result = self.tmpl(template, dictoutput=True).Parse(
+        **{'[spam': 'EPIC', 'eggs]': 'FAIL', 'spam][eggs': 'EPIC FAIL',
+           'spam': 'opening or ', 'eggs': 'closing brackets'})
+    output = {'tags': {
+                '[spam]': 'opening or ',
+                '[eggs]': 'closing brackets'
+              },
+              'templatecontent': template}
+    self.assertEqual(output, result)
+
+  def testTemplateInterpolationSyntax(self):
+    """[BasicTag] Templates support string interpolation of dicts"""
+    template = 'Hello [name]'
+    output = {'tags': {
+                  '[name]': 'Bob',
+                },
+              'templatecontent': template}
+    self.assertEqual(self.tmpl(template, dictoutput=True) % {'name': 'Bob'}, output)
+
 if __name__ == '__main__':
   unittest.main(testRunner=unittest.TextTestRunner(verbosity=2))

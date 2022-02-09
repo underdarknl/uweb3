@@ -134,7 +134,7 @@ class ConnectionManager(object):
       except (KeyError, AttributeError, ValueError):
         pass
       requestdepth = requestdepth + 1
-    raise TypeError('No request could be found in call Stack.')
+    raise TypeError('No request could be found in call Stack or no "model" connections are present.')
 
   def __enter__(self):
     """Proxies the transaction to the underlying relevant connection."""
