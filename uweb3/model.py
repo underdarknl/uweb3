@@ -1075,7 +1075,7 @@ class Record(BaseRecord):
       if result.insertid:
         self._record[self._PRIMARY_KEY] = self.key = result.insertid
     except cursor.OperationalError as err_obj:
-      if err_obj[0] == 1054:
+      if err_obj.args[0] == 1054:
         raise BadFieldError(err_obj[1])
       raise DatabaseError(err_obj)
 
@@ -1097,7 +1097,7 @@ class Record(BaseRecord):
     except KeyError:
       raise Error('Cannot update record without pre-existing primary key.')
     except cursor.OperationalError as err_obj:
-      if err_obj[0] == 1054:
+      if err_obj.args[0] == 1054:
         raise BadFieldError(err_obj[1])
       raise DatabaseError(err_obj)
 
