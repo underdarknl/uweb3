@@ -234,11 +234,11 @@ class Parser(dict):
     Returns:
       str: The template with relevant tags replaced by the replacement dict.
     """
-    if self.tags:
-      replacements.update(self.tags)
-    if self.requesttags:
-      replacements.update(self.requesttags)
-    return self[template].Parse(**replacements)
+    output = {}
+    output.update(self.tags)
+    output.update(self.requesttags)
+    output.update(replacements)
+    return self[template].Parse(**output)
 
   def ParseString(self, template, **replacements):
     """Returns the given `template` with its tags replaced by **replacements.
@@ -250,15 +250,14 @@ class Parser(dict):
       @ replacements: dict
         Dictionary of replacement objects. Tags are looked up in here.
 
-
     Returns:
       str: template with replaced tags.
     """
-    if self.tags:
-      replacements.update(self.tags)
-    if self.requesttags:
-      replacements.update(self.requesttags)
-    return Template(template, parser=self).Parse(**replacements)
+    output = {}
+    output.update(self.tags)
+    output.update(self.requesttags)
+    output.update(replacements)
+    return Template(template, parser=self).Parse(**output)
 
   @staticmethod
   def RegisterFunction(name, function):
