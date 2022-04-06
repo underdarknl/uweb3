@@ -234,10 +234,8 @@ class Parser(dict):
     Returns:
       str: The template with relevant tags replaced by the replacement dict.
     """
-    if self.tags:
-      replacements.update(self.tags)
-    if self.requesttags:
-      replacements.update(self.requesttags)
+    replacements = add_missing_pairs(replacements, self.tags)
+    replacements = add_missing_pairs(replacements, self.requesttags)
     return self[template].Parse(**replacements)
 
   def ParseString(self, template, **replacements):
@@ -254,10 +252,8 @@ class Parser(dict):
     Returns:
       str: template with replaced tags.
     """
-    if self.tags:
-      replacements.update(self.tags)
-    if self.requesttags:
-      replacements.update(self.requesttags)
+    replacements = add_missing_pairs(replacements, self.tags)
+    replacements = add_missing_pairs(replacements, self.requesttags)
     return Template(template, parser=self).Parse(**replacements)
 
   @staticmethod
@@ -1127,6 +1123,12 @@ def HashContent(string):
   users to download raw templates on their own which they know the hash for."""
   return hashlib.sha256(string.encode('utf-8')).hexdigest()
 
+def add_missing_pairs(replacements, tags):
+  """Helper function that only adds missing key, value pairs to given dict"""
+  for key, value in tags.items():
+    if key not in replacements:
+      replacements[key] = value
+  return replacements
 
 TAG_FUNCTIONS = {
     'default': lambda d: HTMLsafestring('') + d,
