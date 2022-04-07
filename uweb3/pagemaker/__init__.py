@@ -17,6 +17,7 @@ from pymysql import Error as pymysqlerr
 
 
 import uweb3
+from uweb3.request import IndexedFieldStorage
 from ..connections import ConnectionManager
 from .. import response, templateparser
 
@@ -316,9 +317,9 @@ class BasePageMaker(Base):
     self.req = req
     self.cookies = req.vars['cookie']
     self.get = req.vars['get']
-    self.post = req.vars['post'] if 'post' in req.vars else {}
-    self.put = req.vars['put'] if 'put' in req.vars else {}
-    self.delete = req.vars['delete'] if 'delete' in req.vars else {}
+    self.post = req.vars['post'] if 'post' in req.vars else IndexedFieldStorage()
+    self.put = req.vars['put'] if 'put' in req.vars else IndexedFieldStorage()
+    self.delete = req.vars['delete'] if 'delete' in req.vars else IndexedFieldStorage()
     self.files = req.vars['files'] if 'files' in req.vars else {}
     self.config = config or None
     self.options = config.options if config else {}
