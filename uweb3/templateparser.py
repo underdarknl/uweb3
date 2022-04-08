@@ -119,7 +119,7 @@ EVALWHITELIST = {
                       ast.Div, ast.Pow, ast.BitOr, ast.BitAnd, ast.BitXor, ast.Lt, ast.LtE,
                       ast.USub, ast.UAdd, ast.FloorDiv, ast.Mod, ast.In, ast.LShift,
                       ast.RShift, ast.Invert, ast.Call, ast.Name, ast.Compare,
-                      ast.Eq, ast.NotEq, ast.Not, ast.Or, ast.BoolOp, ast.Str, ast.Constant)}
+                      ast.Eq, ast.NotEq, ast.Not, ast.Or, ast.BoolOp, ast.Str, ast.Constant, ast.IsNot)}
 
 
 class Parser(dict):
