@@ -519,7 +519,7 @@ class Template(list):
     self._StartScope(TemplateComment(' '.join(nodes),
         self.parser.astvisitor if self.parser else AstVisitor(EVALWHITELIST)))
 
-  def _TemplateConstructEndcomment(self, *nodes):
+  def _TemplateConstructEndcomment(self):
     self._CloseScope(TemplateComment)
 
   def _TemplateConstructIf(self, *nodes):
