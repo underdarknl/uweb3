@@ -70,6 +70,12 @@ class Router:
       page_maker = None
       for pm in self.pagemakers:
         # Check if the page_maker has the method/handler we are looking for
+        try:
+          page_maker = details[0].__globals__[details[0].__qualname__.split('.')[0]]
+          break
+        except:
+          pass
+
         if hasattr(pm, details[0]):
           page_maker = pm
           break
@@ -330,7 +336,11 @@ class uWeb:
         # We're specifically calling _StaticPostInit here as promised in documentation, seperate from the regular PostInit to keep things fast for static pages
         page_maker._StaticPostInit()
 
+
       # pylint: enable=W0212
+      if not isinstance(method, str):
+        return method(page_maker, *args)
+
       return getattr(page_maker, method)(*args)
     except pagemaker.ReloadModules as message:
       reload_message = reload(sys.modules[self.initial_pagemaker.__module__])
