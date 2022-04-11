@@ -515,6 +515,13 @@ class Template(list):
     """Processing for {{ endfor }} template syntax."""
     self._CloseScope(TemplateLoop)
 
+  def _TemplateConstructComment(self, *nodes):
+    self._StartScope(TemplateComment(' '.join(nodes),
+        self.parser.astvisitor if self.parser else AstVisitor(EVALWHITELIST)))
+
+  def _TemplateConstructEndcomment(self):
+    self._CloseScope(TemplateComment)
+
   def _TemplateConstructIf(self, *nodes):
     """Processing for {{ if }} template syntax."""
     self._StartScope(TemplateConditional(' '.join(nodes),
@@ -644,6 +651,18 @@ class FileTemplate(Template):
       # File cannot be stat'd or read. No longer exists or we lack permissions.
       # We shouldn't error in this case, but carry on with the template we have.
       pass
+
+
+class TemplateComment(object):
+  def __init__(self, expr, astvisitor):
+    self.default = []
+    self.astvisitor = astvisitor
+
+  def append(self, part):
+    self.default.append(part)
+
+  def Parse(self, **kwds):
+    return ''
 
 
 class TemplateConditional(object):
