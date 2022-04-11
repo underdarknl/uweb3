@@ -177,7 +177,9 @@ class uWeb:
         'text/plain': str,
         'text/csv': str,
         'application/json': lambda x: JSONsafestring(x, unsafe=True),
-        'default': lambda x: HTMLsafestring(x, unsafe=True) if str(x).endswith('xml') else str(x)}
+        'application/xml': lambda x: HTMLsafestring(x, unsafe=True),
+        'default': bytes,
+        }
 
     accesslogging = self.config.options.get('log', {}).get('access_logging', True) != 'False'
     self._logrequest = self.logrequest if accesslogging else lambda *args: None
@@ -244,7 +246,8 @@ class uWeb:
 
       if not isinstance(response.text, Basesafestring):
         # make sure we always output Safe Strings for our known content-types
-        encoder = self.encoders.get(response.clean_content_type(), self.encoders['default'])
+        clean_content_type = response.clean_content_type()
+        encoder = self.encoders.get(clean_content_type, self.encoders['application/xml'] if str(clean_content_type).endswith('xml') else self.encoders['default'])
         response.text = encoder(response.text)
 
     # CSP might be unneeded for some static content,
