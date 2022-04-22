@@ -136,6 +136,9 @@ class ConnectionManager(object):
       requestdepth = requestdepth + 1
     raise TypeError('No request could be found in call Stack or no "model" connections are present.')
 
+  def __call__(self, *args, **kwargs):
+    return self.RelevantConnection().__call__(*args, **kwargs)
+
   def __enter__(self):
     """Proxies the transaction to the underlying relevant connection."""
     return self.RelevantConnection().__enter__()

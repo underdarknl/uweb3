@@ -816,8 +816,8 @@ class Record(BaseRecord):
       return None
     elif not isinstance(value, BaseRecord):
       if field in self._FOREIGN_RELATIONS:
-         value = self._LoadUsingForeignRelations(
-            self._FOREIGN_RELATIONS[field], field, value)
+        value = self._LoadUsingForeignRelations(
+           self._FOREIGN_RELATIONS[field], field, value)
       elif field == self.TableName():
         return value
       elif field in self._SUBTYPES:
@@ -1129,14 +1129,24 @@ class Record(BaseRecord):
   # Public methods for creation, deletion and storing Record objects.
   #
   @classmethod
-  def Create(cls, connection, record):
+  def Create(cls, connection, record, autocommit=True):
     record = cls(connection, record, run_init_hook=False)
-    with connection as cursor:
+    with connection(
+      autocommit=autocommit
+    ) as cursor:
       # Accessing protected members of a foreign class.
       # pylint: disable=W0212
       record._PreCreate(cursor)
       record._RecordCreate(cursor)
       record._PostCreate(cursor)
+    return record
+
+  @classmethod
+  def CreateWithinTransaction(cls, cursor, record):
+    record = cls(cursor, record, run_init_hook=False)
+    record._PreCreate(cursor)
+    record._RecordCreate(cursor)
+    record._PostCreate(cursor)
     return record
 
   @classmethod
@@ -1624,7 +1634,7 @@ def RecordTableNames():
     # Pylint mistakenly believes there is no method __subclasses__
     # pylint: disable=E1101
     for sub in cls.__subclasses__():
-    # pylint: enable=E1101
+      # pylint: enable=E1101
       if sub not in seen:
         seen.add(sub)
         yield sub
