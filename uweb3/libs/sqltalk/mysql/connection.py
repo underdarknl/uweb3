@@ -191,6 +191,14 @@ class Connection(pymysql.connections.Connection):
             'Transaction committed (server: %r).', self.get_host_info())
     self.lock.release()
 
+  def rollback(self):
+    super().rollback()
+    if self.debug:
+      self.logger.exception(
+          'The transaction was rolled back. '
+          'Server: %s\nQueries in transaction (last one triggered):\n\n%s',
+          self.get_host_info(), '\n\n'.join(self.queries))
+
   def CurrentDatabase(self):
     """Return the name of the currently used database"""
     return self.Query('SELECT DATABASE()')[0]
