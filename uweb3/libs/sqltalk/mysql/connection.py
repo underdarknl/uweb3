@@ -190,6 +190,10 @@ class Connection(pymysql.connections.Connection):
                             self.get_host_info())
     self.lock.release()
 
+  def commit(self):
+    super().commit()
+    del self.queries[:]
+
   def rollback(self):
     super().rollback()
     if self.debug:
