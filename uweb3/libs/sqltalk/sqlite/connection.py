@@ -34,11 +34,6 @@ class Connection(sqlite3.Connection):
     self.autocommit_mode = kwds.pop('autocommit', True)
     sqlite3.Connection.__init__(self, *args, **kwds)
 
-
-  def __call__(self, autocommit=True):
-    self.autocommit_mode = autocommit
-    return self
-
   def __enter__(self):
     """Starts a transaction."""
     self.logger.debug('Beginning new transaction.')

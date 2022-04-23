@@ -93,6 +93,7 @@ class Connection(pymysql.connections.Connection):
     else:
       self.debug = False
       self.logger.setLevel(logging.WARNING)
+
     if kwargs.pop('disable_log', False):
       self.logger.disable_logger = True
 
