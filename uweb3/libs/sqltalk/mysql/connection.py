@@ -157,10 +157,6 @@ class Connection(pymysql.connections.Connection):
     else:
       self.autocommit_mode = not self.transactional
 
-  def __call__(self, autocommit=True):
-    self.autocommit_mode = autocommit
-    return self
-
   def __enter__(self, test=None):
     """Refreshes the connection and returns a cursor, starting a transaction."""
     if self.lock.acquire():  # This will block when the lock is in use. In normal situations this should never happen.

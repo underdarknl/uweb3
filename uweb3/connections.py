@@ -136,9 +136,6 @@ class ConnectionManager(object):
       requestdepth = requestdepth + 1
     raise TypeError('No request could be found in call Stack or no "model" connections are present.')
 
-  def __call__(self, *args, **kwargs):
-    return self.RelevantConnection().__call__(*args, **kwargs)
-
   def __enter__(self):
     """Proxies the transaction to the underlying relevant connection."""
     return self.RelevantConnection().__enter__()
@@ -170,6 +167,15 @@ class ConnectionManager(object):
         if (hasattr(self.__connections[classname], 'PERSISTENT')
             and not self.__connections[classname].PERSISTENT)
     ]
+    cleanups = []
+    for classname in self.__connections:
+      if (hasattr(self.__connections[classname], 'PERSISTENT') and not self.__connections[classname].PERSISTENT):
+        cleanups.append(classname)
+      else:
+        connector = self.__connections[classname]
+        if len(connector.connection.queries) != 0:
+          connector.Rollback()
+
     for classname in cleanups:
       try:
         self.__connections[classname].Disconnect()
