@@ -50,8 +50,12 @@ class Mysql(Connector):
     return ssl
 
   def Rollback(self):
+    if self.debug:
+      print('Rolling back uncommited transaction on Mysql connector')
+
     with self.connection as cursor:
-      return cursor.Execute("ROLLBACK")
+      return cursor.rollback()
+      # return cursor.Execute("ROLLBACK")
 
   def Disconnect(self):
     """Closes the MySQL connection."""
