@@ -165,7 +165,8 @@ class Connection(pymysql.connections.Connection):
     if self.lock.acquire(
     ):  # This will block when the lock is in use. In normal situations this should never happen.
       self.counter_transactions += 1
-      del self.queries[:]
+      if self.autocommit_mode:
+        del self.queries[:]
       self._SetAutocommitState(self.autocommit_mode)
       self.StartTransactionTimer()
       return cursor.Cursor(self)
