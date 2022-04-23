@@ -191,7 +191,9 @@ class SecureCookie(object):
   def __init__(self, connection):
     """Create a new SecureCookie instance."""
     self.connection = connection
-    self.request, self.cookies, self.cookie_salt = self.connection
+    self.request = self.connection.request
+    self.cookies = self.connection.cookies
+    self.cookie_salt = self.connection.cookie_salt
     self.debug = self.connection.debug
     self._rawcookie = None
     if self.debug:
@@ -273,7 +275,9 @@ class SecureCookie(object):
       ValueError: When cookie with name already exists
     """
     cls.connection = connection
-    cls.request, cls.cookies, cls.cookie_salt = connection
+    cls.request = connection.request
+    cls.cookies = connection.cookies
+    cls.cookie_salt = connection.cookie_salt
     name = cls.TableName()
     cls._rawcookie = data
 
