@@ -158,7 +158,7 @@ class Connection(pymysql.connections.Connection):
       self.autocommit_mode = not self.transactional
 
   def __call__(self, autocommit=True):
-    self.autocommit = autocommit
+    self.autocommit_mode = autocommit
     return self
 
   def __enter__(self, test=None):
@@ -184,7 +184,7 @@ class Connection(pymysql.connections.Connection):
             self.get_host_info(),
             '\n\n'.join(self.queries))
     else:
-      if self.autocommit:
+      if self.autocommit_mode:
         self.commit()
       if self.debug:
         self.logger.debug(
