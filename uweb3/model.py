@@ -1129,11 +1129,9 @@ class Record(BaseRecord):
   # Public methods for creation, deletion and storing Record objects.
   #
   @classmethod
-  def Create(cls, connection, record, autocommit=True):
+  def Create(cls, connection, record):
     record = cls(connection, record, run_init_hook=False)
-    with connection(
-      autocommit=autocommit
-    ) as cursor:
+    with connection as cursor:
       # Accessing protected members of a foreign class.
       # pylint: disable=W0212
       record._PreCreate(cursor)
