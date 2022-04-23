@@ -97,7 +97,7 @@ class Connection(pymysql.connections.Connection):
     if kwargs.pop('disable_log', False):
       self.logger.disable_logger = True
 
-    autocommit = kwargs.pop('autocommit', None)
+    autocommit = kwargs.pop('autocommit', True)
     charset = kwargs.pop('charset', 'utf8')
     sql_mode = kwargs.pop('sql_mode', None)
 
