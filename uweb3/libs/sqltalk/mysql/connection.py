@@ -93,6 +93,7 @@ class Connection(pymysql.connections.Connection):
     else:
       self.debug = False
       self.logger.setLevel(logging.WARNING)
+
     if kwargs.pop('disable_log', False):
       self.logger.disable_logger = True
 
@@ -111,9 +112,11 @@ class Connection(pymysql.connections.Connection):
     #   return UnicodeLiteral
 
     def _GetStringDecoder():
+
       def StringDecoder(string):
         """Returns the unicode codepoints for an encoded bytestream."""
         return string.decode(db.charset)
+
       return StringDecoder
 
     encoders = {}
@@ -159,7 +162,8 @@ class Connection(pymysql.connections.Connection):
 
   def __enter__(self):
     """Refreshes the connection and returns a cursor, starting a transaction."""
-    if self.lock.acquire():  # This will block when the lock is in use. In normal situations this should never happen.
+    if self.lock.acquire(
+    ):  # This will block when the lock is in use. In normal situations this should never happen.
       self.counter_transactions += 1
       del self.queries[:]
       self._SetAutocommitState(self.autocommit_mode)
@@ -177,14 +181,22 @@ class Connection(pymysql.connections.Connection):
         self.logger.exception(
             'The transaction was rolled back after an exception.\n'
             'Server: %s\nQueries in transaction (last one triggered):\n\n%s',
-            self.get_host_info(),
-            '\n\n'.join(self.queries))
+            self.get_host_info(), '\n\n'.join(self.queries))
     else:
-      self.commit()
-      if self.debug:
-        self.logger.debug(
-            'Transaction committed (server: %r).', self.get_host_info())
+      if self.autocommit_mode:
+        self.commit()
+        if self.debug:
+          self.logger.debug('Transaction committed (server: %r).',
+                            self.get_host_info())
     self.lock.release()
+
+  def rollback(self):
+    super().rollback()
+    if self.debug:
+      self.logger.exception(
+          'The transaction was rolled back. '
+          'Server: %s\nQueries in transaction (last one triggered):\n\n%s',
+          self.get_host_info(), '\n\n'.join(self.queries))
 
   def CurrentDatabase(self):
     """Return the name of the currently used database"""
@@ -203,7 +215,8 @@ class Connection(pymysql.connections.Connection):
       fields = '.'.join('`%s`' % f.replace('`', '``') for f in field.split('.'))
       return fields.replace('`*`', '*')
     elif not multiple and isinstance(field, tuple):
-      return '%s as %s' % (self.EscapeField(field[0]), self.EscapeField(field[1]))
+      return '%s as %s' % (self.EscapeField(field[0]), self.EscapeField(
+          field[1]))
     return map(self.EscapeField, field)
 
   def EscapeValues(self, obj):
@@ -223,13 +236,15 @@ class Connection(pymysql.connections.Connection):
       dictionary: keys: 'db', 'charset', 'server', 'debug', 'autocommit',
                         'querycount', 'transactioncount'
     """
-    return {'db': self.CurrentDatabase(),
-            'charset': self._GetCharacterSet(),
-            'server': self.ServerInfo(),
-            'debug': self.debug,
-            'autocommit': self.autocommit_mode,
-            'querycount': self.counter_queries,
-            'transactioncount': self.counter_transactions}
+    return {
+        'db': self.CurrentDatabase(),
+        'charset': self._GetCharacterSet(),
+        'server': self.ServerInfo(),
+        'debug': self.debug,
+        'autocommit': self.autocommit_mode,
+        'querycount': self.counter_queries,
+        'transactioncount': self.counter_transactions
+    }
 
   def Query(self, query_string, cur=None):
     self.counter_queries += 1
@@ -243,13 +258,13 @@ class Connection(pymysql.connections.Connection):
       fields = list(stored_result[0])
     else:
       fields = []
-    return sqlresult.ResultSet(
-        affected=self.affected_rows(),
-        charset=self.charset,
-        fields=fields,
-        insertid=self.insert_id(),
-        query=query_string.decode(self.charset, 'ignore'),
-        result=stored_result)
+    return sqlresult.ResultSet(affected=self.affected_rows(),
+                               charset=self.charset,
+                               fields=fields,
+                               insertid=self.insert_id(),
+                               query=query_string.decode(
+                                   self.charset, 'ignore'),
+                               result=stored_result)
 
   def ServerInfo(self):
     """Returns a mysql specific set of server information"""
@@ -270,6 +285,7 @@ class Connection(pymysql.connections.Connection):
     N.B. The timer is only set when the connection is in debug mode. Calling
     this method on a non-debug connection will do nothing.
     """
+
     def Warn(caller, delay=delay):
       self.logger.warning('Transaction open for more than %s seconds.', delay)
 
@@ -310,7 +326,6 @@ class Connection(pymysql.connections.Connection):
     if charset != self._charset:
       super(Connection, self).set_charset(charset)
       self._charset = charset
-
 
   # Error classes taken from PyMySQL
   Error = pymysql.Error
