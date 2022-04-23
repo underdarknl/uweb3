@@ -31,7 +31,13 @@ class Connection(sqlite3.Connection):
       self.logger.setLevel(logging.WARNING)
     if kwds.pop('disable_log', False):
       self.logger.disable_logger = True
+    self.autocommit_mode = kwds.pop('autocommit', True)
     sqlite3.Connection.__init__(self, *args, **kwds)
+
+
+  def __call__(self, autocommit=True):
+    self.autocommit_mode = autocommit
+    return self
 
   def __enter__(self):
     """Starts a transaction."""
@@ -43,7 +49,7 @@ class Connection(sqlite3.Connection):
     if exc_type:
       self.rollback()
       self.logger.warning('Transaction was rolled back.')
-    else:
+    elif self.autocommit_mode:
       self.commit()
       self.logger.debug('Transaction committed.')
 
