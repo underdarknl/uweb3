@@ -32,7 +32,6 @@ class SignedCookie(Connector):
       self.secure_cookie_secret = secret
 
     self.connection =  safe_cookie.Connect(request, request.vars['cookie'], self.secure_cookie_secret)
-    # self.connection = (request, request.vars['cookie'], self.secure_cookie_secret)
 
   @staticmethod
   def GenerateNewKey(length=128):

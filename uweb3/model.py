@@ -2,15 +2,14 @@
 """uWeb3 model base classes."""
 
 # Standard modules
-import base64
 import configparser
-import datetime
+import os
+import sys
+import json
+import configparser
 import os
 import sys
 import hashlib
-import json
-import secrets
-
 
 
 class Error(Exception):
@@ -191,9 +190,9 @@ class SecureCookie(object):
   def __init__(self, connection):
     """Create a new SecureCookie instance."""
     self.connection = connection
-    self.request = self.connection.request
-    self.cookies = self.connection.cookies
-    self.cookie_salt = self.connection.cookie_salt
+    self.request = connection.request_object
+    self.cookies = connection.cookies
+    self.cookie_salt = connection.cookie_salt
     self.debug = self.connection.debug
     self._rawcookie = None
     if self.debug:
@@ -275,7 +274,7 @@ class SecureCookie(object):
       ValueError: When cookie with name already exists
     """
     cls.connection = connection
-    cls.request = connection.request
+    cls.request = connection.request_object
     cls.cookies = connection.cookies
     cls.cookie_salt = connection.cookie_salt
     name = cls.TableName()
@@ -283,7 +282,7 @@ class SecureCookie(object):
 
     hashed = cls.__CreateCookieHash(cls, data)
     cls.cookies[name] = hashed
-    cls.request.AddCookie(name, hashed, **attrs)
+    cls.connection.insert(name, hashed, **attrs)
     return cls
 
   def Update(self, data, **attrs):
@@ -332,14 +331,14 @@ class SecureCookie(object):
     self._rawcookie = data
     hashed = self.__CreateCookieHash(data)
     self.cookies[name] = hashed
-    self.request.AddCookie(name,  hashed, **attrs)
+    self.connection.update(name, hashed, **attrs)
 
   def Delete(self):
     """Deletes cookie based on name
     The cookie is no longer in the session after calling this method
     """
     name = self.TableName()
-    self.request.DeleteCookie(name)
+    self.connection.delete(name)
     self._rawcookie = None
 
   def __CreateCookieHash(self, data):
