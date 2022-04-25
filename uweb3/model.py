@@ -1091,7 +1091,7 @@ class Record(BaseRecord):
         self._record[self._PRIMARY_KEY] = self.key = result.insertid
     except cursor.OperationalError as err_obj:
       if err_obj.args[0] == 1054:
-        raise BadFieldError(err_obj[1])
+        raise BadFieldError(err_obj)
       raise DatabaseError(err_obj)
 
   def _RecordUpdate(self, cursor):
@@ -1113,7 +1113,7 @@ class Record(BaseRecord):
       raise Error('Cannot update record without pre-existing primary key.')
     except cursor.OperationalError as err_obj:
       if err_obj.args[0] == 1054:
-        raise BadFieldError(err_obj[1])
+        raise BadFieldError(err_obj)
       raise DatabaseError(err_obj)
 
   def _SaveForeign(self, cursor):
