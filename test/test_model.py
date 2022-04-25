@@ -188,6 +188,54 @@ class RecordTests(unittest.TestCase):
     book = Book(self.connection, {'author': None})
     self.assertEqual(book['author'], None)
 
+  def testManualCommit(self):
+    """Validates that manual committing is indeed working"""
+    Author.autocommit(self.connection, False)
+    new_author = Author.Create(self.connection, {'name': 'W. Shakespeare'})
+    Author.commit(self.connection)
+    author = Author.FromPrimary(self.connection, new_author.key)
+    self.assertEqual(author['name'], 'W. Shakespeare')
+
+  def testMultipleRecordsInManualCommit(self):
+    Author.autocommit(self.connection, False)
+    for i in range(5):
+      Author.Create(self.connection, {'name': 'W. Shakespeare'})
+    Author.commit(self.connection)
+    authors = list(Author.List(self.connection))
+    self.assertEqual(5, len(authors))
+
+  def testMultipleRecordsRollback(self):
+    Author.autocommit(self.connection, False)
+    for i in range(5):
+      Author.Create(self.connection, {'name': f'W. Shakespeare'})
+    Author.rollback(self.connection)
+    authors = list(Author.List(self.connection))
+    self.assertEqual(0, len(authors))
+
+  def testDirtyRead(self):
+    """Test validates that a dirty read is not possible"""
+    seperate_connection = DatabaseConnection()
+    Author.autocommit(self.connection, False)
+    new_author = Author.Create(self.connection, {'name': 'W. Shakespeare'})
+    self.assertRaises(model.NotExistError, Author.FromPrimary, seperate_connection, new_author.key)
+
+  def testUncommitedTransaction(self):
+    """Test validates that a commited transaction is visible for another connection"""
+    seperate_connection = DatabaseConnection()
+    Author.autocommit(self.connection, False)
+    new_author = Author.Create(self.connection, {'name': 'W. Shakespeare'})
+    Author.commit(self.connection)
+    author = Author.FromPrimary(seperate_connection, new_author.key)
+    self.assertEqual(author['name'], 'W. Shakespeare')
+
+  def testRollBack(self):
+    Author.autocommit(self.connection, False)
+    new_author = Author.Create(self.connection, {'name': 'W. Shakespeare'})
+    Author.rollback(self.connection)
+    Author.autocommit(self.connection, True)
+    self.assertRaises(model.NotExistError, Author.FromPrimary, self.connection, new_author.key)
+
+
 
 class NonStandardTableAndRelations(unittest.TestCase):
   """Verified autoloading works for records with an alternate table name."""
