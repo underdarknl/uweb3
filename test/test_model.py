@@ -197,6 +197,7 @@ class RecordTests(unittest.TestCase):
     self.assertEqual(author['name'], 'W. Shakespeare')
 
   def testMultipleRecordsInManualCommit(self):
+    """Validates that all queries in a transaction are propperly committed when doing so manually"""
     Author.autocommit(self.connection, False)
     for i in range(5):
       Author.Create(self.connection, {'name': 'W. Shakespeare'})
@@ -205,6 +206,7 @@ class RecordTests(unittest.TestCase):
     self.assertEqual(5, len(authors))
 
   def testMultipleRecordsRollback(self):
+    """Validates that a rollback indeed removes all queries from the transaction"""
     Author.autocommit(self.connection, False)
     for i in range(5):
       Author.Create(self.connection, {'name': f'W. Shakespeare'})
@@ -213,14 +215,14 @@ class RecordTests(unittest.TestCase):
     self.assertEqual(0, len(authors))
 
   def testDirtyRead(self):
-    """Test validates that a dirty read is not possible"""
+    """Validates that a dirty read is not possible"""
     seperate_connection = DatabaseConnection()
     Author.autocommit(self.connection, False)
     new_author = Author.Create(self.connection, {'name': 'W. Shakespeare'})
     self.assertRaises(model.NotExistError, Author.FromPrimary, seperate_connection, new_author.key)
 
   def testUncommitedTransaction(self):
-    """Test validates that a commited transaction is visible for another connection"""
+    """Validates that a commited transaction is visible for another connection"""
     seperate_connection = DatabaseConnection()
     Author.autocommit(self.connection, False)
     new_author = Author.Create(self.connection, {'name': 'W. Shakespeare'})
@@ -229,6 +231,7 @@ class RecordTests(unittest.TestCase):
     self.assertEqual(author['name'], 'W. Shakespeare')
 
   def testRollBack(self):
+    """No record should be found after the transaction was rolled back"""
     Author.autocommit(self.connection, False)
     new_author = Author.Create(self.connection, {'name': 'W. Shakespeare'})
     Author.rollback(self.connection)
