@@ -33,8 +33,20 @@ class NotExistError(Error):
 class PermissionError(Error):
   """The entity has insufficient rights to access the resource."""
 
+class TransactionMixin:
+  @classmethod
+  def autocommit(cls, connection, value):
+    connection.autocommit(value)
 
-class SettingsManager(object):
+  @classmethod
+  def commit(cls, connection):
+    connection.commit()
+
+  @classmethod
+  def rollback(cls, connection):
+    connection.rollback()
+
+class SettingsManager(TransactionMixin):
   def __init__(self, filename=None, path=None):
     """Creates a ini file with the child class name
 
@@ -174,7 +186,7 @@ class SettingsManager(object):
     return True
 
 
-class SecureCookie(object):
+class SecureCookie(TransactionMixin):
   """The secureCookie class works just like other data abstraction classes,
   except that it stores its data in client side cookies that are signed with a
   server side secret to avoid tampering by the end-user.
@@ -388,7 +400,7 @@ class SecureCookie(object):
 
 # Record classes have many methods, this is not an actual problem.
 # pylint: disable=R0904
-class BaseRecord(dict):
+class BaseRecord(TransactionMixin, dict):
   """Basic database record wrapping class.
 
   This allows structured database manipulation for applications. Supported
