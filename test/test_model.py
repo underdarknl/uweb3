@@ -141,7 +141,7 @@ class RecordTests(unittest.TestCase):
 
   def testCreateRecordWithBadField(self):
     """Database record creation fails if there are unknown fields present"""
-    self.assertRaises(InternalError, Author.Create, self.connection,
+    self.assertRaises(model.BadFieldError, Author.Create, self.connection,
                       {'name': 'L. Tolstoy', 'email': 'leo@tolstoy.ru'})
 
   def testUpdateRecord(self):
@@ -157,7 +157,7 @@ class RecordTests(unittest.TestCase):
     """Database record updating fails if there are unknown fields present"""
     author = Author.Create(self.connection, {'name': 'A. Pushkin'})
     author['specialty'] = 'poetry'
-    self.assertRaises(InternalError, author.Save)
+    self.assertRaises(model.BadFieldError, author.Save)
 
   def testUpdatePrimaryKey(self):
     """Saving with an updated primary key properly saved the record"""
