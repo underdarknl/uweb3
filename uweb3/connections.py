@@ -162,11 +162,15 @@ class ConnectionManager(object):
     Eg, connections that rely on request information, or connections that should
     not be kept alive beyond the scope of a request.
     """
-    cleanups = [
-        classname for classname in self.__connections
-        if (hasattr(self.__connections[classname], 'PERSISTENT')
-            and not self.__connections[classname].PERSISTENT)
-    ]
+    cleanups = []
+    for classname in self.__connections:
+      if (hasattr(self.__connections[classname], 'PERSISTENT') and not self.__connections[classname].PERSISTENT):
+        cleanups.append(classname)
+      else:
+        connector = self.__connections[classname]
+        if len(connector.connection.queries) != 0:
+          connector.Rollback()
+
     for classname in cleanups:
       try:
         self.__connections[classname].Disconnect()

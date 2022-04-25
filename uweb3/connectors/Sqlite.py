@@ -22,6 +22,9 @@ class Sqlite(Connector):
 
   def Rollback(self):
     """Rolls back any uncommited transactions."""
+    if self.debug:
+      print('Rolling back uncommited transaction on Mysql connector')
+
     return self.connection.rollback()
 
   def Disconnect(self):
