@@ -8,10 +8,10 @@
 import unittest
 
 # Importing uWeb3 makes the SQLTalk library available as a side-effect
-from uweb3.libs.sqltalk import mysql
+from uweb3.libs.sqltalk import mysql, safe_cookie
 # Unittest target
 from uweb3 import model
-from pymysql.err import InternalError
+from uweb3 import request
 
 # ##############################################################################
 # Record classes for testing
@@ -27,11 +27,12 @@ class Author(model.Record):
 class Book(model.Record):
   """Book class for testing purposes."""
 
+class Session(model.SecureCookie):
+  """Session class for cookie testing purposes."""
 
 class Writer(model.Record):
   """Writer class for testing purposes, will manage `writers` table."""
   _TABLE = 'writers'
-
 
 class VersionedAuthor(model.VersionedRecord):
   """Versioned author table for testing purposes."""
@@ -477,6 +478,56 @@ class CompoundKeyRecordTests(unittest.TestCase):
         self.connection, {'first': 2, 'second': 1, 'message': 'Break stuff'})
 
 
+class CookieTests(unittest.TestCase):
+  def setUp(self):
+    """Sets up the tests for the VersionedRecord class."""
+    self.connection = CookieConnection()
+
+  def get_response_cookie_header(self):
+    return self.connection.request_object.response.headers.setdefault("Set-Cookie", {})
+
+  def testUncommittedCookie(self):
+    Session.autocommit(self.connection, False)
+    Session.Create(self.connection, "test_cookie")
+    self.assertEqual(1, len(self.connection.uncommitted_cookies))
+    # Validate that the Set-Cookie header is not actually set cause we didn't commit the cookie yet
+    self.assertEqual(0, len(self.get_response_cookie_header()))
+
+  def testAutocommitOnByDefault(self):
+    Session.Create(self.connection, "test_cookie")
+    self.assertEqual(0, len(self.connection.uncommitted_cookies))
+    # This time it should be set because autocommit is the default action
+    self.assertEqual(1, len(self.get_response_cookie_header()))
+
+  def testManualCommit(self):
+    Session.autocommit(self.connection, False)
+    Session.Create(self.connection, "test_cookie")
+    Session.commit(self.connection)
+    self.assertEqual(0, len(self.connection.uncommitted_cookies))
+    self.assertEqual(1, len(self.get_response_cookie_header()))
+
+  def testRollback(self):
+    Session.autocommit(self.connection, False)
+    Session.Create(self.connection, "test_cookie")
+    Session.rollback(self.connection)
+    self.assertEqual(0, len(self.connection.uncommitted_cookies))
+    # Cookie header should be empty after a rollback too!
+    self.assertEqual(0, len(self.get_response_cookie_header()))
+
+  def testMultipleCommits(self):
+    Session.autocommit(self.connection, False)
+    for i in range(5):
+      Session.Create(self.connection, f"test_cookie{i}")
+
+    self.assertEqual(5, len(self.connection.uncommitted_cookies))
+    self.assertEqual(0, len(self.get_response_cookie_header()))
+
+    Session.commit(self.connection)
+
+    self.assertEqual(0, len(self.connection.uncommitted_cookies))
+    self.assertEqual(5, len(self.get_response_cookie_header()))
+
+
 
 def DatabaseConnection():
   """Returns an SQLTalk database connection to 'uWeb3_model_test'."""
@@ -488,6 +539,8 @@ def DatabaseConnection():
       charset='utf8')
 
 
+def CookieConnection():
+  return safe_cookie.Connect(request.Request({'REQUEST_METHOD': 'GET', 'host': 'localhost', 'QUERY_STRING': ''}, None, None), {}, 'secret')
 
 if __name__ == '__main__':
   unittest.main(testRunner=unittest.TextTestRunner(verbosity=2))
