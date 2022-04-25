@@ -31,6 +31,8 @@ nosetests.xml
 *.mo
 
 uweb3-venv
+env
+venv
 features
 *.vscode
 *.log
