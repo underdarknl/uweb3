@@ -108,6 +108,10 @@ class RecordTests(unittest.TestCase):
                             `title` varchar(32) NOT NULL,
                             PRIMARY KEY (`ID`)
                           ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+  def tearDown(self):
+      with self.connection as cursor:
+        cursor.Execute('DROP TABLE IF EXISTS `author`')
+        cursor.Execute('DROP TABLE IF EXISTS `book`')
 
   def testLoadPrimary(self):
     """[Record] Records can be loaded by primary key using FromPrimary()"""
@@ -260,6 +264,10 @@ class NonStandardTableAndRelations(unittest.TestCase):
                             `title` varchar(32) NOT NULL,
                             PRIMARY KEY (`ID`)
                           ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+  def tearDown(self):
+      with self.connection as cursor:
+        cursor.Execute('DROP TABLE IF EXISTS `writers`')
+        cursor.Execute('DROP TABLE IF EXISTS `book`')
 
   def testVerifyNoLoad(self):
     """No loading is performed on a field that matches a class but no table"""
@@ -312,6 +320,10 @@ class VersionedRecordTests(unittest.TestCase):
                             KEY `recordKey` (`versionedBookID`)
                           ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
+  def tearDown(self):
+      with self.connection as cursor:
+        cursor.Execute('DROP TABLE IF EXISTS `versionedAuthor`')
+        cursor.Execute('DROP TABLE IF EXISTS `versionedBook`')
 
   def testRecordKeyName(self):
     """[Versioned] Versioning key name follows table name unless specified"""
@@ -433,6 +445,10 @@ class CompoundKeyRecordTests(unittest.TestCase):
                             PRIMARY KEY (`first`, `second`)
                           ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
+  def tearDown(self):
+    with self.connection as cursor:
+      cursor.Execute('DROP TABLE IF EXISTS`compounded`')
+
   def testCreate(self):
     """[Compound] Creating a compound record requires both keys provided"""
     compound = Compounded.Create(self.connection, {
@@ -487,7 +503,10 @@ class SqliteTest(BaseRecordTests):
                         "author" INTEGER,
                         "title" TEXT
                       )""")
-
+  def tearDown(self):
+    with self.connection as cursor:
+      cursor.Execute('DROP TABLE IF EXISTS "author"')
+      cursor.Execute('DROP TABLE IF EXISTS "book"')
 class CookieTests(unittest.TestCase):
   def setUp(self):
     """Sets up the tests for the VersionedRecord class."""
@@ -544,7 +563,7 @@ def DatabaseConnection():
   return mysql.Connect(
       host='localhost',
       user='stef',
-      passwd='24192419',
+      passwd='password',
       db='uweb_test',
       charset='utf8')
 
