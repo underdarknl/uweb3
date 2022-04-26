@@ -511,11 +511,10 @@ class SqliteTest(BaseRecordTests):
       cursor.Execute('DROP TABLE IF EXISTS "author"')
       cursor.Execute('DROP TABLE IF EXISTS "book"')
 
-class SqliteTransactionTest(BaseRecordTests):
+class SqliteTransactionTest(RecordTests):
   def setUp(self):
     """Sets up the tests for the VersionedRecord class."""
     self.record_class = BasicTestRecordSqlite
-    self.record_class._PRIMARY_KEY = 'ID'
     self.connection = SqliteConnection()
     with self.connection as cursor:
       cursor.Execute('DROP TABLE IF EXISTS "author"')
