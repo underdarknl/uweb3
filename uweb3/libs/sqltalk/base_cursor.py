@@ -52,6 +52,115 @@ class BaseCursor:
       result.affected = self._Execute('SELECT FOUND_ROWS()')[0][0]
     return result
 
+  def Insert(self, table, values, escape=True):
+    """Insert new row into table.
+
+    This method can also perform multi-row insert.
+    By default, input strings are quoted, made safe to be inserted into MySQL
+    and the Python None-object is translated to MySQL 'NULL'.
+
+    Arguments:
+      table:   string. Name of the table to insert into.
+      values:  dictionary or list/tuple.
+               Dictionary for single inserts:
+               * keys:   field names
+               * values: field values
+               List of dictionaries for a multi-row insert:
+               * Each record as a single dictionary.
+               * Each dictionary should have the same keys (fields).
+      escape:  boolean. Defines whether table names, fields and values should
+               be escaped. Set this to False if you want to make use of
+               MySQL functions on this query. Default True.
+
+    Returns:
+      sqlresult.ResultSet object.
+    """
+    if not values:
+      raise ValueError('Must insert 1 or more value')
+    values = self.connection.EscapeValues(values) if escape else values
+    table = self.connection.EscapeField(table) if escape else table
+    try:
+      # Single insert
+      values = ', '.join('`%s`=%s' % value for value in values.items())
+      query = 'INSERT INTO %s SET %s' % (table, values)
+    except AttributeError:
+      # Multi-row insert
+      fields = ', '.join(map(self.connection.EscapeField, values[0]))
+      values = ', '.join('(%s)' % ', '.join(row.itervalues()) for row in values)
+      query = 'INSERT INTO %s (%s) VALUES %s' % (table, fields, values)
+    return self._Execute(query)
+
+  def Delete(self, table, conditions, order=None,
+             limit=None, offset=0, escape=True):
+    """Remove row(s) from table that match conditions, up to limit.
+
+    Arguments:
+      table:      string. Name of the table to delete.
+      conditions: string/list/tuple (optional).
+                  Where statements. Literal as string. AND'd if list/tuple.
+                  THESE WILL NOT BE ESCAPED FOR YOU, EVER.
+      order:      (nested) list/tuple (optional).
+                  Defines sorting of table before updating, elements can be:
+                    string: a field to order by (in default database order).
+                    list/tuple of two elements:
+                      1) string, field name to order by
+                      2) bool, revserse; set this to True to reverse the order
+      limit:      integer. Defines max number of rows to delete. Default: None.
+      offset:     integer (optional). Number of rows to skip, requires limit.
+      escape:     boolean. Defines whether table and field names should be
+                  escaped. Set this to False if you want to make use of MySQL
+                  functions on this query. Default True.
+
+    Returns:
+      sqlresult.ResultSet object.
+    """
+    field_escape = self.connection.EscapeField if escape else lambda x: x
+    return self._Execute('delete from %s where %s %s %s' % (
+        self._StringTable(table, field_escape),
+        self._StringConditions(conditions, field_escape),
+        self._StringOrder(order, field_escape),
+        self._StringLimit(limit, offset)))
+
+
+  def Update(self, table, values, conditions, order=None,
+             limit=None, offset=None, escape=True):
+    """Updates table records to the new values where conditions are met.
+
+    Arguments:
+      table:      string. Name of table to update values in.
+      values:     dictionary. Key for fieldname, value for content (autoquoted).
+      conditions: string/list/tuple.
+                  Where statements. Literal as string. AND'd if list/tuple.
+                  THESE WILL NOT BE ESCAPED FOR YOU, EVER.
+      order:      (nested) list/tuple (optional).
+                  Defines sorting of table before updating, elements can be:
+                    string: a field to order by (in default database order).
+                    list/tuple of two elements:
+                      1) string, field name to order by
+                      2) bool, revserse; set this to True to reverse the order
+      limit:      integer (optional). Defines max rows to update.
+                  Default value for this is None, meaning no limit.
+      offset:     integer (optional). Number of rows to skip, requires limit.
+      escape:     boolean. Defines whether table names, fields and values should
+                  be escaped. Set this to False if you want to make use of
+                  MySQL functions on this query. Default True.
+
+    Returns:
+      sqlresult.ResultSet object.
+    """
+    if escape:
+      field_escape = self.connection.EscapeField
+      values = self.connection.EscapeValues(values)
+    else:
+      field_escape = lambda x: x
+
+    return self._Execute('UPDATE %s SET %s WHERE %s %s %s' % (
+        self._StringTable(table, field_escape),
+        ', '.join('`%s`=%s' % value for value in values.items()),
+        self._StringConditions(conditions, field_escape),
+        self._StringOrder(order, field_escape),
+        self._StringLimit(limit, offset)))
+
   def _Execute(self, query):
     """Actually executes the query and returns the result of it.
 

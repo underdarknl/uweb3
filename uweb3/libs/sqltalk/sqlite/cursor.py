@@ -26,28 +26,8 @@ class Cursor(base_cursor.BaseCursor):
     self.connection = connection
     self.cursor = connection.cursor()
 
-  def Execute(self, query, args=(), many=False):
-    try:
-      if many:
-        result = self.cursor.executemany(query, args)
-      else:
-        result = self.cursor.execute(query, args)
-    except Exception:
-      self.connection.logger.exception('Exception during query execution')
-      raise
-    stored_result = self.cursor.fetchall()
-    if stored_result:
-      fields = list(stored_result[0])
-    else:
-      fields = []
-    return sqlresult.ResultSet(
-        affected=result.rowcount,
-        charset='utf-8',
-        fields=fields,
-        insertid=result.lastrowid,
-        query=(query, tuple(args)),
-        result=stored_result
-    )
+  def Execute(self, query):
+    return self._Execute(query)
 
   def Update(self, table, values, conditions, order=None,
              limit=None, offset=None, escape=True):
@@ -87,20 +67,47 @@ class Cursor(base_cursor.BaseCursor):
         self._StringOrder(order, field_escape),
         self._StringLimit(limit, offset)))
 
-  def Insert(self, table, values):
+  def Insert(self, table, values, escape=True):
+    """Insert new row into table.
+
+    This method can also perform multi-row insert.
+    By default, input strings are quoted, made safe to be inserted into MySQL
+    and the Python None-object is translated to MySQL 'NULL'.
+
+    Arguments:
+      table:   string. Name of the table to insert into.
+      values:  dictionary or list/tuple.
+               Dictionary for single inserts:
+               * keys:   field names
+               * values: field values
+               List of dictionaries for a multi-row insert:
+               * Each record as a single dictionary.
+               * Each dictionary should have the same keys (fields).
+      escape:  boolean. Defines whether table names, fields and values should
+               be escaped. Set this to False if you want to make use of
+               MySQL functions on this query. Default True.
+
+    Returns:
+      sqlresult.ResultSet object.
+    """
     if not values:
       raise ValueError('Must insert 1 or more value')
-    elif isinstance(values, dict):
+    values = self.connection.EscapeValues(values) if escape else values
+    table = self.connection.EscapeField(table) if escape else table
+    try:
+      values_query = ""
+      for x in values.values():
+        values_query += '"' + x + '"'
       query = ('INSERT INTO %s (%s) VALUES (%s)' %
                (table,
                 ', '.join(map(self.connection.EscapeField, values)),
-                ', '.join('?' * len(values))))
-      return self.Execute(query, args=list(values.values()), many=False)
-    query = ('INSERT INTO %s (%s) VALUES (%s)' %
-             (table,
-              ', '.join(map(self.connection.EscapeField, values[0])),
-              ', '.join('?' * len(values[0]))))
-    return self.Execute(
-        query, args=(row.values() for row in values), many=True)
+                values_query))
+    except AttributeError:
+      # Multi-row insert
+      fields = ', '.join(map(self.connection.EscapeField, values[0]))
+      values = ', '.join('(%s)' % ', '.join(row.itervalues()) for row in values)
+      query = 'INSERT INTO %s (%s) VALUES %s' % (table, fields, values)
+    return self._Execute(query)
+
 
 

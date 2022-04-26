@@ -97,13 +97,26 @@ class Connection(sqlite3.Connection):
     result = self.execute(NAMED_TYPE_SELECT, ('table',)).fetchall()
     return [row[0] for row in result]
 
-  def Query(self, query_string, cur=None):
+  def Query(self, query_string, cur):
     self.counter_queries += 1
-    # if isinstance(query_string, str):
-    #   query_string = query_string.encode(self.charset)
+
     if not cur:
       cur = cursor.Cursor(self)
-    return cur.Execute(query_string)
+
+    result = cur.cursor.execute(query_string)
+    stored_result = cur.cursor.fetchall()
+    if stored_result:
+      fields = list(stored_result[0])
+    else:
+      fields = []
+    return sqlresult.ResultSet(
+        affected=result.rowcount,
+        charset='utf-8',
+        fields=fields,
+        insertid=result.lastrowid,
+        query=query_string,
+        result=stored_result
+    )
 
 
 class ThreadedConnection(threading.Thread):

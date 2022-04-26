@@ -238,6 +238,14 @@ class RecordTests(unittest.TestCase):
     author = Author.FromPrimary(seperate_connection, new_author.key)
     self.assertEqual(author['name'], 'W. Shakespeare')
 
+  def testDelete(self):
+    """Database records can be created using Create()"""
+    new_author = Author.Create(self.connection, {'name': 'W. Shakespeare'})
+    author = Author.FromPrimary(self.connection, new_author.key)
+    self.assertEqual(author['name'], 'W. Shakespeare')
+    author.Delete()
+    self.assertRaises(model.NotExistError, Author.FromPrimary, self.connection, new_author.key)
+
   def testRollBack(self):
     """No record should be found after the transaction was rolled back"""
     Author.autocommit(self.connection, False)
@@ -538,7 +546,6 @@ class SqliteTransactionTest(RecordTests):
   def getsecondConnection(self):
     return SqliteConnection()
 
-
 class CookieTests(unittest.TestCase):
   def setUp(self):
     """Sets up the tests for the VersionedRecord class."""
@@ -589,7 +596,6 @@ class CookieTests(unittest.TestCase):
     self.assertEqual(5, len(self.get_response_cookie_header()))
 
 
-
 def DatabaseConnection():
   """Returns an SQLTalk database connection to 'uWeb3_model_test'."""
   return mysql.Connect(
@@ -598,7 +604,6 @@ def DatabaseConnection():
       passwd='password',
       db='uweb_test',
       charset='utf8')
-
 
 def CookieConnection():
   return safe_cookie.Connect(request.Request({'REQUEST_METHOD': 'GET', 'host': 'localhost', 'QUERY_STRING': ''}, None, None), {}, 'secret')
