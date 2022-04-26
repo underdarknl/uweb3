@@ -113,6 +113,9 @@ class RecordTests(unittest.TestCase):
         cursor.Execute('DROP TABLE IF EXISTS `author`')
         cursor.Execute('DROP TABLE IF EXISTS `book`')
 
+  def getsecondConnection(self):
+    return DatabaseConnection()
+
   def testLoadPrimary(self):
     """[Record] Records can be loaded by primary key using FromPrimary()"""
     with self.connection as cursor:
@@ -221,14 +224,14 @@ class RecordTests(unittest.TestCase):
 
   def testDirtyRead(self):
     """Validates that a dirty read is not possible"""
-    seperate_connection = DatabaseConnection()
+    seperate_connection = self.getsecondConnection()
     Author.autocommit(self.connection, False)
     new_author = Author.Create(self.connection, {'name': 'W. Shakespeare'})
     self.assertRaises(model.NotExistError, Author.FromPrimary, seperate_connection, new_author.key)
 
   def testUncommitedTransaction(self):
     """Validates that a commited transaction is visible for another connection"""
-    seperate_connection = DatabaseConnection()
+    seperate_connection = self.getsecondConnection()
     Author.autocommit(self.connection, False)
     new_author = Author.Create(self.connection, {'name': 'W. Shakespeare'})
     Author.commit(self.connection)
@@ -507,6 +510,36 @@ class SqliteTest(BaseRecordTests):
     with self.connection as cursor:
       cursor.Execute('DROP TABLE IF EXISTS "author"')
       cursor.Execute('DROP TABLE IF EXISTS "book"')
+
+class SqliteTransactionTest(BaseRecordTests):
+  def setUp(self):
+    """Sets up the tests for the VersionedRecord class."""
+    self.record_class = BasicTestRecordSqlite
+    self.record_class._PRIMARY_KEY = 'ID'
+    self.connection = SqliteConnection()
+    with self.connection as cursor:
+      cursor.Execute('DROP TABLE IF EXISTS "author"')
+      cursor.Execute('DROP TABLE IF EXISTS "book"')
+      cursor.Execute("""
+                        CREATE TABLE "author" (
+                        "ID"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        "name"	TEXT NOT NULL
+                        );
+                    """)
+      cursor.Execute("""CREATE TABLE "book" (
+                        "ID"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        "author" INTEGER,
+                        "title" TEXT
+                      )""")
+  def tearDown(self):
+    with self.connection as cursor:
+      cursor.Execute('DROP TABLE IF EXISTS "author"')
+      cursor.Execute('DROP TABLE IF EXISTS "book"')
+
+  def getsecondConnection(self):
+    return SqliteConnection()
+
+
 class CookieTests(unittest.TestCase):
   def setUp(self):
     """Sets up the tests for the VersionedRecord class."""
