@@ -48,6 +48,9 @@ class Connection(sqlite3.Connection):
       self.commit()
       self.logger.debug('Transaction committed.')
 
+  def autocommit(self, value):
+    self.autocommit_mode = value
+
   def commit(self):
     sqlite3.Connection.commit(self)
 
