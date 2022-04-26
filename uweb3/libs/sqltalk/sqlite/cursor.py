@@ -109,14 +109,18 @@ class Cursor:
     except Exception:
       self.connection.logger.exception('Exception during query execution')
       raise
-    fieldnames = [field[0] for field in result.description] if result.description else None
+    stored_result = self.cursor.fetchall()
+    if stored_result:
+      fields = list(stored_result[0])
+    else:
+      fields = []
     return sqlresult.ResultSet(
         affected=result.rowcount,
         charset='utf-8',
-        fields=fieldnames,
+        fields=fields,
         insertid=result.lastrowid,
         query=(query, tuple(args)),
-        result=[dict(zip(fieldnames, row)) for row in result.fetchall()],
+        result=stored_result
     )
 
   def Update(self, table, values, conditions, order=None,
