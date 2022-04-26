@@ -36,6 +36,7 @@ class PermissionError(Error):
 
 
 class SettingsManager(object):
+    connection.rollback()
   def __init__(self, filename=None, path=None):
     """Creates a ini file with the child class name
 
@@ -399,6 +400,7 @@ class BaseRecord(dict):
   _LOAD_METHOD = 'FromPrimary'
   _PRIMARY_KEY = 'ID'
   _TABLE = None
+  _TABLES = set()
 
   def __init__(self, connection, record, run_init_hook=True):
     """Initializes a BaseRecord instance.
@@ -413,9 +415,15 @@ class BaseRecord(dict):
         the other initialization steps have completed.
     """
     super(BaseRecord, self).__init__(record)
+    if connection:
+      with connection as cursor:
+        tables = cursor.Execute("SHOW TABLES")
+      for item in tables:
+        self._TABLES.add(item.values()[0])
     if not hasattr(BaseRecord, '_SUBTYPES'):
       # Adding classes at runtime is pretty rare, but fails this code.
       BaseRecord._SUBTYPES = dict(RecordTableNames())
+
     self.connection = connection
     self._record = self._DataRecord()
     # _PostInit hook should run after making a live copy of the data, so that
@@ -821,6 +829,8 @@ class Record(BaseRecord):
       elif field == self.TableName():
         return value
       elif field in self._SUBTYPES:
+        if field not in self._TABLES:
+          raise ProgrammingError("Attempted to load foreign key relation from nonexisting table.")
         value = self._SUBTYPES[field]._LoadAsForeign(self.connection, value)
       self[field] = value
     return value
@@ -1076,7 +1086,7 @@ class Record(BaseRecord):
         self._record[self._PRIMARY_KEY] = self.key = result.insertid
     except cursor.OperationalError as err_obj:
       if err_obj.args[0] == 1054:
-        raise BadFieldError(err_obj[1])
+        raise BadFieldError(err_obj)
       raise DatabaseError(err_obj)
 
   def _RecordUpdate(self, cursor):
@@ -1098,7 +1108,7 @@ class Record(BaseRecord):
       raise Error('Cannot update record without pre-existing primary key.')
     except cursor.OperationalError as err_obj:
       if err_obj.args[0] == 1054:
-        raise BadFieldError(err_obj[1])
+        raise BadFieldError(err_obj)
       raise DatabaseError(err_obj)
 
   def _SaveForeign(self, cursor):
