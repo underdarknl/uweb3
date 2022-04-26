@@ -8,10 +8,12 @@
 import unittest
 
 # Importing uWeb3 makes the SQLTalk library available as a side-effect
-from uweb3.libs.sqltalk import mysql, safe_cookie
+from uweb3.libs.sqltalk import mysql, safe_cookie, sqlite
 # Unittest target
 from uweb3 import model
 from uweb3 import request
+from pathlib import Path
+import os
 
 # ##############################################################################
 # Record classes for testing
@@ -19,10 +21,11 @@ from uweb3 import request
 class BasicTestRecord(model.Record):
   """Test record for offline tests."""
 
-
+class BasicTestRecordSqlite(model.Record):
+  """Test record for offline tests."""
+  _CONNECTOR = 'sqlite'
 class Author(model.Record):
   """Author class for testing purposes."""
-
 
 class Book(model.Record):
   """Book class for testing purposes."""
@@ -58,7 +61,8 @@ class BaseRecordTests(unittest.TestCase):
 
   def testTableName(self):
     """[BaseRecord] TableName returns the expected value and obeys _TABLE"""
-    self.assertEqual(self.record_class.TableName(), 'basicTestRecord')
+    tablename = self.record_class.__name__[0].lower() + self.record_class.__name__[1:]
+    self.assertEqual(self.record_class.TableName(), tablename)
     self.record_class._TABLE = 'WonderfulSpam'
     self.assertEqual(self.record_class.TableName(), 'WonderfulSpam')
 
@@ -91,6 +95,8 @@ class RecordTests(unittest.TestCase):
     """Sets up the tests for the Record class."""
     self.connection = DatabaseConnection()
     with self.connection as cursor:
+      cursor.Execute('DROP TABLE IF EXISTS `author`')
+      cursor.Execute('DROP TABLE IF EXISTS `book`')
       cursor.Execute("""CREATE TABLE `author` (
                             `ID` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
                             `name` varchar(32) NOT NULL,
@@ -102,12 +108,6 @@ class RecordTests(unittest.TestCase):
                             `title` varchar(32) NOT NULL,
                             PRIMARY KEY (`ID`)
                           ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
-
-  def tearDown(self):
-    """Destroy tables after testing."""
-    with self.connection as cursor:
-      cursor.Execute('DROP TABLE `author`')
-      cursor.Execute('DROP TABLE `book`')
 
   def testLoadPrimary(self):
     """[Record] Records can be loaded by primary key using FromPrimary()"""
@@ -247,6 +247,8 @@ class NonStandardTableAndRelations(unittest.TestCase):
     """Sets up the tests for the Record class."""
     self.connection = DatabaseConnection()
     with self.connection as cursor:
+      cursor.Execute('DROP TABLE IF EXISTS `writers`')
+      cursor.Execute('DROP TABLE IF EXISTS `book`')
       cursor.Execute("""CREATE TABLE `writers` (
                             `ID` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
                             `name` varchar(32) NOT NULL,
@@ -258,12 +260,6 @@ class NonStandardTableAndRelations(unittest.TestCase):
                             `title` varchar(32) NOT NULL,
                             PRIMARY KEY (`ID`)
                           ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
-
-  def tearDown(self):
-    """Destroy tables after testing."""
-    with self.connection as cursor:
-      cursor.Execute('DROP TABLE `writers`')
-      cursor.Execute('DROP TABLE `book`')
 
   def testVerifyNoLoad(self):
     """No loading is performed on a field that matches a class but no table"""
@@ -298,6 +294,8 @@ class VersionedRecordTests(unittest.TestCase):
     """Sets up the tests for the VersionedRecord class."""
     self.connection = DatabaseConnection()
     with self.connection as cursor:
+      cursor.Execute('DROP TABLE IF EXISTS `versionedAuthor`')
+      cursor.Execute('DROP TABLE IF EXISTS `versionedBook`')
       cursor.Execute("""CREATE TABLE `versionedAuthor` (
                             `ID` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
                             `versionedAuthorID` smallint(5) unsigned NOT NULL,
@@ -314,11 +312,6 @@ class VersionedRecordTests(unittest.TestCase):
                             KEY `recordKey` (`versionedBookID`)
                           ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
-  def tearDown(self):
-    """Destroy tables after testing."""
-    with self.connection as cursor:
-      cursor.Execute('DROP TABLE `versionedAuthor`')
-      cursor.Execute('DROP TABLE `versionedBook`')
 
   def testRecordKeyName(self):
     """[Versioned] Versioning key name follows table name unless specified"""
@@ -432,17 +425,13 @@ class CompoundKeyRecordTests(unittest.TestCase):
     """Sets up the tests for the VersionedRecord class."""
     self.connection = DatabaseConnection()
     with self.connection as cursor:
+      cursor.Execute('DROP TABLE IF EXISTS`compounded`')
       cursor.Execute("""CREATE TABLE `compounded` (
                             `first` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
                             `second` smallint(5) unsigned NOT NULL,
                             `message` varchar(32) NOT NULL,
                             PRIMARY KEY (`first`, `second`)
                           ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
-
-  def tearDown(self):
-    """Destroy tables after testing."""
-    with self.connection as cursor:
-      cursor.Execute('DROP TABLE `compounded`')
 
   def testCreate(self):
     """[Compound] Creating a compound record requires both keys provided"""
@@ -477,6 +466,27 @@ class CompoundKeyRecordTests(unittest.TestCase):
         self.connection.IntegrityError, Compounded.Create,
         self.connection, {'first': 2, 'second': 1, 'message': 'Break stuff'})
 
+class SqliteTest(BaseRecordTests):
+  """Tests for Record classes with a compound key."""
+  def setUp(self):
+    """Sets up the tests for the VersionedRecord class."""
+    self.record_class = BasicTestRecordSqlite
+    # self.record_class._PRIMARY_KEY = 'ID'
+    self.connection = SqliteConnection()
+    with self.connection as cursor:
+      cursor.Execute('DROP TABLE IF EXISTS "author"')
+      cursor.Execute('DROP TABLE IF EXISTS "book"')
+      cursor.Execute("""
+                        CREATE TABLE "author" (
+                        "ID"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        "name"	TEXT NOT NULL
+                        );
+                    """)
+      cursor.Execute("""CREATE TABLE "book" (
+                        "ID"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        "author" INTEGER,
+                        "title" TEXT
+                      )""")
 
 class CookieTests(unittest.TestCase):
   def setUp(self):
@@ -541,6 +551,10 @@ def DatabaseConnection():
 
 def CookieConnection():
   return safe_cookie.Connect(request.Request({'REQUEST_METHOD': 'GET', 'host': 'localhost', 'QUERY_STRING': ''}, None, None), {}, 'secret')
+
+def SqliteConnection():
+  path = os.path.join(Path().absolute(), 'sqlite.db')
+  return sqlite.Connect(path)
 
 if __name__ == '__main__':
   unittest.main(testRunner=unittest.TextTestRunner(verbosity=2))
