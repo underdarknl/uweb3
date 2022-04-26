@@ -154,10 +154,9 @@ class Cursor:
       values = self.connection.EscapeValues(values)
     else:
       field_escape = lambda x: x
-
     return self._Execute('UPDATE %s SET %s WHERE %s %s %s' % (
         self._StringTable(table, field_escape),
-        ', '.join('`%s`=%s' % value for value in values.items()),
+        ', '.join('`%s`="%s"' % value for value in values.items()),
         self._StringConditions(conditions, field_escape),
         self._StringOrder(order, field_escape),
         self._StringLimit(limit, offset)))
