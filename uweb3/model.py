@@ -1268,23 +1268,24 @@ class Record(BaseRecord):
         searchconditions.append('`%s`.`%s` %s' % (thistable, column, like))
         continue
       classname, column = column.split('.', 1)
-      othertable = cls._SUBTYPES[classname].TableName()
-      if (othertable != thistable and
-          othertable not in tables):
+      othertable = cls._SUBTYPES[classname]
+      othertable_name = othertable.TableName()
+      if (othertable_name != thistable and
+          othertable_name not in tables):
         fkey = cls._FOREIGN_RELATIONS.get(classname, False)
         key = othertable._PRIMARY_KEY
         if fkey and fkey.get('LookupKey', False):
           key = fkey.get('LookupKey')
-        elif getattr(table, "RecordKey", None):
+        elif getattr(othertable, "RecordKey", None):
           key = othertable.RecordKey()
         # add the cross table join
         #TODO use referenced field, instead of just the othertable name
-        conditions.append('`%s`.`%s` = `%s`.`%s' % (thistable,
-            othertable,
-            othertable,
+        conditions.append('`%s`.`%s` = `%s`.`%s`' % (thistable,
+            othertable_name,
+            othertable_name,
             key))
-        tables.append(othertable)
-      searchconditions.append('`%s`.`%s` %s' % (othertable,
+        tables.append(othertable_name)
+      searchconditions.append('`%s`.`%s` %s' % (othertable_name,
           column, like))
 
     conditions.append('(%s)' % ' or '.join(searchconditions))
