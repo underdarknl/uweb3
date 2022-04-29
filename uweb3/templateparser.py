@@ -632,7 +632,7 @@ class FileTemplate(Template):
     self.ReloadIfModified()
     try:
       if self._template_alias:
-        kwds = {'__filename': self._template_alias, **kwds}
+        kwds = {'__alias': self._template_alias, **kwds}
       result = super().Parse(**kwds)
     except TemplateFunctionError as error:
       raise TemplateFunctionError('%s in %s' % (error, self._template_path))
