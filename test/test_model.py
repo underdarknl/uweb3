@@ -113,6 +113,9 @@ class RecordTests(unittest.TestCase):
         cursor.Execute('DROP TABLE IF EXISTS `author`')
         cursor.Execute('DROP TABLE IF EXISTS `book`')
 
+  def getsecondConnection(self):
+    return DatabaseConnection()
+
   def testLoadPrimary(self):
     """[Record] Records can be loaded by primary key using FromPrimary()"""
     with self.connection as cursor:
@@ -221,19 +224,27 @@ class RecordTests(unittest.TestCase):
 
   def testDirtyRead(self):
     """Validates that a dirty read is not possible"""
-    seperate_connection = DatabaseConnection()
+    seperate_connection = self.getsecondConnection()
     Author.autocommit(self.connection, False)
     new_author = Author.Create(self.connection, {'name': 'W. Shakespeare'})
     self.assertRaises(model.NotExistError, Author.FromPrimary, seperate_connection, new_author.key)
 
   def testUncommitedTransaction(self):
     """Validates that a commited transaction is visible for another connection"""
-    seperate_connection = DatabaseConnection()
+    seperate_connection = self.getsecondConnection()
     Author.autocommit(self.connection, False)
     new_author = Author.Create(self.connection, {'name': 'W. Shakespeare'})
     Author.commit(self.connection)
     author = Author.FromPrimary(seperate_connection, new_author.key)
     self.assertEqual(author['name'], 'W. Shakespeare')
+
+  def testDelete(self):
+    """Database records can be created using Create()"""
+    new_author = Author.Create(self.connection, {'name': 'W. Shakespeare'})
+    author = Author.FromPrimary(self.connection, new_author.key)
+    self.assertEqual(author['name'], 'W. Shakespeare')
+    author.Delete()
+    self.assertRaises(model.NotExistError, Author.FromPrimary, self.connection, new_author.key)
 
   def testRollBack(self):
     """No record should be found after the transaction was rolled back"""
@@ -507,6 +518,34 @@ class SqliteTest(BaseRecordTests):
     with self.connection as cursor:
       cursor.Execute('DROP TABLE IF EXISTS "author"')
       cursor.Execute('DROP TABLE IF EXISTS "book"')
+
+class SqliteTransactionTest(RecordTests):
+  def setUp(self):
+    """Sets up the tests for the VersionedRecord class."""
+    self.record_class = BasicTestRecordSqlite
+    self.connection = SqliteConnection()
+    with self.connection as cursor:
+      cursor.Execute('DROP TABLE IF EXISTS "author"')
+      cursor.Execute('DROP TABLE IF EXISTS "book"')
+      cursor.Execute("""
+                        CREATE TABLE "author" (
+                        "ID"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        "name"	TEXT NOT NULL
+                        );
+                    """)
+      cursor.Execute("""CREATE TABLE "book" (
+                        "ID"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        "author" INTEGER,
+                        "title" TEXT
+                      )""")
+  def tearDown(self):
+    with self.connection as cursor:
+      cursor.Execute('DROP TABLE IF EXISTS "author"')
+      cursor.Execute('DROP TABLE IF EXISTS "book"')
+
+  def getsecondConnection(self):
+    return SqliteConnection()
+
 class CookieTests(unittest.TestCase):
   def setUp(self):
     """Sets up the tests for the VersionedRecord class."""
@@ -557,7 +596,6 @@ class CookieTests(unittest.TestCase):
     self.assertEqual(5, len(self.get_response_cookie_header()))
 
 
-
 def DatabaseConnection():
   """Returns an SQLTalk database connection to 'uWeb3_model_test'."""
   return mysql.Connect(
@@ -566,7 +604,6 @@ def DatabaseConnection():
       passwd='password',
       db='uweb_test',
       charset='utf8')
-
 
 def CookieConnection():
   return safe_cookie.Connect(request.Request({'REQUEST_METHOD': 'GET', 'host': 'localhost', 'QUERY_STRING': ''}, None, None), {}, 'secret')

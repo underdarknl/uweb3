@@ -14,17 +14,27 @@ import queue
 import threading
 
 # Application specific modules
-from . import converters
 from . import cursor
+from .. import sqlresult
 
 COMMIT = '----COMMIT'
 ROLLBACK = '----ROLLBACK'
 NAMED_TYPE_SELECT = 'SELECT `name` FROM `sqlite_master` where `type`=?'
 
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
+
 class Connection(sqlite3.Connection):
   def __init__(self, *args, **kwds):
     db_name = os.path.splitext(os.path.split(args[0])[1])[0]
     self.logger = logging.getLogger('sqlite_%s' % db_name)
+    self.counter_transactions = 0
+    self.counter_queries = 0
+    self.charset = 'utf-8'
+    self.queries = []
     if kwds.pop('debug', False):
       self.logger.setLevel(logging.DEBUG)
     else:
@@ -33,6 +43,7 @@ class Connection(sqlite3.Connection):
       self.logger.disable_logger = True
     self.autocommit_mode = kwds.pop('autocommit', True)
     sqlite3.Connection.__init__(self, *args, **kwds)
+    self.row_factory = dict_factory
 
   def __enter__(self):
     """Starts a transaction."""
@@ -57,20 +68,55 @@ class Connection(sqlite3.Connection):
   def rollback(self):
     sqlite3.Connection.rollback(self)
 
-  @staticmethod
-  def EscapeField(field):
-    """Returns a SQL escaped field or table name."""
-    return '.'.join('`%s`' % f.replace('`', '``') for f in field.split('.'))
+  def EscapeField(self, field, multiple=False):
+    """Returns a SQL escaped field or table name.
+
+    Set multiple = True if field is a tuple of names to be escaped.
+    If multiple = False, and a tuple is encountered `field` as `name` will be
+      returned where the second part of the tuple is the `name` part.
+    """
+    if not field:
+      return ''
+    if isinstance(field, str):
+      fields = '.'.join('`%s`' % f.replace('`', '``') for f in field.split('.'))
+      return fields.replace('`*`', '*')
+    elif not multiple and isinstance(field, tuple):
+      return '%s as %s' % (self.EscapeField(field[0]), self.EscapeField(
+          field[1]))
+    return map(self.EscapeField, field)
 
   def EscapeValues(self, obj):
     """We do not escape here, we simple return the value and allow the query
     engine to escape using parameters.
     """
+    if isinstance(obj, str):
+      return f'"{obj}"' # XXX: This isn't really clean.
     return obj
 
   def ShowTables(self):
     result = self.execute(NAMED_TYPE_SELECT, ('table',)).fetchall()
     return [row[0] for row in result]
+
+  def Query(self, query_string, cur):
+    self.counter_queries += 1
+
+    if not cur:
+      cur = cursor.Cursor(self)
+
+    result = cur.cursor.execute(query_string)
+    stored_result = cur.cursor.fetchall()
+    if stored_result:
+      fields = list(stored_result[0])
+    else:
+      fields = []
+    return sqlresult.ResultSet(
+        affected=result.rowcount,
+        charset='utf-8',
+        fields=fields,
+        insertid=result.lastrowid,
+        query=query_string,
+        result=stored_result
+    )
 
 
 class ThreadedConnection(threading.Thread):

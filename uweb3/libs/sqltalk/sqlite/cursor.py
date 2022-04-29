@@ -5,59 +5,39 @@ __version__ = '0.4'
 
 
 # Custom modules
+import sqlite3
 from .. import sqlresult
+from .. import base_cursor
 
-class Cursor:
+class Cursor(base_cursor.BaseCursor):
+  DatabaseError = sqlite3.DatabaseError
+  DataError = sqlite3.DataError
+  Error = sqlite3.Error
+  IntegrityError = sqlite3.IntegrityError
+  InterfaceError = sqlite3.InterfaceError
+  InternalError = sqlite3.InternalError
+  NotSupportedError = sqlite3.NotSupportedError
+  OperationalError = sqlite3.OperationalError
+  ProgrammingError = sqlite3.ProgrammingError
+  Warning = sqlite3.Warning
+
   def __init__(self, connection):
+    super().__init__(connection)
     self.connection = connection
     self.cursor = connection.cursor()
 
-  def Execute(self, query, args=(), many=False):
-    try:
-      if many:
-        result = self.cursor.executemany(query, args)
-      else:
-        result = self.cursor.execute(query, args)
-    except Exception:
-      self.connection.logger.exception('Exception during query execution')
-      raise
-    fieldnames = [field[0] for field in result.description] if result.description else None
-    return sqlresult.ResultSet(
-        affected=result.rowcount,
-        charset='utf-8',
-        fields=fieldnames,
-        insertid=result.lastrowid,
-        query=(query, tuple(args)),
-        result=[dict(zip(fieldnames, row)) for row in result.fetchall()],
-    )
+  def Execute(self, query):
+    return self._Execute(query)
 
-  def Insert(self, table, values):
-    if not values:
-      raise ValueError('Must insert 1 or more value')
-    elif isinstance(values, dict):
-      query = ('INSERT INTO %s (%s) VALUES (%s)' %
-               (table,
-                ', '.join(map(self.connection.EscapeField, values)),
-                ', '.join('?' * len(values))))
-      return self.Execute(query, args=list(values.values()), many=False)
-    query = ('INSERT INTO %s (%s) VALUES (%s)' %
-             (table,
-              ', '.join(map(self.connection.EscapeField, values[0])),
-              ', '.join('?' * len(values[0]))))
-    return self.Execute(
-        query, args=(row.values() for row in values), many=True)
-
-  def Select(self, table, fields=None, conditions=None, order=None, group=None,
-             limit=None, offset=0):
-    """Select fields from table that match the conditions, ordered and limited.
+  def Update(self, table, values, conditions, order=None,
+             limit=None, offset=None, escape=True):
+    """Updates table records to the new values where conditions are met.
 
     Arguments:
-      table:      string/list/tuple. Table(s) to select fields out of.
-      fields:     string/list/tuple (optional). Fields to select. Default '*'.
-                  As string, single field name. (autoquoted)
-                  As list/tuple, one field name per element. (autoquoted)
-      conditions: string/list/tuple (optional). SQL 'where' statement.
-                  Literal as string. AND'd if list/tuple.
+      table:      string. Name of table to update values in.
+      values:     dictionary. Key for fieldname, value for content (autoquoted).
+      conditions: string/list/tuple.
+                  Where statements. Literal as string. AND'd if list/tuple.
                   THESE WILL NOT BE ESCAPED FOR YOU, EVER.
       order:      (nested) list/tuple (optional).
                   Defines sorting of table before updating, elements can be:
@@ -65,57 +45,69 @@ class Cursor:
                     list/tuple of two elements:
                       1) string, field name to order by
                       2) bool, revserse; set this to True to reverse the order
-      group:      str (optional). Field name or function to group result by.
-      limit:      integer (optional). Defines output size in rows.
+      limit:      integer (optional). Defines max rows to update.
+                  Default value for this is None, meaning no limit.
       offset:     integer (optional). Number of rows to skip, requires limit.
+      escape:     boolean. Defines whether table names, fields and values should
+                  be escaped. Set this to False if you want to make use of
+                  MySQL functions on this query. Default True.
 
     Returns:
       sqlresult.ResultSet object.
     """
-    if isinstance(table, str):
-      table = self.connection.EscapeField(table)
+    if escape:
+      field_escape = self.connection.EscapeField
+      values = self.connection.EscapeValues(values)
     else:
-      table = ', '.join(map(self.connection.EscapeField, table))
+      field_escape = lambda x: x
+    return self._Execute('UPDATE %s SET %s WHERE %s %s %s' % (
+        self._StringTable(table, field_escape),
+        ', '.join('`%s`="%s"' % value for value in values.items()),
+        self._StringConditions(conditions, field_escape),
+        self._StringOrder(order, field_escape),
+        self._StringLimit(limit, offset)))
 
-    if fields is None:
-      fields = '*'
-    elif isinstance(fields, str):
-      fields = self.connection.EscapeField(fields)
-    else:
-      fields = ', '.join(map(self.connection.EscapeField, fields))
+  def Insert(self, table, values, escape=True):
+    """Insert new row into table.
 
-    #FIXME(Elmer): Add consistent programmatic condition support for SQLTalk.
-    if isinstance(conditions, (list, tuple)):
-      conditions = ' AND '.join(conditions)
-    elif not conditions:
-      conditions = 1
+    This method can also perform multi-row insert.
+    By default, input strings are quoted, made safe to be inserted into MySQL
+    and the Python None-object is translated to MySQL 'NULL'.
 
-    if order is not None:
-      orders = []
-      for rule in order:
-        if isinstance(rule, str):
-          orders.append(self.connection.EscapeField(rule))
-        else:
-          orders.append('%s %s' %
-                        (self.connection.EscapeField(rule[0]),
-                        ('ASC', 'DESC')[rule[1]]))
-      order = 'ORDER BY ' + ', '.join(orders)
-    else:
-      order = ''
+    Arguments:
+      table:   string. Name of the table to insert into.
+      values:  dictionary or list/tuple.
+               Dictionary for single inserts:
+               * keys:   field names
+               * values: field values
+               List of dictionaries for a multi-row insert:
+               * Each record as a single dictionary.
+               * Each dictionary should have the same keys (fields).
+      escape:  boolean. Defines whether table names, fields and values should
+               be escaped. Set this to False if you want to make use of
+               MySQL functions on this query. Default True.
 
-    if group is not None:
-      group = 'GROUP BY ' + self.connection.EscapeField(group)
-    else:
-      group = ''
+    Returns:
+      sqlresult.ResultSet object.
+    """
+    if not values:
+      raise ValueError('Must insert 1 or more value')
+    values = self.connection.EscapeValues(values) if escape else values
+    table = self.connection.EscapeField(table) if escape else table
+    try:
+      values_query = ""
+      for x in values.values():
+        values_query += '"' + x + '"'
+      query = ('INSERT INTO %s (%s) VALUES (%s)' %
+               (table,
+                ', '.join(map(self.connection.EscapeField, values)),
+                values_query))
+    except AttributeError:
+      # Multi-row insert
+      fields = ', '.join(map(self.connection.EscapeField, values[0]))
+      values = ', '.join('(%s)' % ', '.join(row.itervalues()) for row in values)
+      query = 'INSERT INTO %s (%s) VALUES %s' % (table, fields, values)
+    return self._Execute(query)
 
-    if limit is not None:
-      if offset:
-        limit = 'LIMIT %d OFFSET %d' % (limit, offset)
-      else:
-        limit = 'LIMIT %d' % limit
-    else:
-      limit = ''
 
-    query = ('SELECT %s FROM %s WHERE %s %s %s %s' %
-             (fields, table, conditions, group, order, limit))
-    return self.Execute(query)
+
