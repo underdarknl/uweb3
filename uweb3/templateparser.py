@@ -187,6 +187,10 @@ class Parser(dict):
     Returns:
       Template: A template object, created from a previously loaded file.
     """
+    if isinstance(template, dict):
+      self.AddTemplate(template['file_name'], name=template['template_alias'])
+      return super().__getitem__(template['template_alias'])
+
     if template not in self:
       self.AddTemplate(template)
     return super().__getitem__(template)
@@ -406,7 +410,7 @@ class Template(list):
   def __str__(self):
     return ''.join(map(str, self))
 
-  def AddFile(self, name):
+  def AddFile(self, name, template_alias=None):
     """Extends the Template by reading template data from a file.
 
     The file is loaded through the Parser instance associated with the template.
@@ -419,7 +423,13 @@ class Template(list):
     self.name = name
     if self.parser is None:
       raise TypeError('The template requires parser for adding template files.')
-    return self._AddToOpenScope(self.parser[name])
+
+    if template_alias:
+      template = self.parser[{'file_name': name, 'template_alias': template_alias}]
+      template._template_alias = template_alias
+    else:
+      template = self.parser[name]
+    return self._AddToOpenScope(template)
 
   def AddString(self, raw_template, filename=None):
     """Extends the Template by adding a raw template string.
@@ -503,9 +513,12 @@ class Template(list):
   # Template syntax constructs
   #
 
-  def _TemplateConstructInline(self, name):
+  def _TemplateConstructInline(self, name, template_alias=None):
     """Processing for {{ inline }} template syntax."""
-    self.AddFile(name)
+    if template_alias:
+      return self.AddFile(name, template_alias)
+    return self.AddFile(name)
+
 
   def _TemplateConstructFor(self, *nodes):
     """Processing for {{ for }} template syntax."""
@@ -597,6 +610,7 @@ class FileTemplate(Template):
         An optional parser instance that is necessary to enable support for
         adding files to the current template. This is used by {{ inline }}.
     """
+    self._template_alias = None
     self._template_path = template_path
     self.parser = parser
     self.templateEncoding = encoding or (self.parser.templateEncoding if self.parser else 'utf-8')
@@ -617,6 +631,8 @@ class FileTemplate(Template):
     """
     self.ReloadIfModified()
     try:
+      if self._template_alias:
+        kwds = {'__filename': self._template_alias, **kwds}
       result = super().Parse(**kwds)
     except TemplateFunctionError as error:
       raise TemplateFunctionError('%s in %s' % (error, self._template_path))
