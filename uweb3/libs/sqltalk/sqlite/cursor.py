@@ -7,7 +7,6 @@ __version__ = '0.4'
 # Custom modules
 from .. import sqlresult
 
-
 class Cursor:
   def __init__(self, connection):
     self.connection = connection
@@ -22,7 +21,7 @@ class Cursor:
     except Exception:
       self.connection.logger.exception('Exception during query execution')
       raise
-    fieldnames = [field[0] for field in result.description]
+    fieldnames = [field[0] for field in result.description] if result.description else None
     return sqlresult.ResultSet(
         affected=result.rowcount,
         charset='utf-8',
@@ -40,7 +39,7 @@ class Cursor:
                (table,
                 ', '.join(map(self.connection.EscapeField, values)),
                 ', '.join('?' * len(values))))
-      return self.Execute(query, args=values.values(), many=False)
+      return self.Execute(query, args=list(values.values()), many=False)
     query = ('INSERT INTO %s (%s) VALUES (%s)' %
              (table,
               ', '.join(map(self.connection.EscapeField, values[0])),

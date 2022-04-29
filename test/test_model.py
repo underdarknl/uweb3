@@ -8,10 +8,12 @@
 import unittest
 
 # Importing uWeb3 makes the SQLTalk library available as a side-effect
-from uweb3.libs.sqltalk import mysql
+from uweb3.libs.sqltalk import mysql, safe_cookie, sqlite
 # Unittest target
 from uweb3 import model
-from pymysql.err import InternalError
+from uweb3 import request
+from pathlib import Path
+import os
 
 # ##############################################################################
 # Record classes for testing
@@ -19,19 +21,21 @@ from pymysql.err import InternalError
 class BasicTestRecord(model.Record):
   """Test record for offline tests."""
 
-
+class BasicTestRecordSqlite(model.Record):
+  """Test record for offline tests."""
+  _CONNECTOR = 'sqlite'
 class Author(model.Record):
   """Author class for testing purposes."""
-
 
 class Book(model.Record):
   """Book class for testing purposes."""
 
+class Session(model.SecureCookie):
+  """Session class for cookie testing purposes."""
 
 class Writer(model.Record):
   """Writer class for testing purposes, will manage `writers` table."""
   _TABLE = 'writers'
-
 
 class VersionedAuthor(model.VersionedRecord):
   """Versioned author table for testing purposes."""
@@ -57,7 +61,8 @@ class BaseRecordTests(unittest.TestCase):
 
   def testTableName(self):
     """[BaseRecord] TableName returns the expected value and obeys _TABLE"""
-    self.assertEqual(self.record_class.TableName(), 'basicTestRecord')
+    tablename = self.record_class.__name__[0].lower() + self.record_class.__name__[1:]
+    self.assertEqual(self.record_class.TableName(), tablename)
     self.record_class._TABLE = 'WonderfulSpam'
     self.assertEqual(self.record_class.TableName(), 'WonderfulSpam')
 
@@ -90,6 +95,8 @@ class RecordTests(unittest.TestCase):
     """Sets up the tests for the Record class."""
     self.connection = DatabaseConnection()
     with self.connection as cursor:
+      cursor.Execute('DROP TABLE IF EXISTS `author`')
+      cursor.Execute('DROP TABLE IF EXISTS `book`')
       cursor.Execute("""CREATE TABLE `author` (
                             `ID` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
                             `name` varchar(32) NOT NULL,
@@ -101,12 +108,10 @@ class RecordTests(unittest.TestCase):
                             `title` varchar(32) NOT NULL,
                             PRIMARY KEY (`ID`)
                           ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
-
   def tearDown(self):
-    """Destroy tables after testing."""
-    with self.connection as cursor:
-      cursor.Execute('DROP TABLE `author`')
-      cursor.Execute('DROP TABLE `book`')
+      with self.connection as cursor:
+        cursor.Execute('DROP TABLE IF EXISTS `author`')
+        cursor.Execute('DROP TABLE IF EXISTS `book`')
 
   def testLoadPrimary(self):
     """[Record] Records can be loaded by primary key using FromPrimary()"""
@@ -141,7 +146,7 @@ class RecordTests(unittest.TestCase):
 
   def testCreateRecordWithBadField(self):
     """Database record creation fails if there are unknown fields present"""
-    self.assertRaises(InternalError, Author.Create, self.connection,
+    self.assertRaises(model.BadFieldError, Author.Create, self.connection,
                       {'name': 'L. Tolstoy', 'email': 'leo@tolstoy.ru'})
 
   def testUpdateRecord(self):
@@ -157,7 +162,7 @@ class RecordTests(unittest.TestCase):
     """Database record updating fails if there are unknown fields present"""
     author = Author.Create(self.connection, {'name': 'A. Pushkin'})
     author['specialty'] = 'poetry'
-    self.assertRaises(InternalError, author.Save)
+    self.assertRaises(model.BadFieldError, author.Save)
 
   def testUpdatePrimaryKey(self):
     """Saving with an updated primary key properly saved the record"""
@@ -188,6 +193,57 @@ class RecordTests(unittest.TestCase):
     book = Book(self.connection, {'author': None})
     self.assertEqual(book['author'], None)
 
+  def testManualCommit(self):
+    """Validates that manual committing is indeed working"""
+    Author.autocommit(self.connection, False)
+    new_author = Author.Create(self.connection, {'name': 'W. Shakespeare'})
+    Author.commit(self.connection)
+    author = Author.FromPrimary(self.connection, new_author.key)
+    self.assertEqual(author['name'], 'W. Shakespeare')
+
+  def testMultipleRecordsInManualCommit(self):
+    """Validates that all queries in a transaction are propperly committed when doing so manually"""
+    Author.autocommit(self.connection, False)
+    for i in range(5):
+      Author.Create(self.connection, {'name': 'W. Shakespeare'})
+    Author.commit(self.connection)
+    authors = list(Author.List(self.connection))
+    self.assertEqual(5, len(authors))
+
+  def testMultipleRecordsRollback(self):
+    """Validates that a rollback indeed removes all queries from the transaction"""
+    Author.autocommit(self.connection, False)
+    for i in range(5):
+      Author.Create(self.connection, {'name': f'W. Shakespeare'})
+    Author.rollback(self.connection)
+    authors = list(Author.List(self.connection))
+    self.assertEqual(0, len(authors))
+
+  def testDirtyRead(self):
+    """Validates that a dirty read is not possible"""
+    seperate_connection = DatabaseConnection()
+    Author.autocommit(self.connection, False)
+    new_author = Author.Create(self.connection, {'name': 'W. Shakespeare'})
+    self.assertRaises(model.NotExistError, Author.FromPrimary, seperate_connection, new_author.key)
+
+  def testUncommitedTransaction(self):
+    """Validates that a commited transaction is visible for another connection"""
+    seperate_connection = DatabaseConnection()
+    Author.autocommit(self.connection, False)
+    new_author = Author.Create(self.connection, {'name': 'W. Shakespeare'})
+    Author.commit(self.connection)
+    author = Author.FromPrimary(seperate_connection, new_author.key)
+    self.assertEqual(author['name'], 'W. Shakespeare')
+
+  def testRollBack(self):
+    """No record should be found after the transaction was rolled back"""
+    Author.autocommit(self.connection, False)
+    new_author = Author.Create(self.connection, {'name': 'W. Shakespeare'})
+    Author.rollback(self.connection)
+    Author.autocommit(self.connection, True)
+    self.assertRaises(model.NotExistError, Author.FromPrimary, self.connection, new_author.key)
+
+
 
 class NonStandardTableAndRelations(unittest.TestCase):
   """Verified autoloading works for records with an alternate table name."""
@@ -195,6 +251,8 @@ class NonStandardTableAndRelations(unittest.TestCase):
     """Sets up the tests for the Record class."""
     self.connection = DatabaseConnection()
     with self.connection as cursor:
+      cursor.Execute('DROP TABLE IF EXISTS `writers`')
+      cursor.Execute('DROP TABLE IF EXISTS `book`')
       cursor.Execute("""CREATE TABLE `writers` (
                             `ID` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
                             `name` varchar(32) NOT NULL,
@@ -206,12 +264,10 @@ class NonStandardTableAndRelations(unittest.TestCase):
                             `title` varchar(32) NOT NULL,
                             PRIMARY KEY (`ID`)
                           ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
-
   def tearDown(self):
-    """Destroy tables after testing."""
-    with self.connection as cursor:
-      cursor.Execute('DROP TABLE `writers`')
-      cursor.Execute('DROP TABLE `book`')
+      with self.connection as cursor:
+        cursor.Execute('DROP TABLE IF EXISTS `writers`')
+        cursor.Execute('DROP TABLE IF EXISTS `book`')
 
   def testVerifyNoLoad(self):
     """No loading is performed on a field that matches a class but no table"""
@@ -246,6 +302,8 @@ class VersionedRecordTests(unittest.TestCase):
     """Sets up the tests for the VersionedRecord class."""
     self.connection = DatabaseConnection()
     with self.connection as cursor:
+      cursor.Execute('DROP TABLE IF EXISTS `versionedAuthor`')
+      cursor.Execute('DROP TABLE IF EXISTS `versionedBook`')
       cursor.Execute("""CREATE TABLE `versionedAuthor` (
                             `ID` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
                             `versionedAuthorID` smallint(5) unsigned NOT NULL,
@@ -263,10 +321,9 @@ class VersionedRecordTests(unittest.TestCase):
                           ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
   def tearDown(self):
-    """Destroy tables after testing."""
-    with self.connection as cursor:
-      cursor.Execute('DROP TABLE `versionedAuthor`')
-      cursor.Execute('DROP TABLE `versionedBook`')
+      with self.connection as cursor:
+        cursor.Execute('DROP TABLE IF EXISTS `versionedAuthor`')
+        cursor.Execute('DROP TABLE IF EXISTS `versionedBook`')
 
   def testRecordKeyName(self):
     """[Versioned] Versioning key name follows table name unless specified"""
@@ -380,6 +437,7 @@ class CompoundKeyRecordTests(unittest.TestCase):
     """Sets up the tests for the VersionedRecord class."""
     self.connection = DatabaseConnection()
     with self.connection as cursor:
+      cursor.Execute('DROP TABLE IF EXISTS`compounded`')
       cursor.Execute("""CREATE TABLE `compounded` (
                             `first` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
                             `second` smallint(5) unsigned NOT NULL,
@@ -388,9 +446,8 @@ class CompoundKeyRecordTests(unittest.TestCase):
                           ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
   def tearDown(self):
-    """Destroy tables after testing."""
     with self.connection as cursor:
-      cursor.Execute('DROP TABLE `compounded`')
+      cursor.Execute('DROP TABLE IF EXISTS`compounded`')
 
   def testCreate(self):
     """[Compound] Creating a compound record requires both keys provided"""
@@ -425,6 +482,80 @@ class CompoundKeyRecordTests(unittest.TestCase):
         self.connection.IntegrityError, Compounded.Create,
         self.connection, {'first': 2, 'second': 1, 'message': 'Break stuff'})
 
+class SqliteTest(BaseRecordTests):
+  """Tests for Record classes with a compound key."""
+  def setUp(self):
+    """Sets up the tests for the VersionedRecord class."""
+    self.record_class = BasicTestRecordSqlite
+    # self.record_class._PRIMARY_KEY = 'ID'
+    self.connection = SqliteConnection()
+    with self.connection as cursor:
+      cursor.Execute('DROP TABLE IF EXISTS "author"')
+      cursor.Execute('DROP TABLE IF EXISTS "book"')
+      cursor.Execute("""
+                        CREATE TABLE "author" (
+                        "ID"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        "name"	TEXT NOT NULL
+                        );
+                    """)
+      cursor.Execute("""CREATE TABLE "book" (
+                        "ID"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        "author" INTEGER,
+                        "title" TEXT
+                      )""")
+  def tearDown(self):
+    with self.connection as cursor:
+      cursor.Execute('DROP TABLE IF EXISTS "author"')
+      cursor.Execute('DROP TABLE IF EXISTS "book"')
+class CookieTests(unittest.TestCase):
+  def setUp(self):
+    """Sets up the tests for the VersionedRecord class."""
+    self.connection = CookieConnection()
+
+  def get_response_cookie_header(self):
+    return self.connection.request_object.response.headers.setdefault("Set-Cookie", {})
+
+  def testUncommittedCookie(self):
+    Session.autocommit(self.connection, False)
+    Session.Create(self.connection, "test_cookie")
+    self.assertEqual(1, len(self.connection.uncommitted_cookies))
+    # Validate that the Set-Cookie header is not actually set cause we didn't commit the cookie yet
+    self.assertEqual(0, len(self.get_response_cookie_header()))
+
+  def testAutocommitOnByDefault(self):
+    Session.Create(self.connection, "test_cookie")
+    self.assertEqual(0, len(self.connection.uncommitted_cookies))
+    # This time it should be set because autocommit is the default action
+    self.assertEqual(1, len(self.get_response_cookie_header()))
+
+  def testManualCommit(self):
+    Session.autocommit(self.connection, False)
+    Session.Create(self.connection, "test_cookie")
+    Session.commit(self.connection)
+    self.assertEqual(0, len(self.connection.uncommitted_cookies))
+    self.assertEqual(1, len(self.get_response_cookie_header()))
+
+  def testRollback(self):
+    Session.autocommit(self.connection, False)
+    Session.Create(self.connection, "test_cookie")
+    Session.rollback(self.connection)
+    self.assertEqual(0, len(self.connection.uncommitted_cookies))
+    # Cookie header should be empty after a rollback too!
+    self.assertEqual(0, len(self.get_response_cookie_header()))
+
+  def testMultipleCommits(self):
+    Session.autocommit(self.connection, False)
+    for i in range(5):
+      Session.Create(self.connection, f"test_cookie{i}")
+
+    self.assertEqual(5, len(self.connection.uncommitted_cookies))
+    self.assertEqual(0, len(self.get_response_cookie_header()))
+
+    Session.commit(self.connection)
+
+    self.assertEqual(0, len(self.connection.uncommitted_cookies))
+    self.assertEqual(5, len(self.get_response_cookie_header()))
+
 
 
 def DatabaseConnection():
@@ -432,11 +563,17 @@ def DatabaseConnection():
   return mysql.Connect(
       host='localhost',
       user='stef',
-      passwd='24192419',
+      passwd='password',
       db='uweb_test',
       charset='utf8')
 
 
+def CookieConnection():
+  return safe_cookie.Connect(request.Request({'REQUEST_METHOD': 'GET', 'host': 'localhost', 'QUERY_STRING': ''}, None, None), {}, 'secret')
+
+def SqliteConnection():
+  path = os.path.join(Path().absolute(), 'sqlite.db')
+  return sqlite.Connect(path)
 
 if __name__ == '__main__':
   unittest.main(testRunner=unittest.TextTestRunner(verbosity=2))

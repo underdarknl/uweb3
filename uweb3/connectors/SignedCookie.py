@@ -7,6 +7,7 @@ import os
 from base64 import b64encode
 
 from . import Connector
+from ..libs.sqltalk import safe_cookie
 
 class SignedCookie(Connector):
   """Adds a signed cookie connection to the connection manager object.
@@ -29,7 +30,8 @@ class SignedCookie(Connector):
       if self.debug:
         print('SignedCookie: Wrote new secret random to config.')
       self.secure_cookie_secret = secret
-    self.connection = (request, request.vars['cookie'], self.secure_cookie_secret)
+
+    self.connection =  safe_cookie.Connect(request, request.vars['cookie'], self.secure_cookie_secret)
 
   @staticmethod
   def GenerateNewKey(length=128):

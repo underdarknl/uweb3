@@ -2,15 +2,14 @@
 """uWeb3 model base classes."""
 
 # Standard modules
-import base64
 import configparser
-import datetime
+import os
+import sys
+import json
+import configparser
 import os
 import sys
 import hashlib
-import json
-import secrets
-
 
 
 class Error(Exception):
@@ -34,8 +33,20 @@ class NotExistError(Error):
 class PermissionError(Error):
   """The entity has insufficient rights to access the resource."""
 
+class TransactionMixin:
+  @classmethod
+  def autocommit(cls, connection, value):
+    connection.autocommit(value)
 
-class SettingsManager(object):
+  @classmethod
+  def commit(cls, connection):
+    connection.commit()
+
+  @classmethod
+  def rollback(cls, connection):
+    connection.rollback()
+
+class SettingsManager(TransactionMixin):
   def __init__(self, filename=None, path=None):
     """Creates a ini file with the child class name
 
@@ -175,7 +186,7 @@ class SettingsManager(object):
     return True
 
 
-class SecureCookie(object):
+class SecureCookie(TransactionMixin):
   """The secureCookie class works just like other data abstraction classes,
   except that it stores its data in client side cookies that are signed with a
   server side secret to avoid tampering by the end-user.
@@ -191,7 +202,9 @@ class SecureCookie(object):
   def __init__(self, connection):
     """Create a new SecureCookie instance."""
     self.connection = connection
-    self.request, self.cookies, self.cookie_salt = self.connection
+    self.request = connection.request_object
+    self.cookies = connection.cookies
+    self.cookie_salt = connection.cookie_salt
     self.debug = self.connection.debug
     self._rawcookie = None
     if self.debug:
@@ -273,13 +286,15 @@ class SecureCookie(object):
       ValueError: When cookie with name already exists
     """
     cls.connection = connection
-    cls.request, cls.cookies, cls.cookie_salt = connection
+    cls.request = connection.request_object
+    cls.cookies = connection.cookies
+    cls.cookie_salt = connection.cookie_salt
     name = cls.TableName()
     cls._rawcookie = data
 
     hashed = cls.__CreateCookieHash(cls, data)
     cls.cookies[name] = hashed
-    cls.request.AddCookie(name, hashed, **attrs)
+    cls.connection.insert(name, hashed, **attrs)
     return cls
 
   def Update(self, data, **attrs):
@@ -328,14 +343,14 @@ class SecureCookie(object):
     self._rawcookie = data
     hashed = self.__CreateCookieHash(data)
     self.cookies[name] = hashed
-    self.request.AddCookie(name,  hashed, **attrs)
+    self.connection.update(name, hashed, **attrs)
 
   def Delete(self):
     """Deletes cookie based on name
     The cookie is no longer in the session after calling this method
     """
     name = self.TableName()
-    self.request.DeleteCookie(name)
+    self.connection.delete(name)
     self._rawcookie = None
 
   def __CreateCookieHash(self, data):
@@ -385,7 +400,7 @@ class SecureCookie(object):
 
 # Record classes have many methods, this is not an actual problem.
 # pylint: disable=R0904
-class BaseRecord(dict):
+class BaseRecord(TransactionMixin, dict):
   """Basic database record wrapping class.
 
   This allows structured database manipulation for applications. Supported
@@ -1076,7 +1091,7 @@ class Record(BaseRecord):
         self._record[self._PRIMARY_KEY] = self.key = result.insertid
     except cursor.OperationalError as err_obj:
       if err_obj.args[0] == 1054:
-        raise BadFieldError(err_obj[1])
+        raise BadFieldError(err_obj)
       raise DatabaseError(err_obj)
 
   def _RecordUpdate(self, cursor):
@@ -1098,7 +1113,7 @@ class Record(BaseRecord):
       raise Error('Cannot update record without pre-existing primary key.')
     except cursor.OperationalError as err_obj:
       if err_obj.args[0] == 1054:
-        raise BadFieldError(err_obj[1])
+        raise BadFieldError(err_obj)
       raise DatabaseError(err_obj)
 
   def _SaveForeign(self, cursor):
