@@ -1092,6 +1092,8 @@ class JITTag(object):
   def __call__(self, *args, **kwargs):
     """Returns the output of the earlier wrapped function"""
     if not self.called:
+      # XXX: This is the issue. A JITTag is called a couple times when creating one in a pagemaker, at this time however no replacements are present.
+      # The JITTag should be parsed whenever its parent is being parsed, so that it can be parsed just in time.
       try:
         self.result = self.wrapped(*args, **kwargs)
       except TypeError as msg: # the lambda does not expect params
