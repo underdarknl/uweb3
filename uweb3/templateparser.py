@@ -945,7 +945,7 @@ class TemplateTag(object):
       for index in self.indices:
         value = self._GetIndex(value, index)
       if isinstance(value, JITTag):
-        return value(**replacements)
+        return value.PassReplacements(**replacements)
       return value
     except KeyError:
       raise TemplateNameError('No replacement with name %r' % self.name)
@@ -1094,9 +1094,16 @@ class JITTag(object):
     if not self.called:
       try:
         self.result = self.wrapped(*args, **kwargs)
-      except TypeError: # the lambda does not expect params
+      except TypeError as msg: # the lambda does not expect params
         self.result = self.wrapped()
     self.called = True
+    return self.result
+
+  def PassReplacements(self, *args, **kwargs):
+    try:
+      self.result = self.wrapped(*args, **kwargs)
+    except TypeError as msg: # the lambda does not expect params
+      self.result = self.wrapped()
     return self.result
 
   def __getattr__(self, name):
