@@ -1099,6 +1099,15 @@ class JITTag(object):
     self.called = True
     return self.result
 
+  def __getattr__(self, name):
+    if not self.result:
+      self()
+    if isinstance(self.result, dict):
+      attr_exists = name in self.result.keys()
+      if attr_exists:
+        return self.result[name]
+      raise AttributeError('Key does not exist')
+    return getattr(super(), name)
 
 class SparseList(list):
   """A spare list implementation to allow us to set the nth item on a list"""
