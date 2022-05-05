@@ -7,6 +7,7 @@ __version__ = '3.0.7'
 # Standard modules
 import configparser
 import datetime
+import importlib
 import logging
 import os
 import re
@@ -70,11 +71,10 @@ class Router:
       page_maker = None
       for pm in self.pagemakers:
         # Check if the page_maker has the method/handler we are looking for
-        try:
-          page_maker = details[0].__globals__[details[0].__qualname__.split('.')[0]]
+        if hasattr(details[0], '__call__'):
+          module = importlib.import_module(details[0].__module__)
+          page_maker = getattr(module, details[0].__qualname__.split('.', 1)[0])
           break
-        except:
-          pass
 
         if hasattr(pm, details[0]):
           page_maker = pm
