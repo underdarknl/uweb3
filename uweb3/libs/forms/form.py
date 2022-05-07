@@ -17,11 +17,17 @@ class BaseMetaClass(type):
 
 
 class BaseForm(metaclass=BaseMetaClass):
-  def __init__(self):
+  def __init__(self, allow_unknown=True):
     self.errors = []
     self.cleaned = {}
+    self.allow_unknown = allow_unknown
 
   def validate(self, data):
+    if not self.allow_unknown:
+      for key in data.keys():
+        if key not in self.fields.keys():
+          self.errors.append({key: f"Unknown field {key} in data."})
+
     for name, field in self.fields.items():
       try:
         self.cleaned[name] = field.validate(name, data.get(name, None))
