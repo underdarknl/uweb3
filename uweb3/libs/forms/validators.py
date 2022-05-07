@@ -19,10 +19,10 @@ class BaseLengthValidator:
     raise NotImplementedError("Not implemented")
 
   def prepare(self, value):
-    raise NotImplementedError("Not implemented")
+    return value
 
 
-class MinValueValidator(BaseLengthValidator):
+class MinLenValidator(BaseLengthValidator):
   def __call__(self, value):
     self.error_message = f"Value '{value}' smaller than {self.limit}"
     super().__call__(value)
@@ -33,7 +33,7 @@ class MinValueValidator(BaseLengthValidator):
   def prepare(self, value):
     return len(value)
 
-class MaxValueValidator(BaseLengthValidator):
+class MaxLenValidator(BaseLengthValidator):
   def __call__(self, value):
     self.error_message = f"Value '{value}' smaller than {self.limit}"
     super().__call__(value)
@@ -43,3 +43,20 @@ class MaxValueValidator(BaseLengthValidator):
 
   def prepare(self, value):
     return len(value)
+
+
+class MinValueValidator(BaseLengthValidator):
+  def __call__(self, value):
+    self.error_message = f"Value '{value}' smaller than {self.limit}"
+    super().__call__(value)
+
+  def compare(self, value, min):
+    return value < min
+
+class MaxValueValidator(BaseLengthValidator):
+  def __call__(self, value):
+    self.error_message = f"Value '{value}' smaller than {self.limit}"
+    super().__call__(value)
+
+  def compare(self, value, max):
+    return value > max

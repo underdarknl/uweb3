@@ -30,7 +30,10 @@ class BaseForm(metaclass=BaseMetaClass):
 
     for name, field in self.fields.items():
       try:
-        self.cleaned[name] = field.validate(name, data.get(name, None))
+        self.cleaned[name] = field.validate(name, data[name])
       except ValidationError as ex:
         self.errors.append({name: str(ex)})
+      except KeyError as ex:
+        if field.required:
+          self.errors.append({name: f"'{name}' is a required field"})
 

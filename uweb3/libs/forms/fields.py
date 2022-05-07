@@ -17,15 +17,14 @@ class Field:
 
 
 class StrField(Field):
-  def __init__(self, min_lenth=None, max_length=None, default_value='', **kwargs):
+  def __init__(self, min_lenth=None, max_length=None, **kwargs):
     super().__init__(**kwargs)
     self.min_length = min_lenth
     self.max_length = max_length
-    self.default_value = default_value
     if min_lenth:
-      self.validators.append(validators.MinValueValidator(min_lenth))
+      self.validators.append(validators.MinLenValidator(min_lenth))
     if max_length:
-      self.validators.append(validators.MaxValueValidator(max_length))
+      self.validators.append(validators.MaxLenValidator(max_length))
 
   def validate(self, name, value):
     value = self.clean(value)
@@ -36,3 +35,24 @@ class StrField(Field):
     if value not in EMPTY_VALUES:
       return str(value)
     return value
+
+class NumberField(Field):
+  def __init__(self, min_value=None, max_value=None, **kwargs):
+    super().__init__(**kwargs)
+    self.min_value = min_value
+    self.max_value = max_value
+    if min_value:
+      self.validators.append(validators.MinValueValidator(min_value))
+    if max_value:
+      self.validators.append(validators.MaxValueValidator(max_value))
+
+  def validate(self, name, value):
+    value = self.clean(value)
+    super().run_validators(name, value)
+    return value
+
+  def clean(self, value):
+    try:
+      return int(value)
+    except:
+      raise validators.ValidationError(f"Value: '{value}' is an invalid integer.")
