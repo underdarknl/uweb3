@@ -320,7 +320,7 @@ class BasePageMaker(Base):
     self.post = req.vars['post'] if 'post' in req.vars else IndexedFieldStorage()
     self.put = req.vars['put'] if 'put' in req.vars else IndexedFieldStorage()
     self.delete = req.vars['delete'] if 'delete' in req.vars else IndexedFieldStorage()
-    self.files = req.vars['files'] if 'files' in req.vars else {}
+    self.files = req.vars['files'] if 'files' in req.vars else []
     self.config = config or None
     self.options = config.options if config else {}
     self.debug = DebuggerMixin in self.__class__.__mro__

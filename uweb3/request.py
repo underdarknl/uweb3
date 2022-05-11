@@ -90,7 +90,7 @@ class Request:
       elif self.env['mimetype'] == 'multipart/form-data':
         boundary = self.env.get('CONTENT_TYPE', '').split(';')[1].strip().split('=')[1]
         request_payload = request_payload.split(b'--%s' % boundary.encode(self.charset))
-        self.vars['files'] = {}
+        self.vars['files'] = []
         fields = []
         for item in request_payload:
           item = item.lstrip()
@@ -131,9 +131,9 @@ class Request:
               except:
                 pass
             if filename:
-              self.vars['files'][name] = {'filename': filename,
+              self.vars['files'].append({'filename': filename,
                                           'ContentType': ContentType,
-                                          'content': content}
+                                          'content': content})
             else:
               fields.append('%s=%s' % (name, content))
         self.vars[self.method.lower()] = IndexedFieldStorage(stringIO.StringIO('&'.join(fields)),
