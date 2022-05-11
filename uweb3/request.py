@@ -131,9 +131,13 @@ class Request:
               except:
                 pass
             if filename:
-              self.vars['files'][name] = {'filename': filename,
-                                          'ContentType': ContentType,
-                                          'content': content}
+              file_obj = {'filename': filename,
+                          'ContentType': ContentType,
+                          'content': content}
+              if self.vars['files'].get(name):
+                self.vars['files'][name].append(file_obj)
+              else:
+                self.vars['files'][name] = [file_obj]
             else:
               fields.append('%s=%s' % (name, content))
         self.vars[self.method.lower()] = IndexedFieldStorage(stringIO.StringIO('&'.join(fields)),
