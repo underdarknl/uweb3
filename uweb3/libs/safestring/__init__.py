@@ -299,7 +299,10 @@ class EmailAddresssafestring(Basesafestring):
         ([a-zA-Z0-9.-]+) # domain name
         (\.[a-zA-Z]{2,4}) # dot-something
     )''', re.VERBOSE)
-    return regex.search(data).group()
+    result = regex.search(data)
+    if result:
+      return result.group()
+    return ''
 
   def unescape(self, data):
     """Can't unremove non address elements so we'll just return the string"""
