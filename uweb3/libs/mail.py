@@ -6,6 +6,8 @@ __version__ = '0.3'
 
 # Standard modules
 import base64
+from email.mime.application import MIMEApplication
+import io
 import os
 import smtplib
 from email.mime.base import MIMEBase
@@ -104,12 +106,14 @@ class SendMailContext:
       message.attach(self.ParseAttachment(attachments))
     else:
       for attachment in attachments:
+        part = self.ParseAttachment(attachment)
         message.attach(self.ParseAttachment(attachment))
     self.server.sendmail(message['From'], recipients, str(message))
 
   @staticmethod
   def ParseAttachment(attachment):
     """Parses an attachment descriptor and returns a MIMEBase part for email."""
+    part = MIMEBase('application', 'octet-stream')
     if isinstance(attachment, tuple):
       name, contents = attachment
       if hasattr(contents, 'read'):
@@ -117,16 +121,19 @@ class SendMailContext:
     elif isinstance(attachment, str):
       name = os.path.basename(attachment)
       contents = file(attachment, 'rb').read()
-    elif isinstance(attachment, file):
-      name = os.path.basename(attachment.name)
+    elif isinstance(attachment, bytes):
+      part = MIMEApplication(attachment.getvalue(), Name=os.path.basename(attachment.filename))
+      name = os.path.basename(attachment.filename)
+    elif isinstance(attachment, io.IOBase):
+      name = os.path.basename(attachment.filename)
       attachment.seek(0)
       contents = attachment.read()
 
-    part = MIMEBase('application', 'octet-stream')
-    part.set_payload(Wrap(base64.b64encode(contents)))
+    part.set_payload(base64.b64encode(contents))
     part.add_header('Content-Transfer-Encoding', 'base64')
     part.add_header('Content-Disposition', 'attachment; filename="%s"' % name)
     return part
+
 
   @staticmethod
   def ParseRecipients(recipients):
