@@ -729,6 +729,9 @@ class TemplateConditional(object):
     local_vars = LazyTagValueRetrieval(kwds)
     for num, node in enumerate(expr):
       if isinstance(node, TemplateTag):
+        if node.functions:
+          nodes.append(node.Parse(**kwds))
+          continue
         node_name = '__tmpl_var_%d' % num
         local_vars[node_name] = node
         nodes.append(node_name)
@@ -793,7 +796,7 @@ class TemplateConditionalNotPresence(TemplateConditionalPresence):
     """Checks the presence of all tags named on the branch."""
     try:
       for tag in tags:
-        f
+        tag.GetValue(kwds)
       return False
     except (TemplateKeyError, TemplateNameError):
       return True
