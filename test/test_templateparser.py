@@ -591,6 +591,29 @@ class TemplateConditionals(unittest.TestCase):
     self.assertFalse(self.parse(template, variable=0))
     self.assertFalse(self.parse(template, variable=''))
 
+  def testConditionalWithFunc(self):
+    parser = templateparser.Parser()
+    parser.RegisterFunction('test', lambda x: len(x))
+
+    template = '{{ if [variable|test] == 4}}foo{{else}}bar{{ endif}}'
+    self.assertEqual(parser.ParseString(template, variable='1234'), 'foo')
+    self.assertEqual(parser.ParseString(template, variable='test'), 'foo')
+    self.assertEqual(parser.ParseString(template, variable='12345'), 'bar')
+
+    # Make sure that the function is parsed and that the comparison is 4 == 'test'
+    # instead of 'test' == 'test'
+    template = '{{ if [variable|test] == "test"}}foo{{else}}bar{{ endif}}'
+    self.assertEqual(parser.ParseString(template, variable='test'), 'bar')
+
+  def testElifTagWithFunc(self):
+    parser = templateparser.Parser()
+    parser.RegisterFunction('test', lambda x: len(x))
+    template = '{{ if [variable|test] == 4}}foo{{elif [variable|test] == 5}}bar{{ endif}}'
+    self.assertEqual(parser.ParseString(template, variable='1234'), 'foo')
+    self.assertEqual(parser.ParseString(template, variable='12345'), 'bar')
+    template = '{{ if [variable|test] == "test"}}foo{{elif [variable|test] == 4}}bar{{ endif}}'
+    self.assertEqual(parser.ParseString(template, variable='test'), 'bar')
+
   def testCompareTag(self):
     """{{ if }} Basic tag value comparison"""
     template = '{{ if [variable] == 5 }} foo {{ endif }}'
