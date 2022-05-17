@@ -256,8 +256,8 @@ class uWeb:
       pagemaker_instance._CSPheaders()
 
     # provide users with a PostRequest method to overide too
-    if not static and hasattr(pagemaker_instance, 'PostRequest'):
-      response = pagemaker_instance.PostRequest(response) or response
+    if not static and hasattr(pagemaker_instance, '_PostRequest'):
+      response = pagemaker_instance._PostRequest(response) or response
     pagemaker_instance.CloseRequestConnections()
 
     # we should at least send out something to make sure we are wsgi compliant.
