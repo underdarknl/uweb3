@@ -141,6 +141,21 @@ class Router:
     return request_router
 
 
+class uweb3_pre_init(object):
+    def __init__(self, method):
+        self._method = method
+    def __call__(self, obj, *args, **kwargs):
+        return self._method(obj, *args, **kwargs)
+
+    @classmethod
+    def methods(cls, subject):
+        def g():
+            for name in dir(subject):
+                method = getattr(subject, name)
+                if isinstance(method, uweb3_pre_init):
+                    yield name, method
+        return {name: method for name,method in g()}
+
 class uWeb:
   """Returns a configured closure for handling page requests.
 
@@ -165,6 +180,7 @@ class uWeb:
     RequestHandler: Configured closure that is ready to process requests.
   """
   def __init__(self, page_class, routes, executing_path=None, config='config'):
+    uweb3_pre_init.methods(page_class)['PreInitHook'](page_class)
     self.executing_path = executing_path or os.path.dirname(__file__)
     self.config = SettingsManager(filename=config, path=self.executing_path)
     self._accesslogger = None
