@@ -315,7 +315,7 @@ class uWeb:
             )
             delay = (
                 self.config.options.get("log", {}).get("acces_log_delay", False)
-                != False
+                is not False
             )
             encoding = self.config.options.get("log", {}).get(
                 "acces_log_encoding", None
@@ -339,7 +339,7 @@ class uWeb:
             )
             delay = (
                 self.config.options.get("log", {}).get("exception_log_delay", False)
-                != False
+                is not False
             )
             encoding = self.config.options.get("log", {}).get(
                 "exception_log_encoding", None
