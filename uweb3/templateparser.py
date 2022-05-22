@@ -20,9 +20,13 @@ import math
 # Standard modules
 import os
 import re
-import urllib.parse as urlparse
 
-from .libs.safestring import *
+from .libs.safestring import (
+    Basesafestring,
+    HTMLsafestring,
+    Unsafestring,
+    URLqueryargumentsafestring,
+)
 
 
 class Error(Exception):
