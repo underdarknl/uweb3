@@ -138,7 +138,7 @@ class SendMailContext:
                 contents = contents.read()
         elif isinstance(attachment, str):
             name = os.path.basename(attachment)
-            contents = file(attachment, "rb").read()
+            contents = attachment
         elif isinstance(attachment, bytes):
             part = MIMEApplication(
                 attachment.getvalue(), Name=os.path.basename(attachment.filename)
