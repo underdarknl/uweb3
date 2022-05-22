@@ -9,865 +9,989 @@ Error classes:
   TemplateKeyError: A tagname
   TemplateReadError: Template file could not be read or found.
 """
-__author__ = ('Elmer de Looff <elmer@underdark.nl>',
-              'Jan Klopper <jan@underdark.nl>')
-__version__ = '1.7'
+__author__ = ("Elmer de Looff <elmer@underdark.nl>", "Jan Klopper <jan@underdark.nl>")
+__version__ = "1.7"
+
+import ast
+import hashlib
+import itertools
+import math
 
 # Standard modules
 import os
 import re
 import urllib.parse as urlparse
+
 from .libs.safestring import *
-import hashlib
-import itertools
-import ast, math
+
 
 class Error(Exception):
-  """Superclass used for inheritance and external exception handling."""
+    """Superclass used for inheritance and external exception handling."""
 
 
 class TemplateKeyError(Error):
-  """The replaced tag has no index, key or attribute of the given value."""
+    """The replaced tag has no index, key or attribute of the given value."""
 
 
 class TemplateNameError(Error):
-  """The referenced tag does not exist."""
+    """The referenced tag does not exist."""
 
 
 class TemplateFunctionError(Error):
-  """The referenced function does not exist."""
+    """The referenced function does not exist."""
 
 
 class TemplateValueError(Error, ValueError):
-  """There is a mismatch on the number of values, or the value is invalid."""
+    """There is a mismatch on the number of values, or the value is invalid."""
 
 
 class TemplateTypeError(Error, TypeError):
-  """Inappropriate argument type, or wrong number of arguments."""
+    """Inappropriate argument type, or wrong number of arguments."""
 
 
 class TemplateSyntaxError(Error):
-  """The template contains illegal syntax."""
+    """The template contains illegal syntax."""
 
 
 class TemplateReadError(Error, IOError):
-  """Template file could not be read or found."""
+    """Template file could not be read or found."""
 
 
 class TemplateEvaluationError(Error):
-  """Template condition was not within allowed set of operators."""
+    """Template condition was not within allowed set of operators."""
 
 
 class LazyTagValueRetrieval:
-  """Provides a means for lazy tag value retrieval.
+    """Provides a means for lazy tag value retrieval.
 
-  This is necessary for instance for TemplateConditional.Expression, where
-  lazy retrieval of tag values means that shortcircuit conditional expressions
-  become possible.
-  """
-  def __init__(self, values):
-    self._values = values
-    self._tags = {}
+    This is necessary for instance for TemplateConditional.Expression, where
+    lazy retrieval of tag values means that shortcircuit conditional expressions
+    become possible.
+    """
 
-  # ############################################################################
-  # Methods for delayed tag value retrieval
-  #
-  def __getitem__(self, key):
-    return self._tags[key].GetValue(self._values)
+    def __init__(self, values):
+        self._values = values
+        self._tags = {}
 
-  def __setitem__(self, key, value):
-    self._tags[key] = value
+    # ############################################################################
+    # Methods for delayed tag value retrieval
+    #
+    def __getitem__(self, key):
+        return self._tags[key].GetValue(self._values)
 
-  # ############################################################################
-  # Methods for minimum dictionary likeness
-  #
-  def __iter__(self):
-    return iter(self._tags)
+    def __setitem__(self, key, value):
+        self._tags[key] = value
 
-  def iteritems(self):
-    """Returns an iterator for the items of the LazyTagValueRetrieval dict."""
-    return ((key, self[key]) for key in self)
+    # ############################################################################
+    # Methods for minimum dictionary likeness
+    #
+    def __iter__(self):
+        return iter(self._tags)
 
-  def iterkeys(self):
-    """Returns an iterator for the keys of the LazyTagValueRetrieval dict."""
-    return iter(self)
+    def iteritems(self):
+        """Returns an iterator for the items of the LazyTagValueRetrieval dict."""
+        return ((key, self[key]) for key in self)
 
-  def itervalues(self):
-    """Returns an iterator for the values of the LazyTagValueRetrieval dict."""
-    return (self[key] for key in self)
+    def iterkeys(self):
+        """Returns an iterator for the keys of the LazyTagValueRetrieval dict."""
+        return iter(self)
 
-  def items(self):
-    """Returns a list with the items of the LazyTagValueRetrieval dict."""
-    return list(self.iteritems())
+    def itervalues(self):
+        """Returns an iterator for the values of the LazyTagValueRetrieval dict."""
+        return (self[key] for key in self)
 
-  def keys(self):
-    """Returns a list with the keys of the LazyTagValueRetrieval dict."""
-    return list(self)
+    def items(self):
+        """Returns a list with the items of the LazyTagValueRetrieval dict."""
+        return list(self.iteritems())
 
-  def values(self):
-    """Returns a list with the values of the LazyTagValueRetrieval dict."""
-    return list(self.itervalues())
+    def keys(self):
+        """Returns a list with the keys of the LazyTagValueRetrieval dict."""
+        return list(self)
+
+    def values(self):
+        """Returns a list with the values of the LazyTagValueRetrieval dict."""
+        return list(self.itervalues())
 
 
 EVALWHITELIST = {
-        'functions': {"abs": abs, "complex": complex, "min": min, "max": max,
-                      "pow": pow, "round": round, "len": len, "type": type,
-                      "isinstance": isinstance, "list": list,
-                      **{key: value for (key,value) in vars(math).items() if not key.startswith('__')}},
-        'operators': (ast.Module, ast.Expr, ast.Load, ast.Expression, ast.Add, ast.And,
-                      ast.Sub, ast.UnaryOp, ast.Num, ast.BinOp, ast.Mult, ast.Gt, ast.GtE,
-                      ast.Div, ast.Pow, ast.BitOr, ast.BitAnd, ast.BitXor, ast.Lt, ast.LtE,
-                      ast.USub, ast.UAdd, ast.FloorDiv, ast.Mod, ast.In, ast.LShift,
-                      ast.RShift, ast.Invert, ast.Call, ast.Name, ast.Compare,
-                      ast.Eq, ast.NotEq, ast.Not, ast.Or, ast.BoolOp, ast.Str, ast.Constant, ast.IsNot, ast.Is)}
+    "functions": {
+        "abs": abs,
+        "complex": complex,
+        "min": min,
+        "max": max,
+        "pow": pow,
+        "round": round,
+        "len": len,
+        "type": type,
+        "isinstance": isinstance,
+        "list": list,
+        **{
+            key: value
+            for (key, value) in vars(math).items()
+            if not key.startswith("__")
+        },
+    },
+    "operators": (
+        ast.Module,
+        ast.Expr,
+        ast.Load,
+        ast.Expression,
+        ast.Add,
+        ast.And,
+        ast.Sub,
+        ast.UnaryOp,
+        ast.Num,
+        ast.BinOp,
+        ast.Mult,
+        ast.Gt,
+        ast.GtE,
+        ast.Div,
+        ast.Pow,
+        ast.BitOr,
+        ast.BitAnd,
+        ast.BitXor,
+        ast.Lt,
+        ast.LtE,
+        ast.USub,
+        ast.UAdd,
+        ast.FloorDiv,
+        ast.Mod,
+        ast.In,
+        ast.LShift,
+        ast.RShift,
+        ast.Invert,
+        ast.Call,
+        ast.Name,
+        ast.Compare,
+        ast.Eq,
+        ast.NotEq,
+        ast.Not,
+        ast.Or,
+        ast.BoolOp,
+        ast.Str,
+        ast.Constant,
+        ast.IsNot,
+        ast.Is,
+    ),
+}
 
 
 class Parser(dict):
-  """A template parser that loads and caches templates and parses them by name.
+    """A template parser that loads and caches templates and parses them by name.
 
-  After initializing the parser with a search path for templates, new templates
-  can be explicitly added by using the `AddTemplate` method, or by using either
-  key-based access or using the `Parse` method. These templates are loaded from
-  file, though inserted into the Parser cache are Template objects. These are
-  constructed into their separate components for faster parsing.
+    After initializing the parser with a search path for templates, new templates
+    can be explicitly added by using the `AddTemplate` method, or by using either
+    key-based access or using the `Parse` method. These templates are loaded from
+    file, though inserted into the Parser cache are Template objects. These are
+    constructed into their separate components for faster parsing.
 
-  The `Parse` method takes a template name and any number of keyword arguments.
-  The template name is used to fetch the desired Template object from the
-  Parser cache (or to load it automatically). This Template object is then
-  parsed using the provided keyword arguments.
+    The `Parse` method takes a template name and any number of keyword arguments.
+    The template name is used to fetch the desired Template object from the
+    Parser cache (or to load it automatically). This Template object is then
+    parsed using the provided keyword arguments.
 
-  Alternatively, there is the `ParseString` method, which works in much the same
-  way as the `Parse` method, but the first argument here is a raw template
-  string instead.
+    Alternatively, there is the `ParseString` method, which works in much the same
+    way as the `Parse` method, but the first argument here is a raw template
+    string instead.
 
-  Beyond parsing, the parser grants easy access to the TAG_FUNCTIONS dictionary,
-  providing the `RegisterFunction` method to add or replace functions in this
-  module constant.
-  """
-  def __init__(self, path=None, templates=(), dictoutput=False, templateEncoding='utf-8'):
-    """Initializes a Parser instance.
-
-    This sets up the template directory and preloads any templates given.
-
-    Arguments:
-      % path: str ~~ '.'
-        Search path for loading templates using AddTemplate().
-      % templates: iter of str ~~ None
-        Names of templates to preload.
-      % dictoutput: Bool ~~ False
-        Skip parsing the templates to output, instead return their
-        structure and replaced values as a dict
-      % templateEncoding: str ~~ utf-8
-        Encoding of the template, used when reading the file.
+    Beyond parsing, the parser grants easy access to the TAG_FUNCTIONS dictionary,
+    providing the `RegisterFunction` method to add or replace functions in this
+    module constant.
     """
-    super().__init__()
-    self.template_dir = path
-    self.dictoutput = dictoutput
-    self.tags = {}
-    self.requesttags = {}
-    self.astvisitor = AstVisitor(EVALWHITELIST)
-    self.templateEncoding = templateEncoding
-    for template in templates:
-      self.AddTemplate(template)
 
-  def __getitem__(self, template):
-    """Retrieves a stored template by name.
+    def __init__(
+        self, path=None, templates=(), dictoutput=False, templateEncoding="utf-8"
+    ):
+        """Initializes a Parser instance.
 
-    If the template is not already present, it will be loaded from disk.
-    The template name will be searched on the defined `template_dir`, if it's
-    not found a `TemplateReadError` is raised.
+        This sets up the template directory and preloads any templates given.
 
-    Arguments:
-      @ template: str
-        Template name, or the relative path to find it on.
+        Arguments:
+          % path: str ~~ '.'
+            Search path for loading templates using AddTemplate().
+          % templates: iter of str ~~ None
+            Names of templates to preload.
+          % dictoutput: Bool ~~ False
+            Skip parsing the templates to output, instead return their
+            structure and replaced values as a dict
+          % templateEncoding: str ~~ utf-8
+            Encoding of the template, used when reading the file.
+        """
+        super().__init__()
+        self.template_dir = path
+        self.dictoutput = dictoutput
+        self.tags = {}
+        self.requesttags = {}
+        self.astvisitor = AstVisitor(EVALWHITELIST)
+        self.templateEncoding = templateEncoding
+        for template in templates:
+            self.AddTemplate(template)
 
-    Raises:
-      TemplateReadError: Template name doesn't exist and cannot be loaded.
+    def __getitem__(self, template):
+        """Retrieves a stored template by name.
 
-    Returns:
-      Template: A template object, created from a previously loaded file.
-    """
-    if template not in self:
-      self.AddTemplate(template)
-    return super().__getitem__(template)
+        If the template is not already present, it will be loaded from disk.
+        The template name will be searched on the defined `template_dir`, if it's
+        not found a `TemplateReadError` is raised.
 
-  def AddTemplate(self, location, name=None):
-    """Reads the given `template` filename and adds it to the cache.
+        Arguments:
+          @ template: str
+            Template name, or the relative path to find it on.
 
-    The `template` argument should be a path/filename. This will be resolved
-    against the configured template directory. The file is parsed and placed in
-    the cache using the `template` filename, or the provided `name`.
+        Raises:
+          TemplateReadError: Template name doesn't exist and cannot be loaded.
 
-    Arguments:
-      @ location: str
-        Location of the template file that should be loaded
-      % name: str ~~ None
-        Optional name to store the the file as in the cache, instead of the
-        template name itself.
+        Returns:
+          Template: A template object, created from a previously loaded file.
+        """
+        if template not in self:
+            self.AddTemplate(template)
+        return super().__getitem__(template)
 
-    Raises:
-      TemplateReadError: When the template file cannot be read
-    """
-    if self.template_dir:
-      template_path = os.path.realpath(os.path.join(self.template_dir, location))
-      if os.path.commonprefix((template_path, self.template_dir)) != self.template_dir:
-        raise TemplateReadError('Could not load template %r, not in template dir' % template_path)
-    else:
-      template_path = location
-    try:
-      self[name or location] = FileTemplate(template_path, parser=self, encoding=None)
-    except IOError:
-      raise TemplateReadError('Could not load template %r' % template_path)
+    def AddTemplate(self, location, name=None):
+        """Reads the given `template` filename and adds it to the cache.
 
-  def Parse(self, template, **replacements):
-    """Returns the referenced template with its tags replaced by **replacements.
+        The `template` argument should be a path/filename. This will be resolved
+        against the configured template directory. The file is parsed and placed in
+        the cache using the `template` filename, or the provided `name`.
 
-    This method automatically loads the referenced template if it doesn't exist.
-    The template is loaded from the `template_dir` defined on the instance.
+        Arguments:
+          @ location: str
+            Location of the template file that should be loaded
+          % name: str ~~ None
+            Optional name to store the the file as in the cache, instead of the
+            template name itself.
 
-    Arguments:
-      @ template: str
-        Template name, or the relative path to find it on.
-      @ **replacements: dict
-        Dictionary of replacement objects. Tags are looked up in here.
+        Raises:
+          TemplateReadError: When the template file cannot be read
+        """
+        if self.template_dir:
+            template_path = os.path.realpath(os.path.join(self.template_dir, location))
+            if (
+                os.path.commonprefix((template_path, self.template_dir))
+                != self.template_dir
+            ):
+                raise TemplateReadError(
+                    "Could not load template %r, not in template dir" % template_path
+                )
+        else:
+            template_path = location
+        try:
+            self[name or location] = FileTemplate(
+                template_path, parser=self, encoding=None
+            )
+        except IOError:
+            raise TemplateReadError("Could not load template %r" % template_path)
 
-    Returns:
-      str: The template with relevant tags replaced by the replacement dict.
-    """
-    output = {}
-    output.update(self.tags)
-    output.update(self.requesttags)
-    output.update(replacements)
-    return self[template].Parse(**output)
+    def Parse(self, template, **replacements):
+        """Returns the referenced template with its tags replaced by **replacements.
 
-  def ParseString(self, template, **replacements):
-    """Returns the given `template` with its tags replaced by **replacements.
+        This method automatically loads the referenced template if it doesn't exist.
+        The template is loaded from the `template_dir` defined on the instance.
 
-    Arguments:
-      @ template: str
-        The literal template string, where tags are replaced. This is not stored
-        in the internal template dictionary, nor is it requested therein.
-      @ replacements: dict
-        Dictionary of replacement objects. Tags are looked up in here.
+        Arguments:
+          @ template: str
+            Template name, or the relative path to find it on.
+          @ **replacements: dict
+            Dictionary of replacement objects. Tags are looked up in here.
 
-    Returns:
-      str: template with replaced tags.
-    """
-    output = {}
-    output.update(self.tags)
-    output.update(self.requesttags)
-    output.update(replacements)
-    return Template(template, parser=self).Parse(**output)
+        Returns:
+          str: The template with relevant tags replaced by the replacement dict.
+        """
+        output = {}
+        output.update(self.tags)
+        output.update(self.requesttags)
+        output.update(replacements)
+        return self[template].Parse(**output)
 
-  @staticmethod
-  def RegisterFunction(name, function):
-    """Registers a templating `function`, allowing use in templates by `name`.
+    def ParseString(self, template, **replacements):
+        """Returns the given `template` with its tags replaced by **replacements.
 
-    Arguments:
-      @ name: str
-        The name of the template function. This can be used behind a pipe ( | )
-      @ function: function
-        The function that should be used. Ideally this returns a string.
-    """
-    TAG_FUNCTIONS[name] = function
+        Arguments:
+          @ template: str
+            The literal template string, where tags are replaced. This is not stored
+            in the internal template dictionary, nor is it requested therein.
+          @ replacements: dict
+            Dictionary of replacement objects. Tags are looked up in here.
 
-  def RegisterTag(self, tag, value, persistent=False):
-    """Registers a `value`, allowing use in templates by `tag`.
+        Returns:
+          str: template with replaced tags.
+        """
+        output = {}
+        output.update(self.tags)
+        output.update(self.requesttags)
+        output.update(replacements)
+        return Template(template, parser=self).Parse(**output)
 
-    Arguments:
-      @ tag: str
-        The name of the tag
-      @ value: str, or function
-        Value or function to be executed when replacing this tag
-      @ persistent: bool
-        will this tag be present for multiple requests?
-    """
-    storage = self.tags if persistent else self.requesttags
-    if ':' not in tag:
-      storage[tag] = value
-      return
-    tag = TemplateTag.FromString('[%s]' % tag)
-    # if we are dealing with a tag consisting of multiple path parts, lets reconstruct the path
-    obj = storage
-    prevnode = tag.name
-    d = storage
-    for node in tag.indices:
-      try:
-        node = int(node)
-        subtype = SparseList()
-      except ValueError:
-        subtype = {}
+    @staticmethod
+    def RegisterFunction(name, function):
+        """Registers a templating `function`, allowing use in templates by `name`.
 
-      # add the new sublist to the path if not existant
-      if prevnode not in obj:
-        obj[prevnode] = subtype
+        Arguments:
+          @ name: str
+            The name of the template function. This can be used behind a pipe ( | )
+          @ function: function
+            The function that should be used. Ideally this returns a string.
+        """
+        TAG_FUNCTIONS[name] = function
 
-      obj = obj[prevnode]
-      prevnode = node
-    obj[node] = value
+    def RegisterTag(self, tag, value, persistent=False):
+        """Registers a `value`, allowing use in templates by `tag`.
 
-  @classmethod
-  def JITTag(cls, function):
-    """Creates a JITTag instance of the given function
+        Arguments:
+          @ tag: str
+            The name of the tag
+          @ value: str, or function
+            Value or function to be executed when replacing this tag
+          @ persistent: bool
+            will this tag be present for multiple requests?
+        """
+        storage = self.tags if persistent else self.requesttags
+        if ":" not in tag:
+            storage[tag] = value
+            return
+        tag = TemplateTag.FromString("[%s]" % tag)
+        # if we are dealing with a tag consisting of multiple path parts, lets reconstruct the path
+        obj = storage
+        prevnode = tag.name
+        d = storage
+        for node in tag.indices:
+            try:
+                node = int(node)
+                subtype = SparseList()
+            except ValueError:
+                subtype = {}
 
-    Arguments:
-      % function: reference
-        Reference to the function
-    """
-    return JITTag(function)
+            # add the new sublist to the path if not existant
+            if prevnode not in obj:
+                obj[prevnode] = subtype
 
-  def ClearRequestTags(self):
-    """Resets the non persistent tags to None, is to be called after each
-    completed request"""
-    self.requesttags = {}
+            obj = obj[prevnode]
+            prevnode = node
+        obj[node] = value
 
-  def SetTemplateEncoding(self, templateEncoding='utf-8'):
-    """Allows the user to set the templateEncoding for this parser instance's
-    templates. Any template reads, and reloads will be attempted with this
-    encoding.
+    @classmethod
+    def JITTag(cls, function):
+        """Creates a JITTag instance of the given function
 
-    Arguments:
-      % templateEncoding: str ~~ utf-8
-        Encoding of the template, used when reading the file.
-    """
-    self.templateEncoding = templateEncoding
+        Arguments:
+          % function: reference
+            Reference to the function
+        """
+        return JITTag(function)
 
-  def SetEvalWhitelist(self, evalwhitelist=None, append=False):
-    """Allows the user to set the Eval Whitelist which limits the python
-    operations allowed within this templateParsers Context. These are usually
-    triggered by If/Elif conditions and the like.
+    def ClearRequestTags(self):
+        """Resets the non persistent tags to None, is to be called after each
+        completed request"""
+        self.requesttags = {}
 
-    Arguments:
-      % evalwhitelist: Dict ~~ None
-        The new Dict of whitelisted eval AST items.
-      % append: bool ~~ False
-        When true, add the new items to the current list, else overwrite.
-    """
-    if append:
-      evalwhitelist = EVALWHITELIST.update(evalwhitelist)
-    self.astvisitor = AstVisitor(evalwhitelist)
+    def SetTemplateEncoding(self, templateEncoding="utf-8"):
+        """Allows the user to set the templateEncoding for this parser instance's
+        templates. Any template reads, and reloads will be attempted with this
+        encoding.
 
-  TemplateReadError = TemplateReadError
+        Arguments:
+          % templateEncoding: str ~~ utf-8
+            Encoding of the template, used when reading the file.
+        """
+        self.templateEncoding = templateEncoding
+
+    def SetEvalWhitelist(self, evalwhitelist=None, append=False):
+        """Allows the user to set the Eval Whitelist which limits the python
+        operations allowed within this templateParsers Context. These are usually
+        triggered by If/Elif conditions and the like.
+
+        Arguments:
+          % evalwhitelist: Dict ~~ None
+            The new Dict of whitelisted eval AST items.
+          % append: bool ~~ False
+            When true, add the new items to the current list, else overwrite.
+        """
+        if append:
+            evalwhitelist = EVALWHITELIST.update(evalwhitelist)
+        self.astvisitor = AstVisitor(evalwhitelist)
+
+    TemplateReadError = TemplateReadError
 
 
 class Template(list):
-  """Contained for template parts, allowing for rich content construction."""
-  FUNCTION = re.compile(r'\{\{\s*(.*?)\s*\}\}')
-  # For a full tag syntax explanation, refer to the TAG regex in TemplateTag.
-  TAG = re.compile("""
+    """Contained for template parts, allowing for rich content construction."""
+
+    FUNCTION = re.compile(r"\{\{\s*(.*?)\s*\}\}")
+    # For a full tag syntax explanation, refer to the TAG regex in TemplateTag.
+    TAG = re.compile(
+        """
       (\[\w+                      # Tag start and alphanum tagname
         (?:(?::[\w\-\.]+)+)?           # 0+ indices, alphanum with dashes
         (?:(?:\|[\w-]+              # 0+ functions, alphanum with dashes
           (?:\([^()]*?\))?            # closure parentheses and arguments
         )+)?                        # end of function block
       \])                         # end of tag""",
-      re.VERBOSE)
+        re.VERBOSE,
+    )
 
-  def __init__(self, raw_template, parser=None, dictoutput=False):
-    """Initializes a Template from a string.
+    def __init__(self, raw_template, parser=None, dictoutput=False):
+        """Initializes a Template from a string.
 
-    Arguments:
-      @ raw_template: str
-        The string that represents the template.
-      % parser: Parser ~~ None
-        An optional parser instance that is necessary to enable support for
-        adding files to the current template. This is used by {{ inline }}.
-      % dictoutput: Bool ~~ False
-        An optional parser parameter which can be used to ask the parser to
-        output a dictionary of the template and its replaced vars, will only be
-        used when parser is None.
+        Arguments:
+          @ raw_template: str
+            The string that represents the template.
+          % parser: Parser ~~ None
+            An optional parser instance that is necessary to enable support for
+            adding files to the current template. This is used by {{ inline }}.
+          % dictoutput: Bool ~~ False
+            An optional parser parameter which can be used to ask the parser to
+            output a dictionary of the template and its replaced vars, will only be
+            used when parser is None.
 
-    """
-    super().__init__()
-    self.parser = parser
-    self.dictoutput = dictoutput
-    self.scopes = [self]
-    self.AddString(raw_template)
-    self.name = None
+        """
+        super().__init__()
+        self.parser = parser
+        self.dictoutput = dictoutput
+        self.scopes = [self]
+        self.AddString(raw_template)
+        self.name = None
 
-  def __eq__(self, other):
-    """Returns the equality to another Template.
+    def __eq__(self, other):
+        """Returns the equality to another Template.
 
-    Two templates are equal if they are of the same type, and have the same
-    content for their unparsed template; or string representation.
-    """
-    return isinstance(other, Template) and str(other) == str(self)
+        Two templates are equal if they are of the same type, and have the same
+        content for their unparsed template; or string representation.
+        """
+        return isinstance(other, Template) and str(other) == str(self)
 
-  def __mod__(self, kwds):
-    """Syntactic sugar that enables percent-sign template parsing.
+    def __mod__(self, kwds):
+        """Syntactic sugar that enables percent-sign template parsing.
 
-    The provided keywords MUST be in a dictionary.
-    """
-    return self.Parse(**kwds)
+        The provided keywords MUST be in a dictionary.
+        """
+        return self.Parse(**kwds)
 
-  def __repr__(self):
-    return '%s(%s)' % (type(self).__name__, list(self))
+    def __repr__(self):
+        return "%s(%s)" % (type(self).__name__, list(self))
 
-  def __str__(self):
-    return ''.join(map(str, self))
+    def __str__(self):
+        return "".join(map(str, self))
 
-  def AddFile(self, name):
-    """Extends the Template by reading template data from a file.
+    def AddFile(self, name):
+        """Extends the Template by reading template data from a file.
 
-    The file is loaded through the Parser instance associated with the template.
-    If there is none associated, this will raise a TypeError.
+        The file is loaded through the Parser instance associated with the template.
+        If there is none associated, this will raise a TypeError.
 
-    Raises:
-      TemplateReadError: The template file could not be read by the Parser.
-      TypeError: There is no parser associated with the template.
-    """
-    self.name = name
-    if self.parser is None:
-      raise TypeError('The template requires parser for adding template files.')
-    return self._AddToOpenScope(self.parser[name])
+        Raises:
+          TemplateReadError: The template file could not be read by the Parser.
+          TypeError: There is no parser associated with the template.
+        """
+        self.name = name
+        if self.parser is None:
+            raise TypeError("The template requires parser for adding template files.")
+        return self._AddToOpenScope(self.parser[name])
 
-  def AddString(self, raw_template, filename=None):
-    """Extends the Template by adding a raw template string.
+    def AddString(self, raw_template, filename=None):
+        """Extends the Template by adding a raw template string.
 
-    The given template is parsed and added to the existing template.
+        The given template is parsed and added to the existing template.
 
-    Raises:
-      TemplateSyntaxError: Unbalanced number of scopes in added template.
-    """
-    scope_depth = len(self.scopes)
-    nodes = self.FUNCTION.split(raw_template)
-    for index, node in enumerate(nodes):
-      if index % 2:
-        self._ExtendFunction(node)
-      else:
-        self._ExtendText(node)
-    if len(self.scopes) != scope_depth:
-      scope_diff = len(self.scopes) - scope_depth
-      if scope_diff < 0:
-        raise TemplateSyntaxError('Closed %d scopes too many in "%s"' % (abs(scope_diff), filename or raw_template))
-      raise TemplateSyntaxError('TemplateString left %d open scopes in "%s"' % (scope_diff, filename or raw_template))
+        Raises:
+          TemplateSyntaxError: Unbalanced number of scopes in added template.
+        """
+        scope_depth = len(self.scopes)
+        nodes = self.FUNCTION.split(raw_template)
+        for index, node in enumerate(nodes):
+            if index % 2:
+                self._ExtendFunction(node)
+            else:
+                self._ExtendText(node)
+        if len(self.scopes) != scope_depth:
+            scope_diff = len(self.scopes) - scope_depth
+            if scope_diff < 0:
+                raise TemplateSyntaxError(
+                    'Closed %d scopes too many in "%s"'
+                    % (abs(scope_diff), filename or raw_template)
+                )
+            raise TemplateSyntaxError(
+                'TemplateString left %d open scopes in "%s"'
+                % (scope_diff, filename or raw_template)
+            )
 
-  def Parse(self, **kwds):
-    """Returns the parsed template as HTMLsafestring.
+    def Parse(self, **kwds):
+        """Returns the parsed template as HTMLsafestring.
 
-    The template is parsed by parsing each of its members and combining that.
-    """
-    dictoutput = self.parser and self.parser.dictoutput or self.dictoutput
-    if dictoutput:
-      output = {'tags': {}}
-      if self.name:
-        output['template'] = self.name
-      else:
-        output['templatecontent'] = str(self)
-      for tag in self:
-        if isinstance(tag, TemplateConditional):
-          for flattend_branch in list(itertools.chain(*tag.branches)):
-            for branch_tag in flattend_branch:
-              if isinstance(branch_tag, TemplateTag):
-                output['tags'][str(branch_tag)] = branch_tag.Parse(**kwds)
-        if isinstance(tag, TemplateTag):
-          output['tags'][str(tag)] = tag.Parse(**kwds)
-      return output
-    return HTMLsafestring('').join(HTMLsafestring(tag.Parse(**kwds)) for tag in self)
+        The template is parsed by parsing each of its members and combining that.
+        """
+        dictoutput = self.parser and self.parser.dictoutput or self.dictoutput
+        if dictoutput:
+            output = {"tags": {}}
+            if self.name:
+                output["template"] = self.name
+            else:
+                output["templatecontent"] = str(self)
+            for tag in self:
+                if isinstance(tag, TemplateConditional):
+                    for flattend_branch in list(itertools.chain(*tag.branches)):
+                        for branch_tag in flattend_branch:
+                            if isinstance(branch_tag, TemplateTag):
+                                output["tags"][str(branch_tag)] = branch_tag.Parse(
+                                    **kwds
+                                )
+                if isinstance(tag, TemplateTag):
+                    output["tags"][str(tag)] = tag.Parse(**kwds)
+            return output
+        return HTMLsafestring("").join(
+            HTMLsafestring(tag.Parse(**kwds)) for tag in self
+        )
 
-  @classmethod
-  def TagSplit(cls, template):
-    """Yields the TemplateTag and TemplateText nodes from a template string."""
-    for index, node in enumerate(cls.TAG.split(template)):
-      if index % 2:
-        yield TemplateTag.FromString(node)
-      elif node:
-        yield TemplateText(node)
+    @classmethod
+    def TagSplit(cls, template):
+        """Yields the TemplateTag and TemplateText nodes from a template string."""
+        for index, node in enumerate(cls.TAG.split(template)):
+            if index % 2:
+                yield TemplateTag.FromString(node)
+            elif node:
+                yield TemplateText(node)
 
-  def _ExtendFunction(self, nodes):
-    """Processes a function node and adds its results to the Template.
+    def _ExtendFunction(self, nodes):
+        """Processes a function node and adds its results to the Template.
 
-    For loops, a new scope level is opened by adding the TemplateLoop to the
-    `scopes` instance attribute. Upon finding the end of a loop, the topmost
-    scope is removed, provided it is a TemplateLoop scope. If it is not,
-    TemplateSyntaxError is raised.
+        For loops, a new scope level is opened by adding the TemplateLoop to the
+        `scopes` instance attribute. Upon finding the end of a loop, the topmost
+        scope is removed, provided it is a TemplateLoop scope. If it is not,
+        TemplateSyntaxError is raised.
 
-    Raises:
-      TemplateSyntaxError: Unexpected / unknown command or otherwise bad syntax.
-    """
-    nodes = nodes.split()
-    function = nodes.pop(0)
-    try:
-      getattr(self, '_TemplateConstruct%s' % function.title())(*nodes)
-    except AttributeError:
-      raise TemplateSyntaxError('Unknown template function {{ %s }}%s' %
-        (function,
-         ' in template "%s"' % self._template_path if self._template_path else ''))
+        Raises:
+          TemplateSyntaxError: Unexpected / unknown command or otherwise bad syntax.
+        """
+        nodes = nodes.split()
+        function = nodes.pop(0)
+        try:
+            getattr(self, "_TemplateConstruct%s" % function.title())(*nodes)
+        except AttributeError:
+            raise TemplateSyntaxError(
+                "Unknown template function {{ %s }}%s"
+                % (
+                    function,
+                    ' in template "%s"' % self._template_path
+                    if self._template_path
+                    else "",
+                )
+            )
 
-  def _ExtendText(self, node):
-    """Processes a text node and adds its tags and texts to the Template."""
-    for node in self.TagSplit(node):
-      self._AddToOpenScope(node)
+    def _ExtendText(self, node):
+        """Processes a text node and adds its tags and texts to the Template."""
+        for node in self.TagSplit(node):
+            self._AddToOpenScope(node)
 
-  # ############################################################################
-  # Template syntax constructs
-  #
+    # ############################################################################
+    # Template syntax constructs
+    #
 
-  def _TemplateConstructInline(self, name):
-    """Processing for {{ inline }} template syntax."""
-    self.AddFile(name)
+    def _TemplateConstructInline(self, name):
+        """Processing for {{ inline }} template syntax."""
+        self.AddFile(name)
 
-  def _TemplateConstructFor(self, *nodes):
-    """Processing for {{ for }} template syntax."""
-    self._StartScope(TemplateLoop(nodes[-1], nodes[:-2]))
+    def _TemplateConstructFor(self, *nodes):
+        """Processing for {{ for }} template syntax."""
+        self._StartScope(TemplateLoop(nodes[-1], nodes[:-2]))
 
-  def _TemplateConstructEndfor(self):
-    """Processing for {{ endfor }} template syntax."""
-    self._CloseScope(TemplateLoop)
+    def _TemplateConstructEndfor(self):
+        """Processing for {{ endfor }} template syntax."""
+        self._CloseScope(TemplateLoop)
 
-  def _TemplateConstructComment(self, *nodes):
-    self._StartScope(TemplateComment(' '.join(nodes),
-        self.parser.astvisitor if self.parser else AstVisitor(EVALWHITELIST)))
+    def _TemplateConstructComment(self, *nodes):
+        self._StartScope(
+            TemplateComment(
+                " ".join(nodes),
+                self.parser.astvisitor if self.parser else AstVisitor(EVALWHITELIST),
+            )
+        )
 
-  def _TemplateConstructEndcomment(self):
-    self._CloseScope(TemplateComment)
+    def _TemplateConstructEndcomment(self):
+        self._CloseScope(TemplateComment)
 
-  def _TemplateConstructIf(self, *nodes):
-    """Processing for {{ if }} template syntax."""
-    self._StartScope(TemplateConditional(' '.join(nodes),
-        self.parser.astvisitor if self.parser else AstVisitor(EVALWHITELIST)))
+    def _TemplateConstructIf(self, *nodes):
+        """Processing for {{ if }} template syntax."""
+        self._StartScope(
+            TemplateConditional(
+                " ".join(nodes),
+                self.parser.astvisitor if self.parser else AstVisitor(EVALWHITELIST),
+            )
+        )
 
-  def _TemplateConstructIfpresent(self, *nodes):
-    """Processing for {{ ifpresent }} template syntax."""
-    self._StartScope(TemplateConditionalPresence(' '.join(nodes),
-        self.parser.astvisitor if self.parser else AstVisitor(EVALWHITELIST)))
+    def _TemplateConstructIfpresent(self, *nodes):
+        """Processing for {{ ifpresent }} template syntax."""
+        self._StartScope(
+            TemplateConditionalPresence(
+                " ".join(nodes),
+                self.parser.astvisitor if self.parser else AstVisitor(EVALWHITELIST),
+            )
+        )
 
-  def _TemplateConstructIfnotpresent(self, *nodes):
-    """Processing for {{ ifnotpresent }} template syntax."""
-    self._StartScope(TemplateConditionalNotPresence(' '.join(nodes),
-        self.parser.astvisitor if self.parser else AstVisitor(EVALWHITELIST)))
+    def _TemplateConstructIfnotpresent(self, *nodes):
+        """Processing for {{ ifnotpresent }} template syntax."""
+        self._StartScope(
+            TemplateConditionalNotPresence(
+                " ".join(nodes),
+                self.parser.astvisitor if self.parser else AstVisitor(EVALWHITELIST),
+            )
+        )
 
-  def _TemplateConstructElif(self, *nodes):
-    """Processing for {{ elif }} template syntax."""
-    self._VerifyOpenScope(TemplateConditional)
-    self.scopes[-1].Elif(' '.join(nodes))
+    def _TemplateConstructElif(self, *nodes):
+        """Processing for {{ elif }} template syntax."""
+        self._VerifyOpenScope(TemplateConditional)
+        self.scopes[-1].Elif(" ".join(nodes))
 
-  def _TemplateConstructElse(self):
-    """Processing for {{ else }} template syntax."""
-    self._VerifyOpenScope(TemplateConditional)
-    self.scopes[-1].Else()
+    def _TemplateConstructElse(self):
+        """Processing for {{ else }} template syntax."""
+        self._VerifyOpenScope(TemplateConditional)
+        self.scopes[-1].Else()
 
-  def _TemplateConstructEndif(self):
-    """Processing for {{ endif }} template syntax."""
-    self._CloseScope(TemplateConditional)
+    def _TemplateConstructEndif(self):
+        """Processing for {{ endif }} template syntax."""
+        self._CloseScope(TemplateConditional)
 
-  # ############################################################################
-  # Methods for scope management
-  #
-  def _AddToOpenScope(self, item):
-    """Adds a template part to the current open scope."""
-    self.scopes[-1].append(item)
+    # ############################################################################
+    # Methods for scope management
+    #
+    def _AddToOpenScope(self, item):
+        """Adds a template part to the current open scope."""
+        self.scopes[-1].append(item)
 
-  def _CloseScope(self, scope_cls):
-    """Closes the current open scope, if it's of the given scope type.
+    def _CloseScope(self, scope_cls):
+        """Closes the current open scope, if it's of the given scope type.
 
-    If the open scope is not an instance of the given scope class,
-    TemplateSyntaxError is raised.
-    """
-    if not isinstance(self.scopes[-1], scope_cls):
-      raise TemplateSyntaxError('Tried to close %s, but open scope is %s' % (
-          scope_cls.__name__, type(self.scopes[-1]).__name__))
-    self.scopes.pop()
+        If the open scope is not an instance of the given scope class,
+        TemplateSyntaxError is raised.
+        """
+        if not isinstance(self.scopes[-1], scope_cls):
+            raise TemplateSyntaxError(
+                "Tried to close %s, but open scope is %s"
+                % (scope_cls.__name__, type(self.scopes[-1]).__name__)
+            )
+        self.scopes.pop()
 
-  def _StartScope(self, scope):
-    """Adds the given part to the template and adds it as new current scope."""
-    self._AddToOpenScope(scope)
-    self.scopes.append(scope)
+    def _StartScope(self, scope):
+        """Adds the given part to the template and adds it as new current scope."""
+        self._AddToOpenScope(scope)
+        self.scopes.append(scope)
 
-  def _VerifyOpenScope(self, scope_cls):
-    """Verifies the given `scope_cls` is the current open scope.
+    def _VerifyOpenScope(self, scope_cls):
+        """Verifies the given `scope_cls` is the current open scope.
 
-    If this is not the case, TemplateSyntaxError is raised.
-    """
-    if not isinstance(self.scopes[-1], scope_cls):
-      raise TemplateSyntaxError('Expected open scope %s, but scope is %s' % (
-          scope_cls.__name__, type(self.scopes[-1]).__name__))
+        If this is not the case, TemplateSyntaxError is raised.
+        """
+        if not isinstance(self.scopes[-1], scope_cls):
+            raise TemplateSyntaxError(
+                "Expected open scope %s, but scope is %s"
+                % (scope_cls.__name__, type(self.scopes[-1]).__name__)
+            )
 
 
 class FileTemplate(Template):
-  """Template class that loads from file."""
-  def __init__(self, template_path, parser=None, encoding='utf-8'):
-    """Initializes a FileTemplate based on a given template path.
+    """Template class that loads from file."""
 
-    Arguments:
-      @ template_path: str
-        A string to begin a template with. This is parsed and used to build the
-        initial raw template from.
-      % parser: Parser ~~ None
-        An optional parser instance that is necessary to enable support for
-        adding files to the current template. This is used by {{ inline }}.
-    """
-    self._template_path = template_path
-    self.parser = parser
-    self.templateEncoding = encoding or (self.parser.templateEncoding if self.parser else 'utf-8')
-    try:
-      self._file_name = os.path.abspath(template_path)
-      self._file_mtime = os.path.getmtime(self._file_name)
-      with open(self._file_name, encoding=self.templateEncoding) as templatefile:
-        raw_template = templatefile.read()
-        self._template_hash = HashContent(raw_template)
-      super().__init__(raw_template, parser=parser)
-    except (IOError, OSError) as error:
-      raise TemplateReadError('Cannot open: %r %r' % (template_path, error))
+    def __init__(self, template_path, parser=None, encoding="utf-8"):
+        """Initializes a FileTemplate based on a given template path.
 
-  def Parse(self, **kwds):
-    """Returns the parsed template as SafeString.
+        Arguments:
+          @ template_path: str
+            A string to begin a template with. This is parsed and used to build the
+            initial raw template from.
+          % parser: Parser ~~ None
+            An optional parser instance that is necessary to enable support for
+            adding files to the current template. This is used by {{ inline }}.
+        """
+        self._template_path = template_path
+        self.parser = parser
+        self.templateEncoding = encoding or (
+            self.parser.templateEncoding if self.parser else "utf-8"
+        )
+        try:
+            self._file_name = os.path.abspath(template_path)
+            self._file_mtime = os.path.getmtime(self._file_name)
+            with open(self._file_name, encoding=self.templateEncoding) as templatefile:
+                raw_template = templatefile.read()
+                self._template_hash = HashContent(raw_template)
+            super().__init__(raw_template, parser=parser)
+        except (IOError, OSError) as error:
+            raise TemplateReadError("Cannot open: %r %r" % (template_path, error))
 
-    The template is parsed by parsing each of its members and combining that.
-    """
-    self.ReloadIfModified()
-    try:
-      result = super().Parse(**kwds)
-    except TemplateFunctionError as error:
-      raise TemplateFunctionError('%s in %s' % (error, self._template_path))
-    if self.parser and self.parser.dictoutput:
-      return {'template': self._template_path[len(self.parser.template_dir):],
-              'replacements': result['tags'],
-              'template_hash': self._template_hash}#,
-              #              'content_hash': result.content_hash,
-              #              'page_hash': result.page_hash}
-    return result
+    def Parse(self, **kwds):
+        """Returns the parsed template as SafeString.
 
-  def ReloadIfModified(self):
-    """Reloads the template file if it was modified on disk.
+        The template is parsed by parsing each of its members and combining that.
+        """
+        self.ReloadIfModified()
+        try:
+            result = super().Parse(**kwds)
+        except TemplateFunctionError as error:
+            raise TemplateFunctionError("%s in %s" % (error, self._template_path))
+        if self.parser and self.parser.dictoutput:
+            return {
+                "template": self._template_path[len(self.parser.template_dir) :],
+                "replacements": result["tags"],
+                "template_hash": self._template_hash,
+            }  # ,
+            #              'content_hash': result.content_hash,
+            #              'page_hash': result.page_hash}
+        return result
 
-    If the template is not present, cannot be read, or there is another error
-    accessing the file, the operation is aborted and the old template is left
-    in place.
+    def ReloadIfModified(self):
+        """Reloads the template file if it was modified on disk.
 
-    If the new template has a syntax error or other problem during loading,
-    that error *will* be raised.
-    """
-    try:
-      mtime = os.path.getmtime(self._file_name)
-      if mtime > self._file_mtime:
-        with open(self._file_name, encoding=self.templateEncoding) as templatefile:
-          template = templatefile.read()
-        del self[:]
-        self.scopes = [self]
-        self.AddString(template, self._file_name)
-        self._file_mtime = mtime
-    except (IOError, OSError):
-      # File cannot be stat'd or read. No longer exists or we lack permissions.
-      # We shouldn't error in this case, but carry on with the template we have.
-      pass
+        If the template is not present, cannot be read, or there is another error
+        accessing the file, the operation is aborted and the old template is left
+        in place.
+
+        If the new template has a syntax error or other problem during loading,
+        that error *will* be raised.
+        """
+        try:
+            mtime = os.path.getmtime(self._file_name)
+            if mtime > self._file_mtime:
+                with open(
+                    self._file_name, encoding=self.templateEncoding
+                ) as templatefile:
+                    template = templatefile.read()
+                del self[:]
+                self.scopes = [self]
+                self.AddString(template, self._file_name)
+                self._file_mtime = mtime
+        except (IOError, OSError):
+            # File cannot be stat'd or read. No longer exists or we lack permissions.
+            # We shouldn't error in this case, but carry on with the template we have.
+            pass
 
 
 class TemplateComment(object):
-  def __init__(self, expr, astvisitor):
-    self.default = []
-    self.astvisitor = astvisitor
+    def __init__(self, expr, astvisitor):
+        self.default = []
+        self.astvisitor = astvisitor
 
-  def append(self, part):
-    self.default.append(part)
+    def append(self, part):
+        self.default.append(part)
 
-  def Parse(self, **kwds):
-    return ''
+    def Parse(self, **kwds):
+        return ""
 
 
 class TemplateConditional(object):
-  """A template construct to control flow based on the value of a tag."""
-  def __init__(self, expr, astvisitor):
-    self.branches = []
-    self.default = None
-    self.NewBranch(expr)
-    self.astvisitor = astvisitor
+    """A template construct to control flow based on the value of a tag."""
 
-  def __repr__(self):
-    repr_branches = []
-    for expr, branch in self.branches:
-      clause = 'IF' if not repr_branches else 'ELIF'
-      repr_branches.append('%s %r { %r }' % (clause, expr, branch))
-    if self.default:
-      repr_branches.append(' ELSE { %r }' % self.default)
-    return '%s(%s)' % (type(self).__name__, ''.join(repr_branches))
+    def __init__(self, expr, astvisitor):
+        self.branches = []
+        self.default = None
+        self.NewBranch(expr)
+        self.astvisitor = astvisitor
 
-  def __str__(self):
-    repr_branches = []
-    for expr, branch in self.branches:
-      clause = 'if' if not repr_branches else 'elif'
-      repr_branches.append('{{ %s %s }}%s' % (
-          clause, ''.join(map(str, expr)), ''.join(map(str, branch))))
-    if self.default:
-      repr_branches.append('{{ else }}%s' % ''.join(map(str, self.default)))
-    repr_branches.append('{{ endif }}')
-    return '\n' + '\n'.join(repr_branches)
+    def __repr__(self):
+        repr_branches = []
+        for expr, branch in self.branches:
+            clause = "IF" if not repr_branches else "ELIF"
+            repr_branches.append("%s %r { %r }" % (clause, expr, branch))
+        if self.default:
+            repr_branches.append(" ELSE { %r }" % self.default)
+        return "%s(%s)" % (type(self).__name__, "".join(repr_branches))
 
-  def append(self, part):
-    """Appends a template part to the current open conditional clause.
+    def __str__(self):
+        repr_branches = []
+        for expr, branch in self.branches:
+            clause = "if" if not repr_branches else "elif"
+            repr_branches.append(
+                "{{ %s %s }}%s"
+                % (clause, "".join(map(str, expr)), "".join(map(str, branch)))
+            )
+        if self.default:
+            repr_branches.append("{{ else }}%s" % "".join(map(str, self.default)))
+        repr_branches.append("{{ endif }}")
+        return "\n" + "\n".join(repr_branches)
 
-    Conditional clauses are not explicitly closed, a new one is simply stacked
-    on top. Whenever the {{ else }} statement is found, all append actions will
-    append to the else clause.
-    """
-    if self.default is not None:
-      self.default.append(part)
-    else:
-      self.branches[-1][1].append(part)
+    def append(self, part):
+        """Appends a template part to the current open conditional clause.
 
-  def Elif(self, expr):
-    """Starts an `elif` clause.
+        Conditional clauses are not explicitly closed, a new one is simply stacked
+        on top. Whenever the {{ else }} statement is found, all append actions will
+        append to the else clause.
+        """
+        if self.default is not None:
+            self.default.append(part)
+        else:
+            self.branches[-1][1].append(part)
 
-    This raises TemplateSyntaxError if the `else` clause is already started.
-    """
-    if self.default is not None:
-      raise TemplateSyntaxError('{{ elif }} clause may not follow {{ else }}.')
-    self.NewBranch(expr)
+    def Elif(self, expr):
+        """Starts an `elif` clause.
 
-  def Else(self):
-    """Starts the `else` clause.
+        This raises TemplateSyntaxError if the `else` clause is already started.
+        """
+        if self.default is not None:
+            raise TemplateSyntaxError("{{ elif }} clause may not follow {{ else }}.")
+        self.NewBranch(expr)
 
-    This raises TemplateSyntaxError if the `else` clause is already started.
-    """
-    if self.default is not None:
-      raise TemplateSyntaxError('Only one {{ else }} clause is allowed.')
-    self.default = []
+    def Else(self):
+        """Starts the `else` clause.
 
-  def Expression(self, expr, **kwds):
-    """Returns the evaluated result of a tag expression."""
-    nodes = []
-    local_vars = LazyTagValueRetrieval(kwds)
-    for num, node in enumerate(expr):
-      if isinstance(node, TemplateTag):
-        if node.functions:
-          nodes.append(node.Parse(**kwds))
-          continue
-        node_name = '__tmpl_var_%d' % num
-        local_vars[node_name] = node
-        nodes.append(node_name)
-      else:
-        nodes.append(node)
-    try:
-      return LimitedEval(''.join(nodes), self.astvisitor, local_vars)
-    except NameError as error:
-      raise TemplateNameError(str(error).capitalize() + '. Try it as [tagname]?')
-    except SyntaxError as error:
-      raise TemplateSyntaxError('%s while evaluating: %s' % (str(error).capitalize(), ''.join(nodes)))
+        This raises TemplateSyntaxError if the `else` clause is already started.
+        """
+        if self.default is not None:
+            raise TemplateSyntaxError("Only one {{ else }} clause is allowed.")
+        self.default = []
 
-  def NewBranch(self, expr):
-    """Begins a new branch based on the given expression."""
-    self.branches.append((tuple(Template.TagSplit(expr)), []))
+    def Expression(self, expr, **kwds):
+        """Returns the evaluated result of a tag expression."""
+        nodes = []
+        local_vars = LazyTagValueRetrieval(kwds)
+        for num, node in enumerate(expr):
+            if isinstance(node, TemplateTag):
+                if node.functions:
+                    nodes.append(node.Parse(**kwds))
+                    continue
+                node_name = "__tmpl_var_%d" % num
+                local_vars[node_name] = node
+                nodes.append(node_name)
+            else:
+                nodes.append(node)
+        try:
+            return LimitedEval("".join(nodes), self.astvisitor, local_vars)
+        except NameError as error:
+            raise TemplateNameError(str(error).capitalize() + ". Try it as [tagname]?")
+        except SyntaxError as error:
+            raise TemplateSyntaxError(
+                "%s while evaluating: %s" % (str(error).capitalize(), "".join(nodes))
+            )
 
-  def Parse(self, **kwds):
-    """Returns the TemplateConditional parsed as string.
+    def NewBranch(self, expr):
+        """Begins a new branch based on the given expression."""
+        self.branches.append((tuple(Template.TagSplit(expr)), []))
 
-    One by one, the `if` clause and optional `elif` clauses are evaluated.
-    Their strings are parsed (template tags replaced, though functions are NOT
-    processed) and the resulting expression evaluated. Strings passed into the
-    templateparser will be strings for evaluation (not literal code), so this
-    is safe with regards to users executing code in the templateparser scope.
+    def Parse(self, **kwds):
+        """Returns the TemplateConditional parsed as string.
 
-    Whenever a boolean True value is returned from eval, the corresponding
-    branch is parsed and returned. When none of the `if` or `elif` clauses
-    is True, the `else` branch is parsed and returned (where available, if no
-    `else` branch exists '' is returned.
-    """
-    for expr, branch in self.branches:
-      if self.Expression(expr, **kwds):
-        return ''.join(part.Parse(**kwds) for part in branch)
-    if self.default:
-      return ''.join(part.Parse(**kwds) for part in self.default)
-    return ''
+        One by one, the `if` clause and optional `elif` clauses are evaluated.
+        Their strings are parsed (template tags replaced, though functions are NOT
+        processed) and the resulting expression evaluated. Strings passed into the
+        templateparser will be strings for evaluation (not literal code), so this
+        is safe with regards to users executing code in the templateparser scope.
+
+        Whenever a boolean True value is returned from eval, the corresponding
+        branch is parsed and returned. When none of the `if` or `elif` clauses
+        is True, the `else` branch is parsed and returned (where available, if no
+        `else` branch exists '' is returned.
+        """
+        for expr, branch in self.branches:
+            if self.Expression(expr, **kwds):
+                return "".join(part.Parse(**kwds) for part in branch)
+        if self.default:
+            return "".join(part.Parse(**kwds) for part in self.default)
+        return ""
 
 
 class TemplateConditionalPresence(TemplateConditional):
-  """A template construct to safely check for the presence of tags."""
+    """A template construct to safely check for the presence of tags."""
 
-  @staticmethod
-  def Expression(tags, **kwds):
-    """Checks the presence of all tags named on the branch."""
-    try:
-      for tag in tags:
-        tag.GetValue(kwds)
-      return True
-    except (TemplateKeyError, TemplateNameError):
-      return False
+    @staticmethod
+    def Expression(tags, **kwds):
+        """Checks the presence of all tags named on the branch."""
+        try:
+            for tag in tags:
+                tag.GetValue(kwds)
+            return True
+        except (TemplateKeyError, TemplateNameError):
+            return False
 
-  def NewBranch(self, tags):
-    """Begins a new branch based on the given tags."""
-    self.branches.append((list(map(TemplateTag.FromString, tags.split())), []))
+    def NewBranch(self, tags):
+        """Begins a new branch based on the given tags."""
+        self.branches.append((list(map(TemplateTag.FromString, tags.split())), []))
 
 
 class TemplateConditionalNotPresence(TemplateConditionalPresence):
-  """A template construct to safely check for the presence of tags."""
+    """A template construct to safely check for the presence of tags."""
 
-  @staticmethod
-  def Expression(tags, **kwds):
-    """Checks the presence of all tags named on the branch."""
-    try:
-      for tag in tags:
-        tag.GetValue(kwds)
-      return False
-    except (TemplateKeyError, TemplateNameError):
-      return True
+    @staticmethod
+    def Expression(tags, **kwds):
+        """Checks the presence of all tags named on the branch."""
+        try:
+            for tag in tags:
+                tag.GetValue(kwds)
+            return False
+        except (TemplateKeyError, TemplateNameError):
+            return True
 
 
 class TemplateLoop(list):
-  """Template loops are used to repeat a portion of template multiple times.
+    """Template loops are used to repeat a portion of template multiple times.
 
-  Upon parsing, the loop tag is retrieved, and for each of its members, the
-  items in the loop are parsed. The loop variable is made available as the given
-  alias, which itself can be referenced as a tag in the loop body.
-  """
-  def __init__(self, tag, aliases):
-    """Initializes a TemplateLoop instance.
-
-    Arguments:
-      @ tag: str
-        The tag to retrieve the iterable from.
-      @ aliases: *str
-        The alias(es) under which the loop variable should be made available.
+    Upon parsing, the loop tag is retrieved, and for each of its members, the
+    items in the loop are parsed. The loop variable is made available as the given
+    alias, which itself can be referenced as a tag in the loop body.
     """
-    super().__init__()
-    self.aliases = ''.join(aliases).split(',')
-    self.aliascount = len(self.aliases)
-    try:
-      self.tag = TemplateTag.FromString(tag)
-    except TemplateSyntaxError:
-      self.tag = tag
-      raise TemplateSyntaxError('Tag %r in {{ for }} loop is not valid' % tag)
 
-  def __repr__(self):
-    return '%s(%s)' % (type(self).__name__, list(self))
+    def __init__(self, tag, aliases):
+        """Initializes a TemplateLoop instance.
 
-  def __str__(self):
-    return '\n{{ for %s in %s }}%s\n{{ endfor }}' % (
-        ', '.join(self.aliases), self.tag, ''.join(map(str, self)))
-
-  def Parse(self, **kwds):
-    """Returns the TemplateLoop parsed as string.
-
-    Firstly, the value for the loop tag is retrieved. For each item in this
-    iterable, all members of the TemplateLoop body will be parsed, with the
-    item from the iterable added to the replacements dict as alias(es).
-    """
-    output = []
-    replacements = kwds.copy()
-    for item in self.tag.Iterator(**kwds):
-      if self.aliascount == 1:
-        replacements[self.aliases[0]] = item
-      else:
+        Arguments:
+          @ tag: str
+            The tag to retrieve the iterable from.
+          @ aliases: *str
+            The alias(es) under which the loop variable should be made available.
+        """
+        super().__init__()
+        self.aliases = "".join(aliases).split(",")
+        self.aliascount = len(self.aliases)
         try:
-          if self.aliascount != len(item):
-            raise TemplateValueError('Cannot unpack %d values into %d tags' % (
-                len(item), self.aliascount))
-        except TypeError:
-          raise TemplateValueError(
-              'Cannot unpack %s into %d tags' % (type(item), self.aliascount))
-        replacements.update(zip(self.aliases, item))
-      output.append(''.join(tag.Parse(**replacements) for tag in self))
-    return ''.join(output)
+            self.tag = TemplateTag.FromString(tag)
+        except TemplateSyntaxError:
+            self.tag = tag
+            raise TemplateSyntaxError("Tag %r in {{ for }} loop is not valid" % tag)
+
+    def __repr__(self):
+        return "%s(%s)" % (type(self).__name__, list(self))
+
+    def __str__(self):
+        return "\n{{ for %s in %s }}%s\n{{ endfor }}" % (
+            ", ".join(self.aliases),
+            self.tag,
+            "".join(map(str, self)),
+        )
+
+    def Parse(self, **kwds):
+        """Returns the TemplateLoop parsed as string.
+
+        Firstly, the value for the loop tag is retrieved. For each item in this
+        iterable, all members of the TemplateLoop body will be parsed, with the
+        item from the iterable added to the replacements dict as alias(es).
+        """
+        output = []
+        replacements = kwds.copy()
+        for item in self.tag.Iterator(**kwds):
+            if self.aliascount == 1:
+                replacements[self.aliases[0]] = item
+            else:
+                try:
+                    if self.aliascount != len(item):
+                        raise TemplateValueError(
+                            "Cannot unpack %d values into %d tags"
+                            % (len(item), self.aliascount)
+                        )
+                except TypeError:
+                    raise TemplateValueError(
+                        "Cannot unpack %s into %d tags" % (type(item), self.aliascount)
+                    )
+                replacements.update(zip(self.aliases, item))
+            output.append("".join(tag.Parse(**replacements) for tag in self))
+        return "".join(output)
 
 
 class TemplateTag(object):
-  """Template tags are used for dynamic placeholders in templates.
+    """Template tags are used for dynamic placeholders in templates.
 
-  Their final value is determined during parsing. For more explanation on this,
-  refer to the documentation for Parse().
-  """
-  PFX_INDEX = ':'
-  PFX_FUNCT = '|'
-  TAG = re.compile("""
+    Their final value is determined during parsing. For more explanation on this,
+    refer to the documentation for Parse().
+    """
+
+    PFX_INDEX = ":"
+    PFX_FUNCT = "|"
+    TAG = re.compile(
+        """
       \[                  # Tag starts with opening bracket
         (\w+)               # Capture tagname (1+ alphanum length)
         ((?::[\w\-\.]+)+)?     # Capture 0+ indices (1+ alphanum+dashes length)
@@ -875,297 +999,321 @@ class TemplateTag(object):
           (?:\([^()]*?\))?    # Functions may be closures with arguments.
         )+)?                # // end of optional functions
       \]                  # // end of tag""",
-      re.VERBOSE)
-  FUNC_FINDER = re.compile('\|([\w-]+(?:\([^()]*?\))?)')
-  FUNC_CLOSURE = re.compile('(\w+)\((.*)\)')
-  ALLOWPRIVATE = False # will we allow access to private members for object lookup
+        re.VERBOSE,
+    )
+    FUNC_FINDER = re.compile("\|([\w-]+(?:\([^()]*?\))?)")
+    FUNC_CLOSURE = re.compile("(\w+)\((.*)\)")
+    ALLOWPRIVATE = False  # will we allow access to private members for object lookup
 
-  def __init__(self, name, indices=(), functions=()):
-    """Initializes a TemplateTag instant.
+    def __init__(self, name, indices=(), functions=()):
+        """Initializes a TemplateTag instant.
 
-    Arguments:
-      @ name: str
-        The name of the tag, to retrieve it from the replacements dictionary.
-      % indices: iterable ~~ None
-        Indices that should be applied to arrive at the proper tag value.
-      % functions: iterable ~~ None
-        Names of template functions that should be applied to the value.
-    """
-    self.name = name
-    self.indices = (indices if self.ALLOWPRIVATE else [
-        index for index in indices
-        if not index.startswith('_') or not index.endswith('_')
-    ])
-    self.functions = functions
+        Arguments:
+          @ name: str
+            The name of the tag, to retrieve it from the replacements dictionary.
+          % indices: iterable ~~ None
+            Indices that should be applied to arrive at the proper tag value.
+          % functions: iterable ~~ None
+            Names of template functions that should be applied to the value.
+        """
+        self.name = name
+        self.indices = (
+            indices
+            if self.ALLOWPRIVATE
+            else [
+                index
+                for index in indices
+                if not index.startswith("_") or not index.endswith("_")
+            ]
+        )
+        self.functions = functions
 
-  def __repr__(self):
-    return '%s(%r)' % (type(self).__name__, str(self))
+    def __repr__(self):
+        return "%s(%r)" % (type(self).__name__, str(self))
 
-  def __str__(self):
-    return '[%s%s%s]' % (
-        self.name,
-        ''.join(self.PFX_INDEX + index for index in self.indices),
-        ''.join(self.PFX_FUNCT + func for func in self.functions))
+    def __str__(self):
+        return "[%s%s%s]" % (
+            self.name,
+            "".join(self.PFX_INDEX + index for index in self.indices),
+            "".join(self.PFX_FUNCT + func for func in self.functions),
+        )
 
-  @classmethod
-  def _GetFunctions(cls, raw_functions):
-    if raw_functions:
-      return tuple(cls.FUNC_FINDER.findall(raw_functions))
-    return ()
+    @classmethod
+    def _GetFunctions(cls, raw_functions):
+        if raw_functions:
+            return tuple(cls.FUNC_FINDER.findall(raw_functions))
+        return ()
 
-  @classmethod
-  def _GetIndices(cls, raw_indices):
-    if raw_indices:
-      return raw_indices.lstrip(cls.PFX_INDEX).split(cls.PFX_INDEX)
-    return ()
+    @classmethod
+    def _GetIndices(cls, raw_indices):
+        if raw_indices:
+            return raw_indices.lstrip(cls.PFX_INDEX).split(cls.PFX_INDEX)
+        return ()
 
-  @classmethod
-  def FromString(cls, tag):
-    """Returns a TemplateTag object which is parsed from the given string.
+    @classmethod
+    def FromString(cls, tag):
+        """Returns a TemplateTag object which is parsed from the given string.
 
-    A tag's formatting restrictions are as follows:
-      * The whole tag is delimited by square brackets: []
-      * Indices are separated by colons, :, multiple are allowed
-      * Functions are prefixed by pipes, |, multiple are allowed
-      * In addition to the characters stated above, tags may contain only
-        alphanumeric values, underscores and dashes. Spaces are _not_ allowed.
-    """
-    try:
-      name, indices, functions = cls.TAG.match(tag).groups()
-      return cls(name, cls._GetIndices(indices), cls._GetFunctions(functions))
-    except AttributeError:
-      raise TemplateSyntaxError('Invalid Tag syntax: %r' % tag)
-
-  def GetValue(self, replacements):
-    """Returns the value for the tag, after reducing indices.
-
-    For a tag with indices, these are looked up one after the other, each index
-    being that of the next step. [tag:0:0] for with a keyword tag=[['foo']]
-    would given 'foo' as the value for the tag.
-    """
-    try:
-      value = replacements[self.name]
-      for index in self.indices:
-        value = self._GetIndex(value, index)
-      if isinstance(value, JITTag):
-        return value(**replacements)
-      return value
-    except KeyError:
-      raise TemplateNameError('No replacement with name %r' % self.name)
-    except TemplateKeyError as error:
-      raise TemplateKeyError('%s on %r' % (error, self.name))
-
-  @classmethod
-  def ApplyFunction(cls, func, value):
-    closure = cls.FUNC_CLOSURE.match(func)
-    try:
-      if not closure:
-        return TAG_FUNCTIONS[func](value)
-      func, args = closure.groups()
-      #XXX(Elmer): This uses eval, it's so much easier than lexing and parsing
-      # the regex leading up to this point make sure no function calls end up in
-      # here, nor variables, Math might show up though
-      args = eval(args + ',', {'__builtins__': {}}, {}) if args.strip() else ()
-      return TAG_FUNCTIONS[func](*args)(value)
-    except SyntaxError:
-      raise TemplateSyntaxError('Invalid argument syntax: %r' % args)
-    except TypeError as err_obj:
-      raise TemplateTypeError(
-          ('Templatefunction raised an TypeError %s(%s) ' % (func, value), err_obj))
-    except KeyError as err_obj:
-      raise TemplateFunctionError(
-          'Unknown template tag function %r' % err_obj.args[0])
-    except NameError as err_obj:
-      raise TemplateNameError(
-          'Access to scope outside of parser variables is not allowed: %r' % err_obj.args[0])
-
-  def Parse(self, **kwds):
-    """Returns the parsed string of the tag, using given replacements.
-
-    Firstly, the tag's name is retrieved from the given replacements dictionary.
-
-    After that, for a tag with indices, these are looked up one after the other,
-    each index being that of the next step. `[tag:0:0]` with a replacements
-    dictionary {tag=[['foo']]} will reduce to 'foo' as the value for the tag.
-
-    After reducing indexes, functions are applied. As before, functions are
-    applied one after the other. The second function works on the result of the
-    first. If no functions are defined for a tag, the default tag function
-    will be applied. SafeString objects are exempt from this default function;
-    They will only be acted upon by functions as specified in the tag.
-
-    All tag functions are derived from the module constant TAG_FUNCTIONS, and
-    are looked up when requested. This means that if a function is changed after
-    the template has been created, the new function will be used instead.
-    """
-    try:
-      value = self.GetValue(kwds)
-    except (TemplateKeyError, TemplateNameError):
-      # On any failure to get the given index, return the unmodified tag.
-      return str(self)
-    # Process functions, or apply default if value is not Basesafestring
-    if self.functions:
-      for func in self.functions:
+        A tag's formatting restrictions are as follows:
+          * The whole tag is delimited by square brackets: []
+          * Indices are separated by colons, :, multiple are allowed
+          * Functions are prefixed by pipes, |, multiple are allowed
+          * In addition to the characters stated above, tags may contain only
+            alphanumeric values, underscores and dashes. Spaces are _not_ allowed.
+        """
         try:
-          value = self.ApplyFunction(func, value)
-        except TemplateFunctionError as error:
-          raise TemplateFunctionError('%s on %s' % (error, self))
-        except TemplateSyntaxError as error:
-          raise TemplateSyntaxError('%s on %s' % (error, self))
-    if not isinstance(value, Basesafestring):
-      value = TAG_FUNCTIONS['default'](value)
-    return value
+            name, indices, functions = cls.TAG.match(tag).groups()
+            return cls(name, cls._GetIndices(indices), cls._GetFunctions(functions))
+        except AttributeError:
+            raise TemplateSyntaxError("Invalid Tag syntax: %r" % tag)
 
-  def Iterator(self, **kwds):
-    """Parses the tag for iteration purposes.
+    def GetValue(self, replacements):
+        """Returns the value for the tag, after reducing indices.
 
-    Functions are processed, but no defaults or other conversion is done. Tags
-    that cannot be resolved result in empty iterators.
-    """
-    try:
-      value = self.GetValue(kwds)
-    except TemplateKeyError:
-      # On any failure to get the given index, return an empty iterator
-      return ()
-    for func in self.functions:
-      value = TAG_FUNCTIONS[func](value)
-    return iter(value)
-
-  @staticmethod
-  def _GetIndex(haystack, needle):
-    """Returns the `needle` from the `haystack` by index, key or attribute name.
-
-    Arguments:
-      @ haystack: obj
-        The searched object; iterable, mapping or any kind of object.
-      @ needle: str
-        The index, key or attribute name to find on the haystack.
-
-    Raises:
-      TemplateKeyError: One or more of the given needles don't exist.
-
-    Returns:
-      obj: the object existing on `needle` in `haystack`.
-    """
-    try:
-      if needle.isdigit():
+        For a tag with indices, these are looked up one after the other, each index
+        being that of the next step. [tag:0:0] for with a keyword tag=[['foo']]
+        would given 'foo' as the value for the tag.
+        """
         try:
-          # `needle` is a number; likely an index or a numeric dict-key.
-          return haystack[int(needle)]
+            value = replacements[self.name]
+            for index in self.indices:
+                value = self._GetIndex(value, index)
+            if isinstance(value, JITTag):
+                return value(**replacements)
+            return value
         except KeyError:
-          # `haystack` should be a dict; numeric attributes are invalid syntax.
-          return haystack[needle]
-      try:
-        # `needle` is a string; either a dict-key, or an attribute name.
-        return haystack[needle]
-      except (KeyError, TypeError):
-        # KeyError, `haystack` has no key `needle` but may have matching attr.
-        # TypeError: `haystack` is no mapping but may have a matching attr.
-        return getattr(haystack, needle)
-    except (AttributeError, LookupError):
-      raise TemplateKeyError('Item has no index, key or attribute %r' % needle)
+            raise TemplateNameError("No replacement with name %r" % self.name)
+        except TemplateKeyError as error:
+            raise TemplateKeyError("%s on %r" % (error, self.name))
+
+    @classmethod
+    def ApplyFunction(cls, func, value):
+        closure = cls.FUNC_CLOSURE.match(func)
+        try:
+            if not closure:
+                return TAG_FUNCTIONS[func](value)
+            func, args = closure.groups()
+            # XXX(Elmer): This uses eval, it's so much easier than lexing and parsing
+            # the regex leading up to this point make sure no function calls end up in
+            # here, nor variables, Math might show up though
+            args = eval(args + ",", {"__builtins__": {}}, {}) if args.strip() else ()
+            return TAG_FUNCTIONS[func](*args)(value)
+        except SyntaxError:
+            raise TemplateSyntaxError("Invalid argument syntax: %r" % args)
+        except TypeError as err_obj:
+            raise TemplateTypeError(
+                (
+                    "Templatefunction raised an TypeError %s(%s) " % (func, value),
+                    err_obj,
+                )
+            )
+        except KeyError as err_obj:
+            raise TemplateFunctionError(
+                "Unknown template tag function %r" % err_obj.args[0]
+            )
+        except NameError as err_obj:
+            raise TemplateNameError(
+                "Access to scope outside of parser variables is not allowed: %r"
+                % err_obj.args[0]
+            )
+
+    def Parse(self, **kwds):
+        """Returns the parsed string of the tag, using given replacements.
+
+        Firstly, the tag's name is retrieved from the given replacements dictionary.
+
+        After that, for a tag with indices, these are looked up one after the other,
+        each index being that of the next step. `[tag:0:0]` with a replacements
+        dictionary {tag=[['foo']]} will reduce to 'foo' as the value for the tag.
+
+        After reducing indexes, functions are applied. As before, functions are
+        applied one after the other. The second function works on the result of the
+        first. If no functions are defined for a tag, the default tag function
+        will be applied. SafeString objects are exempt from this default function;
+        They will only be acted upon by functions as specified in the tag.
+
+        All tag functions are derived from the module constant TAG_FUNCTIONS, and
+        are looked up when requested. This means that if a function is changed after
+        the template has been created, the new function will be used instead.
+        """
+        try:
+            value = self.GetValue(kwds)
+        except (TemplateKeyError, TemplateNameError):
+            # On any failure to get the given index, return the unmodified tag.
+            return str(self)
+        # Process functions, or apply default if value is not Basesafestring
+        if self.functions:
+            for func in self.functions:
+                try:
+                    value = self.ApplyFunction(func, value)
+                except TemplateFunctionError as error:
+                    raise TemplateFunctionError("%s on %s" % (error, self))
+                except TemplateSyntaxError as error:
+                    raise TemplateSyntaxError("%s on %s" % (error, self))
+        if not isinstance(value, Basesafestring):
+            value = TAG_FUNCTIONS["default"](value)
+        return value
+
+    def Iterator(self, **kwds):
+        """Parses the tag for iteration purposes.
+
+        Functions are processed, but no defaults or other conversion is done. Tags
+        that cannot be resolved result in empty iterators.
+        """
+        try:
+            value = self.GetValue(kwds)
+        except TemplateKeyError:
+            # On any failure to get the given index, return an empty iterator
+            return ()
+        for func in self.functions:
+            value = TAG_FUNCTIONS[func](value)
+        return iter(value)
+
+    @staticmethod
+    def _GetIndex(haystack, needle):
+        """Returns the `needle` from the `haystack` by index, key or attribute name.
+
+        Arguments:
+          @ haystack: obj
+            The searched object; iterable, mapping or any kind of object.
+          @ needle: str
+            The index, key or attribute name to find on the haystack.
+
+        Raises:
+          TemplateKeyError: One or more of the given needles don't exist.
+
+        Returns:
+          obj: the object existing on `needle` in `haystack`.
+        """
+        try:
+            if needle.isdigit():
+                try:
+                    # `needle` is a number; likely an index or a numeric dict-key.
+                    return haystack[int(needle)]
+                except KeyError:
+                    # `haystack` should be a dict; numeric attributes are invalid syntax.
+                    return haystack[needle]
+            try:
+                # `needle` is a string; either a dict-key, or an attribute name.
+                return haystack[needle]
+            except (KeyError, TypeError):
+                # KeyError, `haystack` has no key `needle` but may have matching attr.
+                # TypeError: `haystack` is no mapping but may have a matching attr.
+                return getattr(haystack, needle)
+        except (AttributeError, LookupError):
+            raise TemplateKeyError("Item has no index, key or attribute %r" % needle)
 
 
 class TemplateText(str):
-  """A raw piece of template text, upon which no replacements will be done."""
-  def __new__(cls, string):
-    return super().__new__(cls, string)
+    """A raw piece of template text, upon which no replacements will be done."""
 
-  def __repr__(self):
-    """Returns the object representation of the TemplateText."""
-    return '%s(%r)' % (type(self).__name__, str(self))
+    def __new__(cls, string):
+        return super().__new__(cls, string)
 
-  def Parse(self, **_kwds):
-    """Returns the string value of the TemplateText."""
-    return str(self)
+    def __repr__(self):
+        """Returns the object representation of the TemplateText."""
+        return "%s(%r)" % (type(self).__name__, str(self))
+
+    def Parse(self, **_kwds):
+        """Returns the string value of the TemplateText."""
+        return str(self)
 
 
 class JITTag(object):
-  """This is a template Tag which is only evaulated on replacement.
-  It is usefull for situations where not all all of this functions input vars
-  are available just yet.
-  """
+    """This is a template Tag which is only evaulated on replacement.
+    It is usefull for situations where not all all of this functions input vars
+    are available just yet.
+    """
 
-  def __init__(self, function):
-    """Stores the function for later use"""
-    self.wrapped = function
-    self.result = None # cache for results
-    self.called = False # keep score of result cache usage, None and False might be correct results in the cache
+    def __init__(self, function):
+        """Stores the function for later use"""
+        self.wrapped = function
+        self.result = None  # cache for results
+        self.called = False  # keep score of result cache usage, None and False might be correct results in the cache
 
-  def __call__(self, *args, **kwargs):
-    """Returns the output of the earlier wrapped function"""
-    if not self.called:
-      try:
-        self.result = self.wrapped(*args, **kwargs)
-      except TypeError: # the lambda does not expect params
-        self.result = self.wrapped()
-    self.called = True
-    return self.result
+    def __call__(self, *args, **kwargs):
+        """Returns the output of the earlier wrapped function"""
+        if not self.called:
+            try:
+                self.result = self.wrapped(*args, **kwargs)
+            except TypeError:  # the lambda does not expect params
+                self.result = self.wrapped()
+        self.called = True
+        return self.result
 
-  def __getattr__(self, name):
-    if not self.result:
-      self()
-    if isinstance(self.result, dict):
-      attr_exists = name in self.result.keys()
-      if attr_exists:
-        return self.result[name]
-      raise AttributeError('Key does not exist')
-    return getattr(super(), name)
+    def __getattr__(self, name):
+        if not self.result:
+            self()
+        if isinstance(self.result, dict):
+            attr_exists = name in self.result.keys()
+            if attr_exists:
+                return self.result[name]
+            raise AttributeError("Key does not exist")
+        return getattr(super(), name)
+
 
 class SparseList(list):
-  """A spare list implementation to allow us to set the nth item on a list"""
-  def __setitem__(self, index, value):
-    missing = index - len(self) + 1
-    if missing > 0:
-      self.extend([None] * missing)
-    super().__setitem__(index, value)
+    """A spare list implementation to allow us to set the nth item on a list"""
 
-  def __getitem__(self, index):
-    """Return the value at the index, and None of that index was not available
-    instead of raisig IndexError
-    """
-    try:
-      return super().__getitem__(index)
-    except IndexError:
-      return None
+    def __setitem__(self, index, value):
+        missing = index - len(self) + 1
+        if missing > 0:
+            self.extend([None] * missing)
+        super().__setitem__(index, value)
+
+    def __getitem__(self, index):
+        """Return the value at the index, and None of that index was not available
+        instead of raisig IndexError
+        """
+        try:
+            return super().__getitem__(index)
+        except IndexError:
+            return None
 
 
 class AstVisitor(ast.NodeVisitor):
-  def __init__(self, whitelists):
-    self.whitelists = whitelists
+    def __init__(self, whitelists):
+        self.whitelists = whitelists
 
-  def visit(self, node):
-    if not isinstance(node, self.whitelists['operators']):
-      raise TemplateEvaluationError('`%s` is not an allowed operation' % node)
-    return super().visit(node)
+    def visit(self, node):
+        if not isinstance(node, self.whitelists["operators"]):
+            raise TemplateEvaluationError("`%s` is not an allowed operation" % node)
+        return super().visit(node)
 
-  def visit_Call(self, call):
-    """Filter calls"""
-    if call.func.id not in self.whitelists['functions']:
-      raise TemplateEvaluationError('`%s` is not an allowed function call' % call.func.id)
+    def visit_Call(self, call):
+        """Filter calls"""
+        if call.func.id not in self.whitelists["functions"]:
+            raise TemplateEvaluationError(
+                "`%s` is not an allowed function call" % call.func.id
+            )
 
-def LimitedEval(expr, astvisitor, evallocals = {}):
-  """A limited Eval function which only allows certain operations"""
-  tree = ast.parse(expr, mode='eval')
-  astvisitor.visit(tree)
-  return eval(compile(tree, "<string>", "eval"),
-      astvisitor.whitelists['functions'],
-      evallocals)
+
+def LimitedEval(expr, astvisitor, evallocals={}):
+    """A limited Eval function which only allows certain operations"""
+    tree = ast.parse(expr, mode="eval")
+    astvisitor.visit(tree)
+    return eval(
+        compile(tree, "<string>", "eval"),
+        astvisitor.whitelists["functions"],
+        evallocals,
+    )
+
 
 def HashContent(string):
-  """Helper function for hashing of template files, this is needed to allow
-  users to download raw templates on their own which they know the hash for."""
-  return hashlib.sha256(string.encode('utf-8')).hexdigest()
+    """Helper function for hashing of template files, this is needed to allow
+    users to download raw templates on their own which they know the hash for."""
+    return hashlib.sha256(string.encode("utf-8")).hexdigest()
 
 
 TAG_FUNCTIONS = {
-    'default': lambda d: HTMLsafestring('') + d,
-    'html': lambda d: HTMLsafestring('') + d,
-    'htmlsource': lambda d: HTMLsafestring(d, unsafe=True),
-    'raw': lambda d: Unsafestring(d),
-    'url': lambda d: HTMLsafestring(URLqueryargumentsafestring(d, unsafe=True)),
-    'type': type,
-    'items': lambda d: list(d.items()),
-    'values': lambda d: list(d.values()),
-    'sorted': sorted,
-    'len': len}
+    "default": lambda d: HTMLsafestring("") + d,
+    "html": lambda d: HTMLsafestring("") + d,
+    "htmlsource": lambda d: HTMLsafestring(d, unsafe=True),
+    "raw": lambda d: Unsafestring(d),
+    "url": lambda d: HTMLsafestring(URLqueryargumentsafestring(d, unsafe=True)),
+    "type": type,
+    "items": lambda d: list(d.items()),
+    "values": lambda d: list(d.values()),
+    "sorted": sorted,
+    "len": len,
+}
