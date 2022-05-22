@@ -98,20 +98,20 @@ class RecordTests(unittest.TestCase):
         self.engine = DatabaseConnection()
         self.session = Create_session(self.engine)
         self.meta = MetaData()
-        book = Table(
+        Table(
             "book",
             self.meta,
             Column("ID", Integer, primary_key=True),
             Column("authorid", Integer, ForeignKey("author.ID")),
             Column("title", String(32), nullable=False),
         )
-        author = Table(
+        Table(
             "author",
             self.meta,
             Column("ID", Integer, primary_key=True),
             Column("name", String(32), nullable=False),
         )
-        writers = Table(
+        Table(
             "writers",
             self.meta,
             Column("ID", Integer, primary_key=True),
