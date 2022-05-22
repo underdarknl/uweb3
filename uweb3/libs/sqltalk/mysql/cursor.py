@@ -118,7 +118,6 @@ class Cursor(pymysql.cursors.DictCursor, BaseCursor):
 
     def _ProcessWarnings(self, resultset):
         """Updates messages attribute with warnings given by the MySQL server."""
-        db_info = self.connection.Info()
         db_warnings = self.connection.ShowWarnings()
         if db_warnings:
             # This is done in two loops in case Warnings are set to raise exceptions.
