@@ -1150,12 +1150,6 @@ class DictTemplateTagBasic(unittest.TestCase):
         self.assertEqual(self.tmpl(template, dictoutput=True).Parse(**replaces), output)
 
     def testUnreplacedTag(self):
-        """[BasicTag] Template tags without replacement are returned verbatim"""
-        template = "Template with an [undefined] tag."
-        output = {"tags": {}, "templatecontent": template}
-        self.assertEqual(self.tmpl(template, dictoutput=True).Parse(), output)
-
-    def testUnreplacedTag(self):
         """[BasicTag] Access to private members is not allowed"""
         template = "Template with an [private.__class__] tag."
         output = {"tags": {}, "templatecontent": template}
@@ -1164,7 +1158,7 @@ class DictTemplateTagBasic(unittest.TestCase):
     def testBracketsInsideTag(self):
         """[BasicTag] Innermost bracket pair are the tag's delimiters"""
         template = "Template tags may not contain [[spam][eggs]]."
-        expected = "Template tags may not contain [opening or closing brackets]."
+        # expected = "Template tags may not contain [opening or closing brackets]."
         result = self.tmpl(template, dictoutput=True).Parse(
             **{
                 "[spam": "EPIC",
