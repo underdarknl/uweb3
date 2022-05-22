@@ -158,7 +158,7 @@ class TemplateTagBasic(unittest.TestCase):
         replaces["check"] = ".."
         self.assertEqual(self.tmpl(template).Parse(**replaces), expected)
 
-    def testUnreplacedTag(self):
+    def testUnreplacedBasicTag(self):
         """[BasicTag] Template tags without replacement are returned verbatim"""
         template = "Template with an [undefined] tag."
         self.assertEqual(self.tmpl(template).Parse(), template)
