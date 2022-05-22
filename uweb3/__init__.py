@@ -223,7 +223,6 @@ class uWeb:
         response = None
         method = "_NotFound"
         args = None
-        rollback = False
         try:
             method, args, hostargs, page_maker = self.router(
                 req.path, req.env["REQUEST_METHOD"], req.env["host"]
@@ -255,7 +254,7 @@ class uWeb:
             if hasattr(pagemaker_instance, "_ConnectionRollback"):
                 try:
                     pagemaker_instance._ConnectionRollback()
-                except:
+                except Exception:
                     pass
             pagemaker_instance = PageMaker(
                 req, config=self.config, executing_path=self.executing_path
