@@ -358,7 +358,6 @@ class Parser(dict):
         # if we are dealing with a tag consisting of multiple path parts, lets reconstruct the path
         obj = storage
         prevnode = tag.name
-        d = storage
         for node in tag.indices:
             try:
                 node = int(node)
