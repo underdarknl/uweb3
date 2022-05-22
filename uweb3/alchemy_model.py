@@ -26,7 +26,7 @@ class AlchemyBaseRecord:
         if self.session:
             try:
                 self.session.add(self)
-            except:
+            except Exception:
                 self.session.rollback()
                 raise
             else:
@@ -250,7 +250,7 @@ class AlchemyRecord(AlchemyBaseRecord):
                 .filter(cls._PrimaryKeyCondition(cls) == p_key)
                 .first()
             )
-        except:
+        except Exception:
             session.rollback()
             raise
         else:
@@ -277,7 +277,7 @@ class AlchemyRecord(AlchemyBaseRecord):
                 .filter(cls._PrimaryKeyCondition(cls) == p_key)
                 .delete()
             )
-        except:
+        except Exception:
             session.rollback()
             raise
         else:
@@ -348,7 +348,7 @@ class AlchemyRecord(AlchemyBaseRecord):
             if offset:
                 query = query.offset(offset)
             result = query.all()
-        except:
+        except Exception:
             session.rollback()
             raise
         else:
@@ -373,7 +373,7 @@ class AlchemyRecord(AlchemyBaseRecord):
             for condition in conditions:
                 query = query.filter(condition)
             query = query.update(values)
-        except:
+        except Exception:
             session.rollback()
             raise
         else:
@@ -387,7 +387,7 @@ class AlchemyRecord(AlchemyBaseRecord):
                 .filter(self._PrimaryKeyCondition(self) == self.key)
                 .delete()
             )
-        except:
+        except Exception:
             self.session.rollback()
             raise
         else:
@@ -423,7 +423,7 @@ class AlchemyRecord(AlchemyBaseRecord):
                 .filter(cls._PrimaryKeyCondition(cls) == p_key)
                 .first()
             )
-        except:
+        except Exception:
             session.rollback()
             raise
         else:
@@ -450,7 +450,7 @@ class AlchemyRecord(AlchemyBaseRecord):
                 .filter(cls._PrimaryKeyCondition(cls) == p_key)
                 .delete()
             )
-        except:
+        except Exception:
             session.rollback()
             raise
         else:
@@ -521,7 +521,7 @@ class AlchemyRecord(AlchemyBaseRecord):
             if offset:
                 query = query.offset(offset)
             result = query.all()
-        except:
+        except Exception:
             session.rollback()
             raise
         else:
@@ -546,7 +546,7 @@ class AlchemyRecord(AlchemyBaseRecord):
             for condition in conditions:
                 query = query.filter(condition)
             query = query.update(values)
-        except:
+        except Exception:
             session.rollback()
             raise
         else:
@@ -560,7 +560,7 @@ class AlchemyRecord(AlchemyBaseRecord):
                 .filter(self._PrimaryKeyCondition(self) == self.key)
                 .delete()
             )
-        except:
+        except Exception:
             self.session.rollback()
             raise
         else:
