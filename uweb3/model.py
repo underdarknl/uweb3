@@ -241,7 +241,7 @@ class SecureCookie(TransactionMixin):
     def rawcookie(self):
         """Reads the request cookie, checks if it was signed correctly and return
         the value, or returns False"""
-        if not self._rawcookie is None:
+        if self._rawcookie is not None:
             return self._rawcookie
         name = self.TableName()
         if name in self.cookies and self.cookies[name]:
@@ -1428,7 +1428,9 @@ class Record(BaseRecord):
             dict: dictionary representation of the record.
         """
         record_dict = {}
-        record = self if complete else dict(record) # FIXME: record is not assigned, what should it point to?
+        record = (
+            self if complete else dict(record)
+        )  # FIXME: record is not assigned, what should it point to?
         for key, value in record.items():
             if isinstance(value, BaseRecord):
                 if complete and recursive:
