@@ -388,7 +388,6 @@ class BasePageMaker(Base):
         directory is used as the working directory. Then, the module constant
         TEMPLATE_DIR is used to define class constants from.
         """
-        local_file = os.path.abspath(sys.modules[cls.__module__].__file__)
         cls.LOCAL_DIR = cls_dir = executing_path
         cls.PUBLIC_DIR = os.path.realpath(os.path.join(cls_dir, cls.PUBLIC_DIR))
         cls.TEMPLATE_DIR = os.path.realpath(os.path.join(cls_dir, cls.TEMPLATE_DIR))
