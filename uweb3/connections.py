@@ -8,7 +8,7 @@ import sys
 
 import uweb3
 
-from .connectors import *
+from .connectors import Mongo, Mysql, SignedCookie, SqlAlchemy, Sqlite
 
 
 class ConnectionError(Exception):
