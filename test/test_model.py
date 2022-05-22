@@ -241,7 +241,7 @@ class RecordTests(unittest.TestCase):
         """Validates that a rollback indeed removes all queries from the transaction"""
         Author.autocommit(self.connection, False)
         for i in range(5):
-            Author.Create(self.connection, {"name": f"W. Shakespeare"})
+            Author.Create(self.connection, {"name": "W. Shakespeare"})
         Author.rollback(self.connection)
         authors = list(Author.List(self.connection))
         self.assertEqual(0, len(authors))
