@@ -328,7 +328,7 @@ class Connection(pymysql.connections.Connection):
         This is False by default if the database supports transactions."""
         try:
             self.ping(reconnect=True)
-        except:
+        except Exception:
             self.connect(sock=None)
         super(Connection, self).autocommit(state)
         self.autocommit_mode = state
