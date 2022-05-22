@@ -334,9 +334,15 @@ class TemplateTagFunctions(unittest.TestCase):
     def testFunctionCharacters(self):
         """[TagFunctions] Tags functions may contain word chars and dashes only"""
         good_funcs = "aAzZ0123-_"
-        good_func = lambda tag: "SUCCESS"
+
+        def good_func(tag):
+            return "SUCCESS"
+
         bad_funcs = """ :~!@#$%^&*+={}\;':"./<>?| """
-        bad_func = lambda tag: "FAIL"
+
+        def bad_func(tag):
+            return "FAIL"
+
         for index in good_funcs:
             template = "[tag|%s]" % index
             self.parser.RegisterFunction(index, good_func)
@@ -478,7 +484,6 @@ class TemplateTagFunctionClosures(unittest.TestCase):
     def testVariableClosureArgument(self):
         """[TagClosures] tags that try to use vars in their function arguments
         should never have access to the python scope."""
-        test = 20
         template = "[tag|limit(test)]"
         self.assertRaises(
             templateparser.TemplateNameError, self.parse, template, tag=self.tag
