@@ -1428,7 +1428,7 @@ class Record(BaseRecord):
             dict: dictionary representation of the record.
         """
         record_dict = {}
-        record = self if complete else dict(record)
+        record = self if complete else dict(record) # FIXME: record is not assigned, what should it point to?
         for key, value in record.items():
             if isinstance(value, BaseRecord):
                 if complete and recursive:
@@ -1790,9 +1790,6 @@ def RecordTableNames():
         # Do not yield subclasses defined in this module
         if cls.__module__ != __name__:
             yield cls.TableName(), cls
-
-
-import functools
 
 
 class CachedPage(object):
