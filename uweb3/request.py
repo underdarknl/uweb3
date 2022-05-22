@@ -148,7 +148,7 @@ class Request:
                         elif not ContentType:
                             try:
                                 content = content.decode(charset or self.charset)
-                            except:
+                            except Exception:
                                 pass
                         if filename:
                             file_obj = {
@@ -248,7 +248,7 @@ class Request:
                 attrs[
                     "samesite"
                 ] = "Lax"  # set default to LAX for no secure (eg, local) sessions.
-            except http.cookies.CookieError:
+            except cookie.CookieError:
                 pass
         self.AddHeader("Set-Cookie", new_cookie[key].OutputString())
 
