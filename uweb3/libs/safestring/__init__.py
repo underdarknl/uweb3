@@ -33,9 +33,19 @@ import json
 import re
 import urllib.parse as urlparse
 import uuid
-from json import JSONEncoder
 
-from uweb3 import model
+__all__ = [
+    "Basesafestring",
+    "SQLSAFE",
+    "Unsafestring",
+    "HTMLsafestring",
+    "JSONsafestring",
+    "JsonEncoder",
+    "URLqueryargumentsafestring",
+    "URLsafestring",
+    "EmailAddresssafestring",
+    "EmailHeadersafestring",
+]
 
 
 class Basesafestring(str):
