@@ -314,7 +314,7 @@ class BasePageMaker(Base):
         {"text": 7, "image": 30, "application": 7, "text/css": 7}
     )
 
-    def __init__(self, req, config=None, executing_path=None):
+    def __init__(self, req, config, executing_path=None):
         """sets up the template parser and database connections.
 
         Arguments:
@@ -337,7 +337,7 @@ class BasePageMaker(Base):
             req.vars["delete"] if "delete" in req.vars else IndexedFieldStorage()
         )
         self.files = req.vars["files"] if "files" in req.vars else {}
-        self.config = config or None
+        self.config = config
         self.options = config.options if config else {}
         self.debug = DebuggerMixin in self.__class__.__mro__
         try:
