@@ -7,6 +7,7 @@ __version__ = "3.0.7"
 # Standard modules
 import configparser
 import datetime
+import importlib
 import logging
 import os
 import re
@@ -80,7 +81,12 @@ class Router:
         websocket_pagemaker = {}
         for pattern, *details in routes:
             page_maker = None
+            handler = details[0]
             for pm in self.pagemakers:
+                if isinstance(details[0], tuple):
+                  handler = details[0][1]
+                  page_maker = details[0][0]
+                  break
                 # Check if the page_maker has the method/handler we are looking for
                 if hasattr(pm, details[0]):
                     page_maker = pm
@@ -90,16 +96,16 @@ class Router:
                 # if so just use that one. This prevents creating multiple instances for one route.
                 if not websocket_pagemaker.get(page_maker.__name__):
                     websocket_pagemaker[page_maker.__name__] = page_maker()
-                pattern(getattr(websocket_pagemaker[page_maker.__name__], details[0]))
+                pattern(getattr(websocket_pagemaker[page_maker.__name__], handler))
                 continue
             if not page_maker:
                 raise NoRouteError(
-                    f"µWeb3 could not find a route handler called '{details[0]}' in any of the PageMakers, your application will not start."
+                    f"µWeb3 could not find a route handler called '{handler}' in any of the PageMakers, your application will not start."
                 )
             req_routes.append(
                 (
                     re.compile(pattern + "$", re.UNICODE),
-                    details[0],  # handler,
+                    handler,  # handler,
                     details[1].upper() if len(details) > 1 else "ALL",  # request types
                     details[2].lower() if len(details) > 2 else "*",  # host
                     page_maker,  # pagemaker class
