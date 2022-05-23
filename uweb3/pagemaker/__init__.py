@@ -222,71 +222,6 @@ class WebsocketPageMaker(Base):
         print(f"User connected with SocketID {sid}: ")
         self.req = env
 
-
-class XSRFMixin:
-    """Provides XSRF protection by enabling setting xsrf token cookies, checking
-    them and setting a flag based on their value
-
-    A seperate decorator can then be used to clear the POST/GET/PUT variables if
-    needed in specific pagemaker functions depending on that page's security
-    context.
-    """
-
-    XSRFCOOKIE = "xsrf"
-    XSRF_seed = str(os.urandom(32))
-
-    def validatexsrf(self):
-        """Sets the invalid_xsrf_token flag to true or false"""
-        self.invalid_xsrf_token = False
-        if self.req.method != "GET":  # GET calls will be ignored, but will set a cookie
-            self.invalid_xsrf_token = True
-            try:
-                user_supplied_xsrf_token = getattr(
-                    self, self.req.method.lower()
-                ).getfirst(self.XSRFCOOKIE)
-                self.invalid_xsrf_token = (
-                    self.cookies.get(self.XSRFCOOKIE) != user_supplied_xsrf_token
-                )
-            except Exception:
-                # any error in looking up the cookie of the supplied post vars will result in a invalid xsrf token flag
-                pass
-        # If no cookie is present, set it.
-        self._Set_XSRF_cookie()
-
-    def _Set_XSRF_cookie(self):
-        """This creates a new XSRF token for this client, which is IP bound, and
-        stores it in a cookie.
-        """
-        xsrf_cookie = self.cookies.get(self.XSRFCOOKIE, False)
-        if not xsrf_cookie:
-            xsrf_cookie = XSRFToken(
-                self.XSRF_seed, self.req.env["REAL_REMOTE_ADDR"]
-            ).generate_token()
-            self.req.AddCookie(self.XSRFCOOKIE, xsrf_cookie, path="/", httponly=True)
-        return xsrf_cookie
-
-    def XSRFInvalidToken(self):
-        """Returns an error message regarding an incorrect XSRF token."""
-        errorpage = templateparser.FileTemplate(
-            os.path.join(os.path.dirname(__file__), "http_403.html")
-        )
-        error = """Your browser did not send us the correct token, any token at all, or a timed out token.
-    Because of this we cannot allow you to perform this action at this time. Please refresh the previous page and try again."""
-
-        return uweb3.Response(
-            content=errorpage.Parse(error=error),
-            httpcode=403,
-            headers=self.req.response.headers,
-        )
-
-    def _Get_XSRF(self):
-        """Easy access to the XSRF token"""
-        try:
-            return self.cookies[self.XSRFCOOKIE]
-        except KeyError:
-            return self._Set_XSRF_cookie()
-
-
 class LoginMixin:
     """This mixin provides a few methods that help with handling logins, sessions
     and related database/cookie interaction"""
@@ -482,6 +417,68 @@ class BasePageMaker(Base):
         connections like signedcookieStores"""
         self.connection.PostRequest()
 
+class XSRFMixin(BasePageMaker):
+    """Provides XSRF protection by enabling setting xsrf token cookies, checking
+    them and setting a flag based on their value
+
+    A seperate decorator can then be used to clear the POST/GET/PUT variables if
+    needed in specific pagemaker functions depending on that page's security
+    context.
+    """
+
+    XSRFCOOKIE = "xsrf"
+    XSRF_seed = str(os.urandom(32))
+
+    def validatexsrf(self):
+        """Sets the invalid_xsrf_token flag to true or false"""
+        self.invalid_xsrf_token = False
+        if self.req.method != "GET":  # GET calls will be ignored, but will set a cookie
+            self.invalid_xsrf_token = True
+            try:
+                user_supplied_xsrf_token = getattr(
+                    self, self.req.method.lower()
+                ).getfirst(self.XSRFCOOKIE)
+                self.invalid_xsrf_token = (
+                    self.cookies.get(self.XSRFCOOKIE) != user_supplied_xsrf_token
+                )
+            except Exception:
+                # any error in looking up the cookie of the supplied post vars will result in a invalid xsrf token flag
+                pass
+        # If no cookie is present, set it.
+        self._Set_XSRF_cookie()
+
+    def _Set_XSRF_cookie(self):
+        """This creates a new XSRF token for this client, which is IP bound, and
+        stores it in a cookie.
+        """
+        xsrf_cookie = self.cookies.get(self.XSRFCOOKIE, False)
+        if not xsrf_cookie:
+            xsrf_cookie = XSRFToken(
+                self.XSRF_seed, self.req.env["REAL_REMOTE_ADDR"]
+            ).generate_token()
+            self.req.AddCookie(self.XSRFCOOKIE, xsrf_cookie, path="/", httponly=True)
+        return xsrf_cookie
+
+    def XSRFInvalidToken(self):
+        """Returns an error message regarding an incorrect XSRF token."""
+        errorpage = templateparser.FileTemplate(
+            os.path.join(os.path.dirname(__file__), "http_403.html")
+        )
+        error = """Your browser did not send us the correct token, any token at all, or a timed out token.
+    Because of this we cannot allow you to perform this action at this time. Please refresh the previous page and try again."""
+
+        return uweb3.Response(
+            content=errorpage.Parse(error=error),
+            httpcode=403,
+            headers=self.req.response.headers,
+        )
+
+    def _Get_XSRF(self):
+        """Easy access to the XSRF token"""
+        try:
+            return self.cookies[self.XSRFCOOKIE]
+        except KeyError:
+            return self._Set_XSRF_cookie()
 
 class DebuggerMixin:
     """Replaces the default handler for Internal Server Errors.
@@ -696,7 +693,7 @@ class SparseAsyncPages(BasePageMaker):
 # ##############################################################################
 # Classes for public use (wildcard import)
 #
-class PageMaker(XSRFMixin, BasePageMaker):
+class PageMaker(XSRFMixin):
     """The basic PageMaker class, providing XSRF support."""
 
 
