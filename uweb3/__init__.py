@@ -7,6 +7,7 @@ __version__ = '3.0.7'
 # Standard modules
 import configparser
 import datetime
+import importlib
 import logging
 import os
 import re
@@ -70,6 +71,11 @@ class Router:
       page_maker = None
       for pm in self.pagemakers:
         # Check if the page_maker has the method/handler we are looking for
+        if hasattr(details[0], '__call__'):
+          module = importlib.import_module(details[0].__module__)
+          page_maker = getattr(module, details[0].__qualname__.split('.', 1)[0])
+          break
+
         if hasattr(pm, details[0]):
           page_maker = pm
           break
@@ -333,7 +339,11 @@ class uWeb:
         # We're specifically calling _StaticPostInit here as promised in documentation, seperate from the regular PostInit to keep things fast for static pages
         page_maker._StaticPostInit()
 
+
       # pylint: enable=W0212
+      if not isinstance(method, str):
+        return method(page_maker, *args)
+
       return getattr(page_maker, method)(*args)
     except pagemaker.ReloadModules as message:
       reload_message = reload(sys.modules[self.initial_pagemaker.__module__])
