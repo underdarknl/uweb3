@@ -68,16 +68,18 @@ class Router:
     # To prevent creating the same instance for each route we store them in a dict
     websocket_pagemaker = {}
     for pattern, *details in routes:
+      handler = None
       page_maker = None
       for pm in self.pagemakers:
         # Check if the page_maker has the method/handler we are looking for
-        if hasattr(details[0], '__call__'):
-          module = importlib.import_module(details[0].__module__)
-          page_maker = getattr(module, details[0].__qualname__.split('.', 1)[0])
+        if isinstance(details[0], tuple):
+          handler = details[0][1]
+          page_maker = details[0][0]
           break
 
         if hasattr(pm, details[0]):
           page_maker = pm
+          handler = details[0]
           break
       if callable(pattern):
         # Check if the page_maker is already in the dict, if not instantiate
@@ -89,7 +91,7 @@ class Router:
       if not page_maker:
         raise NoRouteError(f"µWeb3 could not find a route handler called '{details[0]}' in any of the PageMakers, your application will not start.")
       req_routes.append((re.compile(pattern + '$', re.UNICODE),
-                        details[0], #handler,
+                        handler, #handler,
                         details[1].upper() if len(details) > 1 else 'ALL', #request types
                         details[2].lower() if len(details) > 2 else '*', #host
                         page_maker #pagemaker class
