@@ -9,6 +9,7 @@ import base64
 import io
 import os
 import smtplib
+from email import encoders
 from email.mime.application import MIMEApplication
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -124,9 +125,9 @@ class SendMailContext:
             message.attach(self.ParseAttachment(attachments))
         else:
             for attachment in attachments:
-                part = self.ParseAttachment(attachment)
                 message.attach(self.ParseAttachment(attachment))
-        self.server.sendmail(message["From"], recipients, str(message))
+
+        self.server.sendmail(message["From"], recipients, message.as_string())
 
     @staticmethod
     def ParseAttachment(attachment):
@@ -149,9 +150,9 @@ class SendMailContext:
             attachment.seek(0)
             contents = attachment.read()
 
-        part.set_payload(base64.b64encode(contents))
-        part.add_header("Content-Transfer-Encoding", "base64")
+        part.set_payload(contents)
         part.add_header("Content-Disposition", 'attachment; filename="%s"' % name)
+        encoders.encode_base64(part)
         return part
 
     @staticmethod
