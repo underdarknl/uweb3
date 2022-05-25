@@ -3,6 +3,7 @@
 __author__ = "Stef van Houten <stef@underdark.nl>"
 __version__ = "0.1"
 
+from re import T
 import weakref
 import psycopg2
 import psycopg2.extras
@@ -27,7 +28,7 @@ class Cursor(psycopg2.extras.RealDictCursor, base_cursor.BaseCursor):
         super().__init__(connection, *args, **kwargs)
         self._connection = weakref.ref(connection)
 
-    def _Execute(self, sql, args):
+    def _Execute(self, query):
         """Actually executes the query and returns the result of it.
 
         Arguments:
@@ -39,15 +40,13 @@ class Cursor(psycopg2.extras.RealDictCursor, base_cursor.BaseCursor):
         Returns:
           sqlresult.ResultSet instance holding all query result data.
         """
-        # if args:
-        #   self._LogQuery(sql % args)
-        # else:
-        #   self._LogQuery(sql)
-        return self.connection.Query(sql.strip(), args, self)
 
-    def Execute(self, query, replacements=None):
+        # self._LogQuery(query)
+        return self.connection.Query(query)
+
+    def Execute(self, query):
         """Executes a raw query."""
-        return self._Execute(query, replacements)
+        return self._Execute(query)
 
     def Select(
         self,
@@ -96,7 +95,6 @@ class Cursor(psycopg2.extras.RealDictCursor, base_cursor.BaseCursor):
           sqlresult.ResultSet object.
         """
         field_escape = self.connection.EscapeField if escape else self.NoEscapeField
-        sql = "SELECT %s %s %s FROM %s WHERE %s %s %s %s"
 
         test = "SELECT"
         if totalcount and limit is not None:
@@ -104,25 +102,57 @@ class Cursor(psycopg2.extras.RealDictCursor, base_cursor.BaseCursor):
         if distinct:
             test += " DISTINCT "
 
-        fields = self._StringFields(fields, field_escape)
-        table = self._StringTable(table, field_escape)
-        conditions = self._StringConditions(group, field_escape)
-        group = self._StringGroup(group, field_escape)
-        order = self._StringOrder(order, field_escape)
-        limit = self._StringLimit(limit, offset)
+        if fields:
+            fields = psycopg2.sql.SQL(",").join(
+                [psycopg2.sql.Identifier(field) for field in fields]
+            )
+        else:
+            fields = psycopg2.sql.SQL("*")
 
-        # TODO: Add escaping for sql
-        psycopg2.sql.SQL("SELECT {fields} FROM {table} ").format()
+        if conditions:
+            conditions = psycopg2.sql.SQL("WHERE ") + psycopg2.sql.SQL(
+                self._StringConditions(conditions, field_escape)
+            )
+        else:
+            conditions = psycopg2.sql.SQL("")
 
-        result = self._Execute(test, replacements)
+        if group:
+            group = psycopg2.sql.SQL(self._StringGroup(group, field_escape))
+        else:
+            group = psycopg2.sql.SQL("")
+
+        if order:
+            order = psycopg2.sql.SQL(self._StringOrder(order, field_escape))
+        else:
+            order = psycopg2.sql.SQL("")
+
+        if limit:
+            limit = psycopg2.sql.SQL(self._StringLimit(limit, offset))
+        else:
+            limit = psycopg2.sql.SQL("")
+
+        query = psycopg2.sql.SQL(
+            "SELECT {fields} FROM {table} {conditions} {group}"
+        ).format(
+            fields=fields,
+            table=psycopg2.sql.Identifier(table),
+            conditions=conditions,
+            group=group,
+            order=order,
+            limit=limit,
+        )
+        result = self._Execute(query)
         # if totalcount and limit is not None:
         #   result.affected = self._Execute('SELECT FOUND_ROWS()')[0][0]
         return result
 
-    @staticmethod
-    def _StringConditions(conditions, _unused_field_escape):
-        if not conditions:
-            return "1=1"
-        elif not isinstance(conditions, str):
-            return " AND ".join(conditions)
-        return conditions
+    Error = psycopg2.Error
+    InterfaceError = psycopg2.InterfaceError
+    DatabaseError = psycopg2.DatabaseError
+    DataError = psycopg2.DataError
+    OperationalError = psycopg2.OperationalError
+    IntegrityError = psycopg2.IntegrityError
+    InternalError = psycopg2.InternalError
+    ProgrammingError = psycopg2.ProgrammingError
+    NotSupportedError = psycopg2.NotSupportedError
+    Warning = psycopg2.Warning

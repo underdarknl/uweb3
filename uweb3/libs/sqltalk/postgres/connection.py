@@ -60,6 +60,22 @@ class Connection(psycopg2.extensions.connection, BaseConnection):
 
     # def autocommit(self, value):
     #   self.autocommit = value
+    # def EscapeField(self, field, multiple=False):
+    #     """Returns a SQL escaped field or table name.
+
+    #     Set multiple = True if field is a tuple of names to be escaped.
+    #     If multiple = False, and a tuple is encountered `field` as `name` will be
+    #       returned where the second part of the tuple is the `name` part.
+    #     """
+    #     if not field:
+    #         return ""
+    #     if isinstance(field, str):j
+    #         fields = ".".join("%s" % f.replace("`", "``") for f in field.split("."))j
+    #         return fields.replace("`*`", "*")
+    #     elif not multiple and isinstance(field, tuple):
+    #         return "%s as %s" % (self.EscapeField(field[0]), self.EscapeField(field[1]))
+    #     return map(self.EscapeField, field)j
+
     def EscapeField(self, field, multiple=False):
         """Returns a SQL escaped field or table name.
 
@@ -80,11 +96,13 @@ class Connection(psycopg2.extensions.connection, BaseConnection):
         """Return the name of the currently used database"""
         return self.Query("SELECT current_database()")[0]["current_database"]  # type: ignore
 
-    def Query(self, query_string, replacements, cur=None):
+    def Query(self, query_string, cur=None):
         if not cur:
             cur = self.cursor()
-        cur.execute(query_string, replacements)
-        results = cur.fetchall()
+        results = None
+        cur.execute(query_string)
+        if cur.description:
+            results = cur.fetchall()
 
         if results:
             fields = list(results[0])
@@ -110,14 +128,13 @@ class Connection(psycopg2.extensions.connection, BaseConnection):
             # 'transactioncount': self.counter_transactions
         }
 
-
-Error = psycopg2.Error
-InterfaceError = psycopg2.InterfaceError
-DatabaseError = psycopg2.DatabaseError
-DataError = psycopg2.DataError
-OperationalError = psycopg2.OperationalError
-IntegrityError = psycopg2.IntegrityError
-InternalError = psycopg2.InternalError
-ProgrammingError = psycopg2.ProgrammingError
-NotSupportedError = psycopg2.NotSupportedError
-Warning = psycopg2.Warning
+    Error = psycopg2.Error
+    InterfaceError = psycopg2.InterfaceError
+    DatabaseError = psycopg2.DatabaseError
+    DataError = psycopg2.DataError
+    OperationalError = psycopg2.OperationalError
+    IntegrityError = psycopg2.IntegrityError
+    InternalError = psycopg2.InternalError
+    ProgrammingError = psycopg2.ProgrammingError
+    NotSupportedError = psycopg2.NotSupportedError
+    Warning = psycopg2.Warning

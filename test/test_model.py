@@ -14,7 +14,7 @@ from pathlib import Path
 from uweb3 import model, request
 
 # Importing uWeb3 makes the SQLTalk library available as a side-effect
-from uweb3.libs.sqltalk import mysql, safe_cookie, sqlite
+from uweb3.libs.sqltalk import mysql, safe_cookie, sqlite, postgres
 
 
 # ##############################################################################
@@ -683,6 +683,12 @@ def CookieConnection():
         ),
         {},
         "secret",
+    )
+
+
+def PostgresConnection():
+    return postgres.Connect(
+        host="localhost", database="test", user="stef", password="password"
     )
 
 
