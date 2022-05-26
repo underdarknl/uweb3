@@ -6,9 +6,6 @@ con = postgres.Connect(
 
 with con as cursor:
     # res = cursor.Execute("select * from test")
-    res = cursor.Select(
-        "test",
-        conditions="test='t'",
-        group=("test=t",),
-    )
+    # res = cursor.Select("test", fields=("test",))
+    cursor.Insert("test", {"test": "test"})
     print(res[0])

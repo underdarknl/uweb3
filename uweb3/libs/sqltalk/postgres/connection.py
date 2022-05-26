@@ -9,6 +9,7 @@ import psycopg2.extensions
 
 from .. import sqlresult
 from . import cursor
+import psycopg2.sql
 
 
 class BaseConnection:
@@ -60,47 +61,43 @@ class Connection(psycopg2.extensions.connection, BaseConnection):
 
     # def autocommit(self, value):
     #   self.autocommit = value
-    # def EscapeField(self, field, multiple=False):
-    #     """Returns a SQL escaped field or table name.
-
-    #     Set multiple = True if field is a tuple of names to be escaped.
-    #     If multiple = False, and a tuple is encountered `field` as `name` will be
-    #       returned where the second part of the tuple is the `name` part.
-    #     """
-    #     if not field:
-    #         return ""
-    #     if isinstance(field, str):j
-    #         fields = ".".join("%s" % f.replace("`", "``") for f in field.split("."))j
-    #         return fields.replace("`*`", "*")
-    #     elif not multiple and isinstance(field, tuple):
-    #         return "%s as %s" % (self.EscapeField(field[0]), self.EscapeField(field[1]))
-    #     return map(self.EscapeField, field)j
+    def EscapeValues(self, obj):
+        return obj
 
     def EscapeField(self, field, multiple=False):
-        """Returns a SQL escaped field or table name.
-
-        Set multiple = True if field is a tuple of names to be escaped.
-        If multiple = False, and a tuple is encountered `field` as `name` will be
-          returned where the second part of the tuple is the `name` part.
-        """
+        """Returns a SQL escaped field or table name."""
         if not field:
-            return ""
+            return psycopg2.sql.SQL("*")
         if isinstance(field, str):
-            fields = ".".join("%s" % f.replace("`", "``") for f in field.split("."))
-            return fields.replace("`*`", "*")
+            res = psycopg2.sql.SQL("{field}").format(
+                field=psycopg2.sql.Identifier(field)
+            )
+            return res
         elif not multiple and isinstance(field, tuple):
-            return "%s as %s" % (self.EscapeField(field[0]), self.EscapeField(field[1]))
-        return map(self.EscapeField, field)
+            return psycopg2.sql.SQL("{field_one} as {field_two}").format(
+                field_one=psycopg2.sql.Identifier(field[0]),
+                field_two=psycopg2.sql.Identifier(field[1]),
+            )
+        return psycopg2.sql.SQL("{fields}").format(
+            fields=psycopg2.sql.SQL(", ").join(
+                [psycopg2.sql.Identifier(f) for f in field]
+            )
+        )
 
     def CurrentDatabase(self):
         """Return the name of the currently used database"""
         return self.Query("SELECT current_database()")[0]["current_database"]  # type: ignore
 
-    def Query(self, query_string, cur=None):
+    def Query(self, query_string, cur=None, values=None):
         if not cur:
             cur = self.cursor()
         results = None
-        cur.execute(query_string)
+
+        if values:
+            cur.execute(query_string, values)
+        else:
+            cur.execute(query_string)
+
         if cur.description:
             results = cur.fetchall()
 

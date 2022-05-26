@@ -1,5 +1,6 @@
 import unittest
 from test import test_model
+from uweb3 import model
 
 
 class PostgresTest(test_model.BaseRecordTests):
@@ -40,6 +41,12 @@ class PostgresTransactionTest(test_model.RecordTests):
 
     def getsecondConnection(self):
         return test_model.PostgresConnection()
+
+    def testUpdateRecordWithBadField(self):
+        """Database record updating fails if there are unknown fields present"""
+        author = test_model.Author.Create(self.connection, {"name": "A. Pushkin"})
+        author["specialty"] = "poetry"
+        self.assertRaises(model.BadFieldError, author.Save)
 
 
 if __name__ == "__main__":
