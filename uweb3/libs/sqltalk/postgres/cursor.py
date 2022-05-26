@@ -6,6 +6,7 @@ __version__ = "0.1"
 from re import T
 import weakref
 import psycopg2
+import psycopg2.errors
 import psycopg2.extras
 import psycopg2.extensions
 import psycopg2.sql
@@ -42,7 +43,7 @@ class Cursor(psycopg2.extras.RealDictCursor, base_cursor.BaseCursor):
         """
 
         # self._LogQuery(query)
-        return self.connection.Query(query, values)
+        return self.connection.Query(query, values=values)
 
     def Execute(self, query):
         """Executes a raw query."""
@@ -97,11 +98,16 @@ class Cursor(psycopg2.extras.RealDictCursor, base_cursor.BaseCursor):
         field_escape = self.connection.EscapeField
 
         fields = self._StringFields(fields, field_escape)
-
+        values = []
         if conditions:
-            conditions = psycopg2.sql.SQL("WHERE ") + psycopg2.sql.SQL(
-                self._StringConditions(conditions, field_escape)
-            )
+            if isinstance(conditions, str):
+                identifier, value = conditions.split("=", 1)
+
+                identifier = identifier.replace("`", "").strip()
+                conditions = psycopg2.sql.SQL("WHERE {cond} = %s").format(
+                    cond=psycopg2.sql.Identifier(identifier),
+                )
+                values.append(value.strip())
         else:
             conditions = psycopg2.sql.SQL("")
 
@@ -130,7 +136,7 @@ class Cursor(psycopg2.extras.RealDictCursor, base_cursor.BaseCursor):
             order=order,
             limit=limit,
         )
-        result = self._Execute(query)
+        result = self._Execute(query, values=values)
         # if totalcount and limit is not None:
         #   result.affected = self._Execute('SELECT FOUND_ROWS()')[0][0]
         return result
@@ -166,7 +172,6 @@ class Cursor(psycopg2.extras.RealDictCursor, base_cursor.BaseCursor):
         # Single insert
         keys = values.keys()
         values = tuple(values.values())
-        # values = ", ".join("`%s`=%s" % value for value in values.items())
         sql = "(" + ",".join("%s" for value in values) + ")"
         query = psycopg2.sql.SQL("INSERT INTO {table}({keys}) VALUES " + sql).format(
             table=table,
@@ -174,7 +179,6 @@ class Cursor(psycopg2.extras.RealDictCursor, base_cursor.BaseCursor):
                 psycopg2.sql.Identifier(key) for key in keys
             ),
         )
-        self.execute(query, values)
         # except AttributeError:
         #     # Multi-row insert
         #     fields = ", ".join(map(self.connection.EscapeField, values[0]))
@@ -194,7 +198,7 @@ class Cursor(psycopg2.extras.RealDictCursor, base_cursor.BaseCursor):
     InterfaceError = psycopg2.InterfaceError
     DatabaseError = psycopg2.DatabaseError
     DataError = psycopg2.DataError
-    OperationalError = psycopg2.OperationalError
+    OperationalError = (psycopg2.OperationalError, psycopg2.errors.UndefinedColumn)
     IntegrityError = psycopg2.IntegrityError
     InternalError = psycopg2.InternalError
     ProgrammingError = psycopg2.ProgrammingError

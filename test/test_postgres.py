@@ -10,7 +10,7 @@ class PostgresTest(test_model.BaseRecordTests):
         self.record_class = test_model.BasicTestRecord
 
 
-class PostgresTransactionTest(test_model.RecordTests):
+class PostgresTransactionTest(unittest.TestCase):
     def setUp(self):
         """Sets up the tests for the VersionedRecord class."""
         self.record_class = test_model.BasicTestRecord
@@ -42,11 +42,31 @@ class PostgresTransactionTest(test_model.RecordTests):
     def getsecondConnection(self):
         return test_model.PostgresConnection()
 
-    def testUpdateRecordWithBadField(self):
-        """Database record updating fails if there are unknown fields present"""
-        author = test_model.Author.Create(self.connection, {"name": "A. Pushkin"})
-        author["specialty"] = "poetry"
-        self.assertRaises(model.BadFieldError, author.Save)
+    def testLoadPrimary(self):
+        """[Record] Records can be loaded by primary key using FromPrimary()"""
+        with self.connection as cursor:
+            inserted = cursor.Insert(table="author", values={"name": "A. Chrstie"})
+        author = test_model.Author.FromPrimary(self.connection, inserted.insertid)
+        self.assertEqual(type(author), test_model.Author)
+        self.assertEqual(len(author), 2)
+        self.assertEqual(author.key, inserted.insertid)
+        self.assertEqual(author["name"], "A. Chrstie")
+
+    def testLoadPrimaryWithChangedKey(self):
+        """[Record] Records can be loaded from alternative primary key"""
+        with self.connection as cursor:
+            inserted = cursor.Insert(table="author", values={"name": "B. Cartland"})
+
+        # Adjust primary key field name
+        test_model.Author._PRIMARY_KEY = "name"
+        # Actual tests
+        author = test_model.Author.FromPrimary(self.connection, "B. Cartland")
+        self.assertEqual(type(author), test_model.Author)
+        self.assertEqual(len(author), 2)
+        self.assertEqual(author.key, author["name"])
+        self.assertEqual(author["ID"], inserted.insertid)
+        # Restore global state
+        test_model.Author._PRIMARY_KEY = "ID"
 
 
 if __name__ == "__main__":

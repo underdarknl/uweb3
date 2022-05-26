@@ -5,6 +5,7 @@ import logging
 from re import I
 import psycopg2
 import psycopg2.extras
+import psycopg2.errors
 import psycopg2.extensions
 
 from .. import sqlresult
@@ -53,15 +54,21 @@ class Connection(psycopg2.extensions.connection, BaseConnection):
         self.commit()
         self.cur.close()
 
-    # def commit(self):
-    #   self.commit()
+    def commit(self):
+        super().commit()
 
-    # def rollback(self):
-    #   self.rollback()
+    def rollback(self):
+        super().rollback()
 
-    # def autocommit(self, value):
-    #   self.autocommit = value
+    def autocommit(self, value):
+        self.set_session(autocommit=value)
+
     def EscapeValues(self, obj):
+        """We do not escape here, we simple return the value and allow the query
+        engine to escape using parameters.
+        """
+        # if isinstance(obj, str):
+        #     return f'"{obj}"'  # XXX: This isn't really clean.
         return obj
 
     def EscapeField(self, field, multiple=False):
@@ -98,8 +105,10 @@ class Connection(psycopg2.extensions.connection, BaseConnection):
         else:
             cur.execute(query_string)
 
-        if cur.description:
+        try:
             results = cur.fetchall()
+        except Exception:
+            pass
 
         if results:
             fields = list(results[0])
@@ -126,10 +135,11 @@ class Connection(psycopg2.extensions.connection, BaseConnection):
         }
 
     Error = psycopg2.Error
+    UndefinedColumn = psycopg2.errors.UndefinedColumn
     InterfaceError = psycopg2.InterfaceError
     DatabaseError = psycopg2.DatabaseError
     DataError = psycopg2.DataError
-    OperationalError = psycopg2.OperationalError
+    OperationalError = (psycopg2.OperationalError, psycopg2.errors.UndefinedColumn)
     IntegrityError = psycopg2.IntegrityError
     InternalError = psycopg2.InternalError
     ProgrammingError = psycopg2.ProgrammingError
