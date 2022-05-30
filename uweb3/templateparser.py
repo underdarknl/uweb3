@@ -948,7 +948,7 @@ class TemplateTag(object):
       for index in self.indices:
         value = self._GetIndex(value, index)
       if isinstance(value, JITTag):
-        return value(**replacements)
+        return value.PassReplacements(**replacements)
       return value
     except KeyError:
       raise TemplateNameError('No replacement with name %r' % self.name)
@@ -1095,11 +1095,20 @@ class JITTag(object):
   def __call__(self, *args, **kwargs):
     """Returns the output of the earlier wrapped function"""
     if not self.called:
+      # XXX: This is the issue. A JITTag is called a couple times when creating one in a pagemaker, at this time however no replacements are present.
+      # The JITTag should be parsed whenever its parent is being parsed, so that it can be parsed just in time.
       try:
         self.result = self.wrapped(*args, **kwargs)
-      except TypeError: # the lambda does not expect params
+      except TypeError as msg: # the lambda does not expect params
         self.result = self.wrapped()
     self.called = True
+    return self.result
+
+  def PassReplacements(self, *args, **kwargs):
+    try:
+      self.result = self.wrapped(*args, **kwargs)
+    except TypeError as msg: # the lambda does not expect params
+      self.result = self.wrapped()
     return self.result
 
   def __getattr__(self, name):
