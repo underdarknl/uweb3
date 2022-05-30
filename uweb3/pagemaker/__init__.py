@@ -198,10 +198,14 @@ class Base:
             self.persistent.Set(
                 "__parser",
                 templateparser.Parser(
-                    self.options.get("templates", {}).get("path", self.TEMPLATE_DIR)
+                    self.options.get("templates", {}).get("path", self.TEMPLATE_DIR),
+                    symlink_path=self.options.get("templates", {}).get(
+                        "symlink_path", None
+                    ),
                 ),
             )
         parser = self.persistent.Get("__parser")
+        parser.template_dir = self.TEMPLATE_DIR
         parser.dictoutput = self.req.noparse
         return parser
 
@@ -221,6 +225,7 @@ class WebsocketPageMaker(Base):
         """
         print(f"User connected with SocketID {sid}: ")
         self.req = env
+
 
 class LoginMixin:
     """This mixin provides a few methods that help with handling logins, sessions
@@ -417,6 +422,7 @@ class BasePageMaker(Base):
         connections like signedcookieStores"""
         self.connection.PostRequest()
 
+
 class XSRFMixin(BasePageMaker):
     """Provides XSRF protection by enabling setting xsrf token cookies, checking
     them and setting a flag based on their value
@@ -479,6 +485,7 @@ class XSRFMixin(BasePageMaker):
             return self.cookies[self.XSRFCOOKIE]
         except KeyError:
             return self._Set_XSRF_cookie()
+
 
 class DebuggerMixin:
     """Replaces the default handler for Internal Server Errors.
