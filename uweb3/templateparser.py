@@ -187,9 +187,21 @@ class Parser(dict):
     Returns:
       Template: A template object, created from a previously loaded file.
     """
+    if isinstance(template, dict):
+      self.AddTemplate(template['file_name'], name=template['template_alias'])
+      return super().__getitem__(template['template_alias'])
+
     if template not in self:
       self.AddTemplate(template)
     return super().__getitem__(template)
+
+  def _getTemplatePath(self, location):
+    if self.template_dir:
+      template_path = os.path.realpath(os.path.join(self.template_dir, location))
+      if os.path.commonprefix((template_path, self.template_dir)) != self.template_dir:
+        raise TemplateReadError('Could not load template %r, not in template dir' % template_path)
+      return template_path
+    return location
 
   def AddTemplate(self, location, name=None):
     """Reads the given `template` filename and adds it to the cache.
@@ -208,14 +220,16 @@ class Parser(dict):
     Raises:
       TemplateReadError: When the template file cannot be read
     """
-    if self.template_dir:
-      template_path = os.path.realpath(os.path.join(self.template_dir, location))
-      if os.path.commonprefix((template_path, self.template_dir)) != self.template_dir:
-        raise TemplateReadError('Could not load template %r, not in template dir' % template_path)
-    else:
-      template_path = location
+    template_path = self._getTemplatePath(location)
     try:
       self[name or location] = FileTemplate(template_path, parser=self, encoding=None)
+    except IOError:
+      raise TemplateReadError('Could not load template %r' % template_path)
+
+  def AddAlias(self, location, alias, **kwds):
+    template_path = self._getTemplatePath(location)
+    try:
+      self[alias] = FileTemplate(template_path, parser=self, encoding=None, alias=alias, replacements=kwds)
     except IOError:
       raise TemplateReadError('Could not load template %r' % template_path)
 
@@ -406,7 +420,7 @@ class Template(list):
   def __str__(self):
     return ''.join(map(str, self))
 
-  def AddFile(self, name):
+  def AddFile(self, name, template_alias=None, **kwds):
     """Extends the Template by reading template data from a file.
 
     The file is loaded through the Parser instance associated with the template.
@@ -419,7 +433,13 @@ class Template(list):
     self.name = name
     if self.parser is None:
       raise TypeError('The template requires parser for adding template files.')
-    return self._AddToOpenScope(self.parser[name])
+
+    if template_alias:
+      self.parser.AddAlias(name, template_alias, **kwds)
+      template = self.parser[template_alias]
+    else:
+      template = self.parser[name]
+    return self._AddToOpenScope(template)
 
   def AddString(self, raw_template, filename=None):
     """Extends the Template by adding a raw template string.
@@ -503,9 +523,16 @@ class Template(list):
   # Template syntax constructs
   #
 
-  def _TemplateConstructInline(self, name):
+  def _TemplateConstructInline(self, name, template_alias=None, *args):
     """Processing for {{ inline }} template syntax."""
-    self.AddFile(name)
+    if template_alias:
+      arguments ={}
+      for txt in args:
+        key, value = txt.split('=', 1)
+        arguments[key] = value
+      return self.AddFile(name, template_alias, **arguments)
+    return self.AddFile(name)
+
 
   def _TemplateConstructFor(self, *nodes):
     """Processing for {{ for }} template syntax."""
@@ -586,7 +613,7 @@ class Template(list):
 
 class FileTemplate(Template):
   """Template class that loads from file."""
-  def __init__(self, template_path, parser=None, encoding='utf-8'):
+  def __init__(self, template_path, parser=None, encoding='utf-8', alias=None, replacements={}):
     """Initializes a FileTemplate based on a given template path.
 
     Arguments:
@@ -597,6 +624,8 @@ class FileTemplate(Template):
         An optional parser instance that is necessary to enable support for
         adding files to the current template. This is used by {{ inline }}.
     """
+    self._template_alias = alias
+    self._replacements = replacements
     self._template_path = template_path
     self.parser = parser
     self.templateEncoding = encoding or (self.parser.templateEncoding if self.parser else 'utf-8')
@@ -617,6 +646,14 @@ class FileTemplate(Template):
     """
     self.ReloadIfModified()
     try:
+      if self._template_alias:
+        for key, value in self._replacements.items():
+          try:
+            x = TemplateTag.FromString(value) # XXX: This can probably be done in a cleaner way. How can we determine if a passed value is a tag?
+            kwds[key] = x.GetValue(**kwds)
+          except Exception:
+            pass
+        kwds = {**kwds, '__alias': self._template_alias, **self._replacements}
       result = super().Parse(**kwds)
     except TemplateFunctionError as error:
       raise TemplateFunctionError('%s in %s' % (error, self._template_path))
