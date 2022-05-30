@@ -7,6 +7,7 @@
 # Standard modules
 import os
 import re
+import shutil
 import time
 import unittest
 
@@ -29,7 +30,7 @@ class Parser(unittest.TestCase):
     def tearDown(self):
         """Removes the template file from the filesystem."""
         os.unlink("tmp_template")
-
+        
     def testAddTemplate(self):
         """[Parser] AddTemplate adds a template to the parser"""
         parser = templateparser.Parser()
@@ -74,6 +75,38 @@ class Parser(unittest.TestCase):
         self.assertEqual(result_parse, result_parse_string)
 
 
+class ParserDirectoryTests(unittest.TestCase):
+    """Basic tests for the Parser class and equality of Template objects."""
+
+    def setUp(self):
+        """Creates a template file and a similar instance attribute."""
+        self.name = "tmp_template"
+        self.raw = "This is a basic [noun]"
+        self.template = templateparser.Template(self.raw)
+        with open(self.name, "w") as template:
+            template.write("This is a basic [noun]")
+            template.flush()
+        
+        self.test_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_folder')
+        self.template_dir = os.path.join(self.test_folder, 'templates')
+        
+        if not os.path.exists('./test/test_folder/templates'):
+            os.makedirs('./test/test_folder/templates')
+        
+    def tearDown(self):
+        """Removes the template file from the filesystem."""
+        os.unlink("tmp_template")
+        shutil.rmtree('./test/test_folder')
+
+    def test(self):
+        filename = os.path.join(self.template_dir, 'test.html')
+        with open(filename, 'w') as f:
+            f.write(self.raw)
+            
+        parser = templateparser.Parser(path=self.template_dir)
+        parser.AddTemplate(filename)
+        self.assertEqual(self.template, parser[filename])
+        
 class ParserPerformance(unittest.TestCase):
     """Basic performance test of the Template's initialization and Parsing."""
 
