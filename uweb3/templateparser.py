@@ -204,7 +204,12 @@ class Parser(dict):
     """
 
     def __init__(
-        self, path=None, templates=(), dictoutput=False, templateEncoding="utf-8"
+        self,
+        path=None,
+        templates=(),
+        dictoutput=False,
+        templateEncoding="utf-8",
+        symlink_path=None,
     ):
         """Initializes a Parser instance.
 
@@ -220,9 +225,12 @@ class Parser(dict):
             structure and replaced values as a dict
           % templateEncoding: str ~~ utf-8
             Encoding of the template, used when reading the file.
+          % symlink_path: str ~~ None
+            The base directory to use for resolving symlinked files.
         """
         super().__init__()
         self.template_dir = path
+        self.template_symlink_path = symlink_path
         self.dictoutput = dictoutput
         self.tags = {}
         self.requesttags = {}
@@ -275,11 +283,29 @@ class Parser(dict):
                 os.path.commonprefix((template_path, self.template_dir))
                 != self.template_dir
             ):
-                raise TemplateReadError(
-                    "Could not load template %r, not in template dir" % template_path
-                )
+                # Check if the parser was created with a symlin_path setting
+                if self.template_symlink_path:
+                    # If the template is outside of its current template directory but inside the simlink directory
+                    # allow the template to be loaded from the symlink directory. However if the template
+                    # is also outside of the symlink directory, raise an error.
+                    symlink_path = os.path.realpath(
+                        os.path.join(self.template_symlink_path, location)
+                    )
+                    if (
+                        os.path.commonprefix((symlink_path, self.template_symlink_path))
+                        != self.template_symlink_path
+                    ):
+                        raise TemplateReadError(
+                            f"Template {location} is outside the template directory."
+                        )
+                else:
+                    raise TemplateReadError(
+                        "Could not load template %r, not in template dir"
+                        % template_path
+                    )
         else:
             template_path = location
+
         try:
             self[name or location] = FileTemplate(
                 template_path, parser=self, encoding=None
