@@ -54,7 +54,7 @@ class Cookie(cookie.SimpleCookie):
 
 
 class Request:
-    def __init__(self, env, logger, errorlogger):
+    def __init__(self, env, logger, errorlogger): # noqa: C901
         self.env = env
         self.headers = dict(self.headers_from_env(env))
         self._out_headers = []
@@ -139,10 +139,10 @@ class Request:
                                     if len(ContentType) > 1:
                                         if ContentType[1].startswith("charset"):
                                             charset = ContentType[1].split("=")[1]
-                                        if ContentType[0].startswith("content-type"):
-                                            contenttype = (
-                                                ContentType[0].split(":")[1].strip()
-                                            )
+                                        # if ContentType[0].startswith("content-type"):
+                                        #     contenttype = (
+                                        #         ContentType[0].split(":")[1].strip()
+                                        #     )
                         if charset:
                             content = content.decode(charset)
                         elif not ContentType:
