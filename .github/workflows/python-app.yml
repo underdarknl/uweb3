@@ -40,7 +40,7 @@ jobs:
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=B,C,E,F,W,T4,B9 --show-source --statistics --ignore=E203,E266,E501,W503,F403,F401,W605,F811
+        flake8 . --count --select=B,C,E,F,W,T4,B9 --show-source --statistics --ignore=E203,E266,E501,W503,F403,F401,W605,F811,E712,E731
         flake8 . --count --exit-zero --max-line-length=79 --statistics
     - name: Run uweb3 unittests
       run: |
