@@ -195,13 +195,14 @@ class Base:
         Otherwise, the `TEMPLATE_DIR` will be used to load templates from.
         """
         if "__parser" not in self.persistent:
+            allowed_paths = self.options.get("templates", {}).get("allowed_paths", None)
+            if allowed_paths:
+                allowed_paths = allowed_paths.split(",")
             self.persistent.Set(
                 "__parser",
                 templateparser.Parser(
                     self.options.get("templates", {}).get("path", self.TEMPLATE_DIR),
-                    symlink_path=self.options.get("templates", {}).get(
-                        "symlink_path", None
-                    ),
+                    allowed_paths=allowed_paths,
                 ),
             )
         parser = self.persistent.Get("__parser")
