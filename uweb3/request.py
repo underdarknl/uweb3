@@ -54,7 +54,7 @@ class Cookie(cookie.SimpleCookie):
 
 
 class Request:
-    def __init__(self, env, logger, errorlogger): # noqa: C901
+    def __init__(self, env, logger, errorlogger):  # noqa: C901
         self.env = env
         self.headers = dict(self.headers_from_env(env))
         self._out_headers = []
