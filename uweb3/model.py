@@ -1429,7 +1429,7 @@ class Record(BaseRecord):
         """
         record_dict = {}
         record = (
-            self if complete else dict(record)
+            self if complete else self._record
         )  # FIXME: record is not assigned, what should it point to?
         for key, value in record.items():
             if isinstance(value, BaseRecord):
