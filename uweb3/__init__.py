@@ -219,7 +219,7 @@ class uWeb:
         )
         self._logerror = self.logerror if errorlogging else lambda *args: None
 
-    def __call__(self, env, start_response):
+    def __call__(self, env, start_response): # noqa: C901
         """WSGI request handler.
         Accepts the WSGI `environment` dictionary and a function to start the
         response and returns a response iterator.
