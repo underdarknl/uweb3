@@ -222,6 +222,7 @@ class WebsocketPageMaker(Base):
         print(f"User connected with SocketID {sid}: ")
         self.req = env
 
+
 class LoginMixin:
     """This mixin provides a few methods that help with handling logins, sessions
     and related database/cookie interaction"""
@@ -417,6 +418,7 @@ class BasePageMaker(Base):
         connections like signedcookieStores"""
         self.connection.PostRequest()
 
+
 class XSRFMixin(BasePageMaker):
     """Provides XSRF protection by enabling setting xsrf token cookies, checking
     them and setting a flag based on their value
@@ -479,6 +481,7 @@ class XSRFMixin(BasePageMaker):
             return self.cookies[self.XSRFCOOKIE]
         except KeyError:
             return self._Set_XSRF_cookie()
+
 
 class DebuggerMixin:
     """Replaces the default handler for Internal Server Errors.
