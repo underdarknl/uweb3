@@ -121,14 +121,14 @@ class ParserDirectoryTests(unittest.TestCase):
         self.assertRaises(templateparser.TemplateReadError, parser.AddTemplate, target_file)
         
     def testReadFromSymlinkedDir(self):
-        parser = templateparser.Parser(path=self.template_dir, symlink_path=self.symlinked_dir)
+        parser = templateparser.Parser(path=self.template_dir, allowed_paths=[self.symlinked_dir])
         target_file = os.path.join(self.symlinked_dir, 'file.html')
         with open(target_file, 'w') as f:
             f.write(self.raw)
         self.assertEqual(self.template, parser[target_file])
         
     def testAttemptReadOutsideSymlinkedDir(self):
-        parser = templateparser.Parser(path=self.template_dir, symlink_path=self.symlinked_dir)
+        parser = templateparser.Parser(path=self.template_dir, allowed_paths=[self.symlinked_dir])
         target_file = os.path.join(self.test_folder, 'file.html')
         with open(target_file, 'w') as f:
             f.write(self.raw)
