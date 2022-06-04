@@ -84,9 +84,9 @@ class Router:
             handler = details[0]
             for pm in self.pagemakers:
                 if isinstance(details[0], tuple):
-                  handler = details[0][1]
-                  page_maker = details[0][0]
-                  break
+                    handler = details[0][1]
+                    page_maker = details[0][0]
+                    break
                 # Check if the page_maker has the method/handler we are looking for
                 if hasattr(pm, details[0]):
                     page_maker = pm
@@ -219,7 +219,7 @@ class uWeb:
         )
         self._logerror = self.logerror if errorlogging else lambda *args: None
 
-    def __call__(self, env, start_response):
+    def __call__(self, env, start_response):  # noqa: C901
         """WSGI request handler.
         Accepts the WSGI `environment` dictionary and a function to start the
         response and returns a response iterator.

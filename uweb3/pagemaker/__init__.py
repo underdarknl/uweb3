@@ -176,6 +176,7 @@ class Base:
     TEMPLATE_DIR = "templates"
 
     def __init__(self):
+        super().__init__()
         self.persistent = self.PERSISTENT
         # clean up any request tags in the template parser, We do this in the init
         # because due to crashes we might not have triggered any __del__ or similar

@@ -1,3 +1,4 @@
+cryptography
 PyMySQL==1.0.2
 python-magic==0.4.24
 python-socketio==5.5.1
