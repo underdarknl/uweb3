@@ -291,25 +291,26 @@ class Parser(dict):
 
     def _check_allowed_path(self, location):
         template_path = os.path.realpath(os.path.join(self.template_dir, location))
-        if (os.path.commonprefix((template_path, self.template_dir)) == self.template_dir):
+        if (
+            os.path.commonprefix((template_path, self.template_dir))
+            == self.template_dir
+        ):
             return template_path
 
         if not self.allowed_paths:
             raise TemplateReadError(
-                "Could not load template %r, not in template dir"
-                % template_path
+                "Could not load template %r, not in template dir" % template_path
             )
-            
+
         for path in self.allowed_paths:
             template_path = os.path.realpath(os.path.join(path, location))
             if os.path.commonprefix((template_path, path)) == path:
                 return template_path
-        
+
         raise TemplateReadError(
-            "Could not load template %r, not in template dir"
-            % template_path
+            "Could not load template %r, not in template dir" % template_path
         )
-    
+
     def Parse(self, template, **replacements):
         """Returns the referenced template with its tags replaced by **replacements.
 
