@@ -442,6 +442,7 @@ class BaseRecord(TransactionMixin, dict):
     _LOAD_METHOD = "FromPrimary"
     _PRIMARY_KEY = "ID"
     _TABLE = None
+    __initialized = False
 
     def __init__(self, connection, record, run_init_hook=True):
         """Initializes a BaseRecord instance.
@@ -466,7 +467,20 @@ class BaseRecord(TransactionMixin, dict):
         # the record to be updated on saves where the data hasn't actually changed.
         if run_init_hook:
             self._PostInit()
+        self.__initialized = True
 
+    def __setattr__(self, field, value):
+        """Set the attribute of the record, if the class is already initialized all new attributes will
+        be set as dictionary key value pairs. 
+        """
+        if not self.__initialized:
+            return super().__setattr__(field, value)
+        
+        if hasattr(self, field):
+            return super().__setattr__(field, value)
+        else:
+            self[field] = value
+    
     def __eq__(self, other):
         """Simple equality comparison for database objects.
 
@@ -501,6 +515,7 @@ class BaseRecord(TransactionMixin, dict):
                 return False
         return True
 
+    
     def __hash__(self):
         """Returns the hashed value of the key."""
         return hash(self.key)
@@ -738,10 +753,9 @@ class BaseRecord(TransactionMixin, dict):
     #
     def _Changes(self):
         """Returns the differences of the current state vs the last stored state."""
-        sql_record = self._DataRecord()
         return {
             key: value
-            for key, value in sql_record.items()
+            for key, value in self.items()
             if self._record.get(key) != value
         }
 
@@ -832,7 +846,7 @@ class Record(BaseRecord):
         """
         value = super(Record, self).__getitem__(field)
         return self._LoadForeign(field, value)
-
+        
     def _LoadForeign(self, field, value):
         """Loads and returns objects referenced by foreign key.
 
