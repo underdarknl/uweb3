@@ -212,23 +212,6 @@ class Base:
         return parser
 
 
-class WebsocketPageMaker(Base):
-    """Pagemaker for the websocket routes.
-    This is different from the BasePageMaker as we choose to not have a database connection
-    in our WebSocketPageMaker.
-
-    This class lacks pretty much all functionality that the BasePageMaker has.
-    """
-
-    # TODO: Add request to pagemaker?
-    def Connect(self, sid, env):
-        """This is the connect event,
-        sets the req variable that contains the request headers.
-        """
-        print(f"User connected with SocketID {sid}: ")
-        self.req = env
-
-
 class LoginMixin:
     """This mixin provides a few methods that help with handling logins, sessions
     and related database/cookie interaction"""
@@ -293,27 +276,27 @@ class BasePageMaker(Base):
     def __str__(self):
         return str(type(self))
 
-    @classmethod
-    def LoadModules(cls, routes="routes/*.py"):
-        """Loops over all .py files apart from some exceptions in target directory
-        Looks for classes that contain pagemaker
+    # @classmethod
+    # def LoadModules(cls, routes="routes/*.py"):
+    #     """Loops over all .py files apart from some exceptions in target directory
+    #     Looks for classes that contain pagemaker
 
-        Arguments:
-          % default_routes: str
-            Location to your route files. Defaults to routes/*.py
-            Supports glob style syntax, non recursive.
-        """
-        bases = []
-        for file in glob.glob(routes):
-            module = os.path.relpath(os.path.join(os.getcwd(), file[:-3])).replace(
-                "/", "."
-            )
-            classlist = pyclbr.readmodule_ex(module)
-            for name, data in classlist.items():
-                if hasattr(data, "super") and "PageMaker" in data.super[0]:
-                    module = __import__(file, fromlist=[name])
-                    bases.append(getattr(module, name))
-        return bases
+    #     Arguments:
+    #       % default_routes: str
+    #         Location to your route files. Defaults to routes/*.py
+    #         Supports glob style syntax, non recursive.
+    #     """
+    #     bases = []
+    #     for file in glob.glob(routes):
+    #         module = os.path.relpath(os.path.join(os.getcwd(), file[:-3])).replace(
+    #             "/", "."
+    #         )
+    #         classlist = pyclbr.readmodule_ex(module)
+    #         for name, data in classlist.items():
+    #             if hasattr(data, "super") and "PageMaker" in data.super[0]:
+    #                 module = __import__(file, fromlist=[name])
+    #                 bases.append(getattr(module, name))
+    #     return bases
 
     def _PostInit(self):
         """Method that gets called for derived classes of BasePageMaker."""
