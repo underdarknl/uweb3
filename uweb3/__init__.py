@@ -25,7 +25,6 @@ from .pagemaker import (
     LoginMixin,
     PageMaker,
     SparseAsyncPages,
-    WebsocketPageMaker,
     decorators,
 )
 
@@ -53,10 +52,66 @@ class NoRouteError(Error):
     """The server does not know how to route this request"""
 
 
+class App:
+    def __init__(self, name, routes):
+        self.name = name
+        self.routes = routes
+
+
 class Router:
     def __init__(self, page_class):
-        self.pagemakers = page_class.LoadModules()
-        self.pagemakers.append(page_class)
+        self.page_class = page_class
+        self.req_routes = []
+
+    def __call__(self, url, method, host):
+        """Returns the appropriate handler and arguments for the given `url`.
+
+        The`url` is matched against the compiled patterns in the `req_routes`
+        provided by the outer scope. Upon finding a pattern that matches, the
+        match groups from the regex and the unbound handler method are returned.
+
+        N.B. The rules are such that the first matching route will be used. There
+        is no further concept of specificity. Routes should be written with this in
+        mind.
+
+        Arguments:
+            @ url: str
+            The URL requested by the client.
+            @ method: str
+            The http method requested by the client.
+            @ host: str
+            The http host header value requested by the client.
+
+        Raises:
+            NoRouteError: None of the patterns match the requested `url`.
+
+        Returns:
+            2-tuple: handler method (unbound), and tuple of pattern matches.
+        """
+        for pattern, handler, routemethod, hostpattern, page_maker in self.req_routes:
+            if routemethod != "ALL":
+                # clearly not the route we where looking for
+                if isinstance(routemethod, tuple) and method not in routemethod:
+                    continue
+                if method != routemethod:
+                    continue
+
+            hostmatch = None
+            if hostpattern != "*":
+                # see if we can match this host and extact any info from it.
+                hostmatch = re.compile(f"^{host}$").match(hostpattern)
+                if not hostmatch:
+                    # clearly not the host we where looking for
+                    continue
+                hostmatch = hostmatch.groups()
+
+            match = pattern.match(url)
+            if match:
+                # strip out optional groups, as they return '', which would override
+                # the handlers default argument values later on in the page_maker
+                groups = (group for group in match.groups() if group)
+                return handler, groups, hostmatch, page_maker
+        raise NoRouteError(url + " cannot be handled")
 
     def router(self, routes):
         """Returns the first request handler that matches the request URL.
@@ -68,101 +123,70 @@ class Router:
         are retrieved from the provided `page_class`.
 
         Arguments:
-          @ routes: iterable of 2-tuples.
+            @ routes: iterable of 2-tuples.
             Each tuple is a pair of `pattern` and `handler`, both are strings.
 
         Returns:
-          request_router: Configured closure that processes urls.
+            request_router: Configured closure that processes urls.
         """
-        req_routes = []
-        # Variable used to store websocket pagemakers,
-        # these pagemakers are only created at startup but can have multiple routes.
-        # To prevent creating the same instance for each route we store them in a dict
-        websocket_pagemaker = {}
+
         for pattern, *details in routes:
-            page_maker = None
-            handler = details[0]
-            for pm in self.pagemakers:
-                if isinstance(details[0], tuple):
-                    handler = details[0][1]
-                    page_maker = details[0][0]
-                    break
-                # Check if the page_maker has the method/handler we are looking for
-                if hasattr(pm, details[0]):
-                    page_maker = pm
-                    break
-            if callable(pattern):
-                # Check if the page_maker is already in the dict, if not instantiate
-                # if so just use that one. This prevents creating multiple instances for one route.
-                if not websocket_pagemaker.get(page_maker.__name__):
-                    websocket_pagemaker[page_maker.__name__] = page_maker()
-                pattern(getattr(websocket_pagemaker[page_maker.__name__], handler))
-                continue
-            if not page_maker:
-                raise NoRouteError(
-                    f"µWeb3 could not find a route handler called '{handler}' in any of the PageMakers, your application will not start."
-                )
-            req_routes.append(
+            page_maker, handler = self._get_pagemaker_and_handler(details)
+            self.register_route(pattern, page_maker, handler, details)
+        # return self.request_router
+
+    def _get_pagemaker_and_handler(self, details):
+        page_maker = None
+        handler = details[0]
+
+        if isinstance(details[0], tuple):
+            handler = details[0][1]
+            page_maker = details[0][0]
+        elif hasattr(self.page_class, details[0]):
+            page_maker = self.page_class
+
+        return page_maker, handler
+
+    def register_route(self, pattern, page_maker, handler, details):
+        if not page_maker:
+            raise NoRouteError(
+                f"µWeb3 could not find a route handler called '{handler}' in any of the PageMakers, your application will not start."
+            )
+        METHODS = 1
+        HOSTS = 2
+        method = details[METHODS].upper() if len(details) > 1 else "ALL"
+        host = details[HOSTS].lower() if len(details) > 2 else "*"
+        self.req_routes.append(
+            (
+                re.compile(pattern + "$", re.UNICODE),
+                handler,
+                method,
+                host,
+                page_maker,
+            )
+        )
+
+    def register_app(self, app):
+        # TODO: CLean this up
+        METHODS = 0
+        HOSTS = 1
+        for route in app.routes:
+            pattern, test, *details = route
+            page_maker, route = test
+
+            method = details[METHODS].upper() if len(details) else "ALL"
+            host = details[HOSTS].lower() if len(details) > 1 else "*"
+
+            self.req_routes.insert(
+                0,
                 (
                     re.compile(pattern + "$", re.UNICODE),
-                    handler,  # handler,
-                    details[1].upper() if len(details) > 1 else "ALL",  # request types
-                    details[2].lower() if len(details) > 2 else "*",  # host
-                    page_maker,  # pagemaker class
-                )
+                    route,
+                    method,
+                    host,
+                    page_maker,
+                ),
             )
-
-        def request_router(url, method, host):
-            """Returns the appropriate handler and arguments for the given `url`.
-
-            The`url` is matched against the compiled patterns in the `req_routes`
-            provided by the outer scope. Upon finding a pattern that matches, the
-            match groups from the regex and the unbound handler method are returned.
-
-            N.B. The rules are such that the first matching route will be used. There
-            is no further concept of specificity. Routes should be written with this in
-            mind.
-
-            Arguments:
-              @ url: str
-                The URL requested by the client.
-              @ method: str
-                The http method requested by the client.
-              @ host: str
-                The http host header value requested by the client.
-
-            Raises:
-              NoRouteError: None of the patterns match the requested `url`.
-
-            Returns:
-              2-tuple: handler method (unbound), and tuple of pattern matches.
-            """
-
-            for pattern, handler, routemethod, hostpattern, page_maker in req_routes:
-                if routemethod != "ALL":
-                    # clearly not the route we where looking for
-                    if isinstance(routemethod, tuple) and method not in routemethod:
-                        continue
-                    if method != routemethod:
-                        continue
-
-                hostmatch = None
-                if hostpattern != "*":
-                    # see if we can match this host and extact any info from it.
-                    hostmatch = re.compile(f"^{host}$").match(hostpattern)
-                    if not hostmatch:
-                        # clearly not the host we where looking for
-                        continue
-                    hostmatch = hostmatch.groups()
-                match = pattern.match(url)
-                if match:
-                    # strip out optional groups, as they return '', which would override
-                    # the handlers default argument values later on in the page_maker
-                    groups = (group for group in match.groups() if group)
-                    return handler, groups, hostmatch, page_maker
-            raise NoRouteError(url + " cannot be handled")
-
-        return request_router
 
 
 class uWeb:
@@ -195,8 +219,8 @@ class uWeb:
         self._accesslogger = None
         self._errorlogger = None
         self.initial_pagemaker = page_class
-        self.router = Router(page_class).router(routes)
-        self.setup_routing()
+        self.router = Router(page_class)
+        self.router.router(routes)
         self.encoders = {
             "text/html": lambda x: HTMLsafestring(x, unsafe=True),
             "text/plain": str,
@@ -452,27 +476,8 @@ class uWeb:
             print(error)
             server.shutdown()
 
-    def setup_routing(self):
-        if isinstance(self.initial_pagemaker, list):
-            routes = [route for route in self.initial_pagemaker[1:]]
-            self.initial_pagemaker[0].AddRoutes(tuple(routes))
-            self.initial_pagemaker = self.initial_pagemaker[0]
-
-        default_route = "routes"
-        automatic_detection = True
-        if self.config.options.get("routing"):
-            default_route = self.config.options["routing"].get(
-                "default_routing", default_route
-            )
-            automatic_detection = (
-                self.config.options["routing"].get(
-                    "disable_automatic_route_detection", "False"
-                )
-                != "True"
-            )
-
-        if automatic_detection:
-            self.initial_pagemaker.LoadModules(routes=default_route)
+    def register_app(self, app: App):
+        self.router.register_app(app)
 
 
 class HotReload:
