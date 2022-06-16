@@ -1,6 +1,6 @@
 import unittest
-from uweb3 import RequestedRouteNotAllowed, Router, App, RouteData, PageMaker
-from uweb3 import NoRouteError
+from uweb3 import Router, App
+from uweb3.router import NoRouteError
 
 
 class DummyPageMaker:
