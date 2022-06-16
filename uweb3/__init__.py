@@ -157,7 +157,7 @@ class Router:
                 handler=handler,
                 method=method,
                 host=host,
-                page_maker=self.page_class,
+                page_maker=page_maker,
             )
         )
 
