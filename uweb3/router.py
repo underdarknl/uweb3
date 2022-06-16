@@ -60,6 +60,26 @@ def match_host(hostpattern, host):
     return hostmatch
 
 
+def extract_method_and_host(details):
+    METHODS = 0
+    HOSTS = 1
+
+    if len(details) and (
+        isinstance(details[METHODS], tuple) or isinstance(details[METHODS], list)
+    ):
+        method = details[METHODS]
+    else:
+        method = details[METHODS].upper() if len(details) else "ALL"
+
+    if len(details) > 1 and (
+        isinstance(details[HOSTS], tuple) or isinstance(details[HOSTS], list)
+    ):
+        host = details[HOSTS]
+    else:
+        host = details[HOSTS].lower() if len(details) > 1 else "*"
+    return method, host
+
+
 class Pattern:
     def __init__(self, name, pattern):
         self.name = name
@@ -97,13 +117,13 @@ class Router:
 
     def __call__(self, url, method, host):
         """Calling the router will attempt to find the corresponding handler for the given url and method.
-        
+
         This will take into account the host and method of the request, these values will be matched
         against the allowed values for the route. If either of the values do not pass the test, a
-        RouteError will be raised. 
-        
+        RouteError will be raised.
 
-        The`url` is matched against the compiled patterns in the registered routes list. 
+
+        The`url` is matched against the compiled patterns in the registered routes list.
         Upon finding a pattern that matches, the match groups from the regex and the unbound handler method are returned.
 
         N.B. The rules are such that the first matching route will be used. There
@@ -125,7 +145,7 @@ class Router:
 
         Returns:
             4-tuple: method (unbound) groups (method args), hostmatch, page_maker
-            
+
             For example:
                 ("index", ('argument1', 'argument2', ...), "*", basepages.PageMaker)
         """
@@ -188,12 +208,23 @@ class Router:
             self.register_route(pattern, self.page_class, handler, details)
 
     def register_route(self, pattern, page_maker, handler, details):
+        """Used to register a route to the tail of the list.
+
+        Args:
+            pattern (re.Pattern): The regex pattern to match when a request is coming in.
+            page_maker (PageMaker): The unitialized page maker class.
+            handler (str): The name of the handler (method) in the page_maker class.
+            details (tuple): Containing the methods and hosts that are allowed for this route.
+
+        Raises:
+            NoRouteError: Raised when no PageMaker is passed.
+        """
         if not page_maker:
             raise NoRouteError(
                 f"µWeb3 could not find a route handler called '{handler}' in any of the PageMakers, your application will not start."
             )
         pattern = self._parser.parse(pattern)
-        method, host = self.extract_method_and_host(details)
+        method, host = extract_method_and_host(details)
         self._add_route(
             RouteData(
                 pattern=re.compile(pattern + "$", re.UNICODE),
@@ -205,12 +236,21 @@ class Router:
         )
 
     def register_app(self, app: App):
+        """Register a new app to the router.
+
+        This app is inserted at the start of the list to prevent its routes from never being found.
+        This is because the uweb3 class is initialized with the route handlers that are responsible
+        for matching routes that are not existing.
+
+        Args:
+            app (uweb3.App): A uweb3 App object.
+        """
         self._registered_apps.append(app)
 
         for route in app.routes:
             pattern, (page_maker, handler), *details = route
             pattern = self._parser.parse(pattern)
-            method, host = self.extract_method_and_host(details)
+            method, host = extract_method_and_host(details)
             self._add_route(
                 RouteData(
                     pattern=re.compile(pattern + "$", re.UNICODE),
@@ -226,22 +266,3 @@ class Router:
         if not insert_at_start:
             return self._req_routes.append(route)
         return self._req_routes.insert(0, route)
-
-    def extract_method_and_host(self, details):
-        METHODS = 0
-        HOSTS = 1
-
-        if len(details) and (
-            isinstance(details[METHODS], tuple) or isinstance(details[METHODS], list)
-        ):
-            method = details[METHODS]
-        else:
-            method = details[METHODS].upper() if len(details) else "ALL"
-
-        if len(details) > 1 and (
-            isinstance(details[HOSTS], tuple) or isinstance(details[HOSTS], list)
-        ):
-            host = details[HOSTS]
-        else:
-            host = details[HOSTS].lower() if len(details) > 1 else "*"
-        return method, host
