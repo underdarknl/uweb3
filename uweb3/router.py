@@ -60,11 +60,40 @@ def match_host(hostpattern, host):
     return hostmatch
 
 
+class Pattern:
+    def __init__(self, name, pattern):
+        self.name = name
+        self.pattern = pattern
+
+    def __call__(self, url):
+        return url.replace(self.name, self.pattern)
+
+
+class PatternParser:
+    def __init__(self):
+        self._registered_patterns = {}
+        self.add_default_patterns()
+
+    def register_pattern(self, pattern: Pattern):
+        self._registered_patterns[pattern.name] = pattern
+
+    def add_default_patterns(self):
+        self.register_pattern(Pattern(name="<int>", pattern="([0-9]+)"))
+        self.register_pattern(Pattern(name="<str>", pattern="([a-zA-Z]+)"))
+        self.register_pattern(Pattern(name="<alphanum>", pattern="([a-zA-Z0-9]+)"))
+
+    def parse(self, url):
+        for _, parser in self._registered_patterns.items():
+            url = parser(url)
+        return url
+
+
 class Router:
     def __init__(self, page_class):
         self.page_class = page_class
         self._req_routes = []
         self._registered_apps = []
+        self._parser = PatternParser()
 
     def __call__(self, url, method, host):
         """Returns the appropriate handler and arguments for the given `url`.
@@ -131,6 +160,7 @@ class Router:
             raise NoRouteError(
                 f"µWeb3 could not find a route handler called '{handler}' in any of the PageMakers, your application will not start."
             )
+        pattern = self._parser.parse(pattern)
         method, host = self.extract_method_and_host(details)
         self._add_route(
             RouteData(
@@ -147,6 +177,7 @@ class Router:
 
         for route in app.routes:
             pattern, (page_maker, handler), *details = route
+            pattern = self._parser.parse(pattern)
             method, host = self.extract_method_and_host(details)
             self._add_route(
                 RouteData(

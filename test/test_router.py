@@ -19,6 +19,9 @@ class DummyPageMaker:
     def route_args(self, *args):
         return args
 
+    def route_args_int(self, *args):
+        return args
+
 
 class NewRoutingPageMaker:
     def index(self):
@@ -197,6 +200,28 @@ class RouterTest(unittest.TestCase):
             "/route_args/14/25", "GET", "*"
         )
         assert ["14", "25"] == list(groups)
+
+    def test_pattern_routing(self):
+        custom_router = Router(self.page_maker)
+        custom_router.router(
+            [
+                (
+                    "/test/<str>",
+                    "route_args",
+                ),
+                (
+                    "/test/<int>",
+                    "route_args_int",
+                ),
+            ]
+        )
+        assert ("stringarg",) == self.get_data(
+            custom_router, ("/test/stringarg", "GET", "*")
+        )
+        assert ("123",) == self.get_data(custom_router, ("/test/123", "GET", "*"))
+
+        with self.assertRaises(NoRouteError):
+            self.get_data(custom_router, ("/test/@", "GET", "*"))
 
 
 if __name__ == "__main__":

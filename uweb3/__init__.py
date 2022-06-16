@@ -8,11 +8,9 @@ __version__ = "3.0.7"
 import datetime
 import logging
 import os
-import re
 import sys
 import time
 from importlib import reload
-from typing import NamedTuple
 from wsgiref.simple_server import make_server
 
 
