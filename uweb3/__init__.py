@@ -130,21 +130,23 @@ class Router:
     def _match_host(self, hostpattern, host):
         hostmatch = None
 
-        if hostpattern != "*":
-            if isinstance(hostpattern, tuple):
-                for pattern in hostpattern:
-                    try:
-                        return self._match_host(pattern, host)
-                    except RequestedRouteNotAllowed:
-                        continue
-            else:
-                hostmatch = re.compile(f"^{host}$").match(hostpattern)
-                
-            if not hostmatch:
-                raise RequestedRouteNotAllowed(
-                    "The requested host is not allowed on this route"
-                )
-            hostmatch = hostmatch.group()
+        if hostpattern == "*":
+            return "*"
+
+        if isinstance(hostpattern, tuple):
+            for pattern in hostpattern:
+                try:
+                    return self._match_host(pattern, host)
+                except RequestedRouteNotAllowed:
+                    continue
+        else:
+            hostmatch = re.compile(f"^{host}$").match(hostpattern)
+
+        if not hostmatch:
+            raise RequestedRouteNotAllowed(
+                "The requested host is not allowed on this route"
+            )
+        hostmatch = hostmatch.group()
         return hostmatch
 
     def router(self, routes):
