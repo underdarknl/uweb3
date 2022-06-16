@@ -14,7 +14,10 @@ import re
 import sys
 import time
 from importlib import reload
+from typing import NamedTuple
 from wsgiref.simple_server import make_server
+
+from pyparsing import Regex
 
 # Package modules
 from . import pagemaker, request
@@ -58,10 +61,19 @@ class App:
         self.routes = routes
 
 
+class RouteData(NamedTuple):
+    pattern: re.Pattern
+    handler: str
+    method: str
+    host: str
+    page_maker: PageMaker
+
+
 class Router:
     def __init__(self, page_class):
         self.page_class = page_class
-        self.req_routes = []
+        self._req_routes = []
+        self._registered_apps = []
 
     def __call__(self, url, method, host):
         """Returns the appropriate handler and arguments for the given `url`.
@@ -88,7 +100,7 @@ class Router:
         Returns:
             2-tuple: handler method (unbound), and tuple of pattern matches.
         """
-        for pattern, handler, routemethod, hostpattern, page_maker in self.req_routes:
+        for pattern, handler, routemethod, hostpattern, page_maker in self._req_routes:
             if routemethod != "ALL":
                 # clearly not the route we where looking for
                 if isinstance(routemethod, tuple) and method not in routemethod:
@@ -130,63 +142,53 @@ class Router:
             request_router: Configured closure that processes urls.
         """
 
-        for pattern, *details in routes:
-            page_maker, handler = self._get_pagemaker_and_handler(details)
-            self.register_route(pattern, page_maker, handler, details)
-        # return self.request_router
-
-    def _get_pagemaker_and_handler(self, details):
-        page_maker = None
-        handler = details[0]
-
-        if isinstance(details[0], tuple):
-            handler = details[0][1]
-            page_maker = details[0][0]
-        elif hasattr(self.page_class, details[0]):
-            page_maker = self.page_class
-
-        return page_maker, handler
+        for pattern, handler, *details in routes:
+            self.register_route(pattern, self.page_class, handler, details)
 
     def register_route(self, pattern, page_maker, handler, details):
         if not page_maker:
             raise NoRouteError(
                 f"µWeb3 could not find a route handler called '{handler}' in any of the PageMakers, your application will not start."
             )
-        METHODS = 1
-        HOSTS = 2
-        method = details[METHODS].upper() if len(details) > 1 else "ALL"
-        host = details[HOSTS].lower() if len(details) > 2 else "*"
-        self.req_routes.append(
-            (
-                re.compile(pattern + "$", re.UNICODE),
-                handler,
-                method,
-                host,
-                page_maker,
+        method, host = self.extract_method_and_host(details)
+        self._add_route(
+            RouteData(
+                pattern=re.compile(pattern + "$", re.UNICODE),
+                handler=handler,
+                method=method,
+                host=host,
+                page_maker=self.page_class,
             )
         )
 
-    def register_app(self, app):
-        # TODO: CLean this up
+    def register_app(self, app: App):
+        self._registered_apps.append(app)
+
+        for route in app.routes:
+            pattern, (page_maker, handler), *details = route
+            method, host = self.extract_method_and_host(details)
+            self._add_route(
+                RouteData(
+                    pattern=re.compile(pattern + "$", re.UNICODE),
+                    handler=handler,
+                    method=method,
+                    host=host,
+                    page_maker=page_maker,
+                ),
+                insert_at_start=True,
+            )
+
+    def _add_route(self, route: RouteData, insert_at_start: bool = False):
+        if not insert_at_start:
+            return self._req_routes.append(route)
+        return self._req_routes.insert(0, route)
+
+    def extract_method_and_host(self, details):
         METHODS = 0
         HOSTS = 1
-        for route in app.routes:
-            pattern, test, *details = route
-            page_maker, route = test
-
-            method = details[METHODS].upper() if len(details) else "ALL"
-            host = details[HOSTS].lower() if len(details) > 1 else "*"
-
-            self.req_routes.insert(
-                0,
-                (
-                    re.compile(pattern + "$", re.UNICODE),
-                    route,
-                    method,
-                    host,
-                    page_maker,
-                ),
-            )
+        method = details[METHODS].upper() if len(details) else "ALL"
+        host = details[HOSTS].lower() if len(details) > 1 else "*"
+        return method, host
 
 
 class uWeb:
