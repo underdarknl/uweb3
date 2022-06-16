@@ -5,9 +5,7 @@
 __version__ = "3.0.7"
 
 # Standard modules
-import configparser
 import datetime
-import importlib
 import logging
 import os
 import re
@@ -17,7 +15,6 @@ from importlib import reload
 from typing import NamedTuple
 from wsgiref.simple_server import make_server
 
-from pyparsing import Regex
 
 # Package modules
 from . import pagemaker, request
@@ -53,6 +50,10 @@ class HTTPRequestException(HTTPException):
 
 class NoRouteError(Error):
     """The server does not know how to route this request"""
+
+
+class RequestedRouteNotAllowed(NoRouteError):
+    """"""
 
 
 class App:
@@ -101,21 +102,11 @@ class Router:
             2-tuple: handler method (unbound), and tuple of pattern matches.
         """
         for pattern, handler, routemethod, hostpattern, page_maker in self._req_routes:
-            if routemethod != "ALL":
-                # clearly not the route we where looking for
-                if isinstance(routemethod, tuple) and method not in routemethod:
-                    continue
-                if method != routemethod:
-                    continue
-
-            hostmatch = None
-            if hostpattern != "*":
-                # see if we can match this host and extact any info from it.
-                hostmatch = re.compile(f"^{host}$").match(hostpattern)
-                if not hostmatch:
-                    # clearly not the host we where looking for
-                    continue
-                hostmatch = hostmatch.groups()
+            try:
+                self._route_method_allowed(routemethod, method)
+                hostmatch = self._match_host(hostpattern, host)
+            except RequestedRouteNotAllowed:
+                continue
 
             match = pattern.match(url)
             if match:
@@ -124,6 +115,37 @@ class Router:
                 groups = (group for group in match.groups() if group)
                 return handler, groups, hostmatch, page_maker
         raise NoRouteError(url + " cannot be handled")
+
+    def _route_method_allowed(self, routemethod, method):
+        if routemethod != "ALL":
+            if isinstance(routemethod, tuple) and method not in routemethod:
+                raise RequestedRouteNotAllowed(
+                    "The requested method is not allowed on this route"
+                )
+            if not isinstance(routemethod, tuple) and method != routemethod:
+                raise RequestedRouteNotAllowed(
+                    "The requested method is not allowed on this route"
+                )
+
+    def _match_host(self, hostpattern, host):
+        hostmatch = None
+
+        if hostpattern != "*":
+            if isinstance(hostpattern, tuple):
+                for pattern in hostpattern:
+                    try:
+                        return self._match_host(pattern, host)
+                    except RequestedRouteNotAllowed:
+                        continue
+            else:
+                hostmatch = re.compile(f"^{host}$").match(hostpattern)
+                
+            if not hostmatch:
+                raise RequestedRouteNotAllowed(
+                    "The requested host is not allowed on this route"
+                )
+            hostmatch = hostmatch.group()
+        return hostmatch
 
     def router(self, routes):
         """Returns the first request handler that matches the request URL.
@@ -186,8 +208,20 @@ class Router:
     def extract_method_and_host(self, details):
         METHODS = 0
         HOSTS = 1
-        method = details[METHODS].upper() if len(details) else "ALL"
-        host = details[HOSTS].lower() if len(details) > 1 else "*"
+
+        if len(details) and (
+            isinstance(details[METHODS], tuple) or isinstance(details[METHODS], list)
+        ):
+            method = details[METHODS]
+        else:
+            method = details[METHODS].upper() if len(details) else "ALL"
+
+        if len(details) > 1 and (
+            isinstance(details[HOSTS], tuple) or isinstance(details[HOSTS], list)
+        ):
+            host = details[HOSTS]
+        else:
+            host = details[HOSTS].lower() if len(details) > 1 else "*"
         return method, host
 
 

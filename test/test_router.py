@@ -1,5 +1,5 @@
 import unittest
-from uweb3 import Router, App, RouteData, PageMaker
+from uweb3 import RequestedRouteNotAllowed, Router, App, RouteData, PageMaker
 from uweb3 import NoRouteError
 
 
@@ -108,6 +108,74 @@ class RouterTest(unittest.TestCase):
 
         with self.assertRaises(NoRouteError):
             self.get_data_new_routing(self.router, ("/new_route", "DELETE", "*"))
+
+    def test_tuple_allowed_methods(self):
+        custom_router = Router(self.page_maker)
+        custom_router.router(
+            [
+                (
+                    "/",
+                    "index",
+                    (
+                        "POST",
+                        "GET",
+                    ),
+                )
+            ]
+        )
+
+        assert "Hello from index" == self.get_data(custom_router, ("/", "GET", "*"))
+        assert "Hello from index" == self.get_data(custom_router, ("/", "POST", "*"))
+        with self.assertRaises(NoRouteError):
+            self.get_data(custom_router, ("/", "DELETE", "*"))
+
+    def test_hostmatch(self):
+        custom_router = Router(self.page_maker)
+        custom_router.router(
+            [
+                (
+                    "/",
+                    "index",
+                    (
+                        "POST",
+                        "GET",
+                    ),
+                    "127.0.0.1",
+                )
+            ]
+        )
+        assert "Hello from index" == self.get_data(
+            custom_router, ("/", "GET", "127.0.0.1")
+        )
+        with self.assertRaises(NoRouteError):
+            self.get_data(custom_router, ("/", "GET", "127.0.0.2"))
+
+    def test_hostmatch_multiple_allowed_hosts(self):
+        custom_router = Router(self.page_maker)
+        custom_router.router(
+            [
+                (
+                    "/",
+                    "index",
+                    (
+                        "POST",
+                        "GET",
+                    ),
+                    (
+                        "127.0.0.1",
+                        "127.0.0.2",
+                    ),
+                )
+            ]
+        )
+        assert "Hello from index" == self.get_data(
+            custom_router, ("/", "GET", "127.0.0.1")
+        )
+        assert "Hello from index" == self.get_data(
+            custom_router, ("/", "GET", "127.0.0.2")
+        )
+        with self.assertRaises(NoRouteError):
+            self.get_data(custom_router, ("/", "GET", "127.0.0.3"))
 
 
 if __name__ == "__main__":
