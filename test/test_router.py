@@ -16,6 +16,9 @@ class DummyPageMaker:
     def new_post_only_route(self):
         return "Hello from new_post_only_route"
 
+    def route_args(self, *args):
+        return args
+
 
 class NewRoutingPageMaker:
     def index(self):
@@ -26,7 +29,13 @@ class RouterTest(unittest.TestCase):
     def setUp(self):
         self.page_maker = DummyPageMaker()
         self.router = Router(self.page_maker)
-        self.router.router([("/", "index", "GET"), ("/post", "post_only", "POST")])
+        self.router.router(
+            [
+                ("/", "index", "GET"),
+                ("/post", "post_only", "POST"),
+                ("/route_args/(\d+)/(\d+)", "route_args"),
+            ]
+        )
 
     def get_data(self, router, args):
         handler, groups, hostmatch, page_maker = router(*args)
@@ -176,6 +185,18 @@ class RouterTest(unittest.TestCase):
         )
         with self.assertRaises(NoRouteError):
             self.get_data(custom_router, ("/", "GET", "127.0.0.3"))
+
+    def test_returns_correct_data(self):
+        handler, groups, hostmatch, page_maker = self.router("/", "GET", "*")
+        assert "index" == handler
+        assert "*" == hostmatch
+        assert type(self.page_maker) == type(page_maker)
+
+    def test_route_args(self):
+        handler, groups, hostmatch, page_maker = self.router(
+            "/route_args/14/25", "GET", "*"
+        )
+        assert ["14", "25"] == list(groups)
 
 
 if __name__ == "__main__":
