@@ -96,15 +96,21 @@ class Router:
         self._parser = PatternParser()
 
     def __call__(self, url, method, host):
-        """Returns the appropriate handler and arguments for the given `url`.
+        """Calling the router will attempt to find the corresponding handler for the given url and method.
+        
+        This will take into account the host and method of the request, these values will be matched
+        against the allowed values for the route. If either of the values do not pass the test, a
+        RouteError will be raised. 
+        
 
-        The`url` is matched against the compiled patterns in the `req_routes`
-        provided by the outer scope. Upon finding a pattern that matches, the
-        match groups from the regex and the unbound handler method are returned.
+        The`url` is matched against the compiled patterns in the registered routes list. 
+        Upon finding a pattern that matches, the match groups from the regex and the unbound handler method are returned.
 
         N.B. The rules are such that the first matching route will be used. There
         is no further concept of specificity. Routes should be written with this in
-        mind.
+        mind. However when using the register_app method routes will be inserted at the start of the list
+        to prevent matching the error handlers first, since these are present in the basepages class that is
+        supplied at uweb3 initialization time.
 
         Arguments:
             @ url: str
@@ -118,7 +124,10 @@ class Router:
             NoRouteError: None of the patterns match the requested `url`.
 
         Returns:
-            2-tuple: handler method (unbound), and tuple of pattern matches.
+            4-tuple: method (unbound) groups (method args), hostmatch, page_maker
+            
+            For example:
+                ("index", ('argument1', 'argument2', ...), "*", basepages.PageMaker)
         """
         for pattern, handler, routemethod, hostpattern, page_maker in self._req_routes:
             try:
@@ -136,20 +145,43 @@ class Router:
         raise NoRouteError(url + " cannot be handled")
 
     def router(self, routes):
-        """Returns the first request handler that matches the request URL.
+        """Setup for the regular uweb3 router.
 
-        The `routes` argument is an iterable of 2-tuples, each of which contain a
-        pattern (regex) and the name of the handler to use for matching requests.
+        This method adds the routes and its handler to a list of known routes.
 
         Before returning the closure, all regexp are compiled, and handler methods
         are retrieved from the provided `page_class`.
 
         Arguments:
-            @ routes: iterable of 2-tuples.
-            Each tuple is a pair of `pattern` and `handler`, both are strings.
+            @ routes: iterable containing at least the pattern and handler.
+                Optionally it can also containg a tuple of allowed methods, and a tuple of allowed hosts.
 
-        Returns:
-            request_router: Configured closure that processes urls.
+        Example:
+            Basic usage:
+                routes = (
+                        "/", # The pattern to match
+                        "index", # The handler that is present in the page_class supplied to the uweb3 constructor.
+                    )
+            Or:
+                routes = (
+                        "/", # The pattern to match
+                        "index", # The handler that is present in the page_class supplied to the uweb3 constructor.
+                        "GET", # The allowed method,
+                        "127.0.0.1", # The allowed host,
+                    )
+            And lastely:
+                routes = (
+                        "/", # The pattern to match
+                        "index", # The handler that is present in the page_class supplied to the uweb3 constructor.
+                        (
+                            "POST", # The tuple of allowed methods
+                            "GET",
+                        ),
+                        (
+                            "127.0.0.1", # The tuple of allowed hosts
+                            "127.0.0.2",
+                        ),
+                    )
         """
 
         for pattern, handler, *details in routes:
