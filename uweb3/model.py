@@ -1154,16 +1154,6 @@ class Record(BaseRecord):
         """
         try:
             values = self._DataRecord()
-            # Compound key case
-            if isinstance(self._PRIMARY_KEY, tuple):
-                auto_inc_field = set(self._PRIMARY_KEY) - set(values)
-                if auto_inc_field:
-                    raise ValueError(
-                        "No value for compound key field(s): %s"
-                        % (", ".join(map(repr, auto_inc_field)))
-                    )
-                return cursor.Insert(table=self.TableName(), values=values)
-            # Single-column key case
             result = cursor.Insert(table=self.TableName(), values=values)
             if result.insertid:
                 self._record[self._PRIMARY_KEY] = self.key = result.insertid
