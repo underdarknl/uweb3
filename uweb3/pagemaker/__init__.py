@@ -265,6 +265,7 @@ class BasePageMaker(Base):
         """
         super(BasePageMaker, self).__init__()
         self.__SetupPaths(executing_path)
+        self._logger = None
         self.req = req
         self.cookies = req.vars["cookie"]
         self.get = req.vars["get"]
@@ -418,6 +419,36 @@ class BasePageMaker(Base):
         """Method that gets called after each request to close 'request' based
         connections like signedcookieStores"""
         self.connection.PostRequest()
+
+    @property
+    def logger(self):
+        """Simple logger for an uweb3 application"""
+        if not self._logger:
+            logger = logging.getLogger("application_logger")
+            logger.setLevel(logging.DEBUG)
+
+            logpath = os.path.join(self.LOCAL_DIR, "application_logger.log")
+
+            fh = logging.FileHandler(logpath, encoding="utf-8")
+            fh.setLevel(logging.ERROR)
+
+            debug = logging.StreamHandler()
+            debug.setLevel(logging.DEBUG)
+
+            debug_format = logging.Formatter(
+                "\x1b[31;20m"
+                + "%(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
+                + "\x1b[0m"
+            )
+            debug.setFormatter(debug_format)
+
+            formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+            fh.setFormatter(formatter)
+
+            logger.addHandler(debug)
+            logger.addHandler(fh)
+            self._logger = logger
+        return self._logger
 
 
 class XSRFMixin(BasePageMaker):
