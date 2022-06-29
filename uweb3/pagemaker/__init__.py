@@ -265,7 +265,6 @@ class BasePageMaker(Base):
         """
         super(BasePageMaker, self).__init__()
         self.__SetupPaths(executing_path)
-        self._logger = None
         self.req = req
         self.cookies = req.vars["cookie"]
         self.get = req.vars["get"]
@@ -285,6 +284,7 @@ class BasePageMaker(Base):
                 "connection", ConnectionManager(self.config, self.options, self.debug)
             )
             self.connection = self.persistent.Get("connection")
+        self._logger = None
 
     def __str__(self):
         return str(type(self))
@@ -443,11 +443,16 @@ class BasePageMaker(Base):
                 )
                 debug.setFormatter(debug_format)
 
-                formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+                formatter = logging.Formatter(
+                    "%(asctime)s - %(levelname)s - %(page_maker)s - %(route)s - %(message)s"
+                )
                 fh.setFormatter(formatter)
 
                 logger.addHandler(debug)
                 logger.addHandler(fh)
+            logger = logging.LoggerAdapter(
+                logger, {"page_maker": self.__class__.__name__, "route": self.req.path}
+            )
             self._logger = logger
         return self._logger
 
