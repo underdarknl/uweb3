@@ -425,9 +425,9 @@ class BasePageMaker(Base):
         """Simple logger for an uweb3 application"""
         if not self._logger:
             logger = logging.getLogger("application_logger")
+
             if not len(logger.handlers):
                 logger.setLevel(logging.DEBUG)
-
                 logpath = os.path.join(self.LOCAL_DIR, "application_logger.log")
 
                 fh = logging.FileHandler(logpath, encoding="utf-8")
@@ -443,16 +443,26 @@ class BasePageMaker(Base):
                 )
                 debug.setFormatter(debug_format)
 
-                formatter = logging.Formatter(
-                    "%(asctime)s - %(levelname)s - %(page_maker)s - %(route)s - %(message)s"
-                )
+                if self.debug:
+                    formatting = "%(asctime)s - %(levelname)s - %(page_maker)s - %(method)s - %(route)s - %(message)s"
+                else:
+                    formatting = "%(asctime)s - %(levelname)s - %(page_maker)s - %(route)s - %(message)s"
+
+                formatter = logging.Formatter(formatting)
                 fh.setFormatter(formatter)
 
                 logger.addHandler(debug)
                 logger.addHandler(fh)
-            logger = logging.LoggerAdapter(
-                logger, {"page_maker": self.__class__.__name__, "route": self.req.path}
-            )
+
+            extra_details = {
+                "page_maker": self.__class__.__name__,
+                "route": self.req.path,
+            }
+
+            if self.debug:
+                extra_details["method"] = self.req.method
+
+            logger = logging.LoggerAdapter(logger, extra_details)
             self._logger = logger
         return self._logger
 
