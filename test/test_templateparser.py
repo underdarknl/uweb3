@@ -7,6 +7,7 @@
 # Standard modules
 import os
 import re
+import shutil
 import time
 import unittest
 
@@ -72,6 +73,80 @@ class Parser(unittest.TestCase):
         result_parse = parser[self.name].Parse()
         result_parse_string = parser.ParseString(self.raw)
         self.assertEqual(result_parse, result_parse_string)
+
+
+class ParserDirectoryTests(unittest.TestCase):
+    """Basic tests for the Parser class and equality of Template objects."""
+
+    def setUp(self):
+        """Creates a template file and a similar instance attribute."""
+        self.name = "tmp_template"
+        self.raw = "This is a basic [noun]"
+        self.template = templateparser.Template(self.raw)
+        with open(self.name, "w") as template:
+            template.write("This is a basic [noun]")
+            template.flush()
+
+        self.test_folder = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "test_folder"
+        )
+        self.template_dir = os.path.join(self.test_folder, "templates")
+        self.symlinked_dir = os.path.join(self.test_folder, "symlink")
+        self.filename = os.path.join(self.template_dir, "test.html")
+
+        if not os.path.exists(self.template_dir):
+            os.makedirs(self.template_dir)
+            os.makedirs(self.symlinked_dir)
+
+    def tearDown(self):
+        """Removes the template file from the filesystem."""
+        os.unlink("tmp_template")
+        shutil.rmtree(self.test_folder)
+
+    def testNormalRead(self):
+        with open(self.filename, "w") as f:
+            f.write(self.raw)
+
+        parser = templateparser.Parser(path=self.template_dir)
+        parser.AddTemplate(self.filename)
+        self.assertEqual(self.template, parser[self.filename])
+
+    def testAttemptReadNonExistingFile(self):
+        parser = templateparser.Parser(path=self.template_dir)
+        self.assertRaises(
+            templateparser.TemplateReadError,
+            parser.AddTemplate,
+            "non_existing_file.html",
+        )
+
+    def testAttemptReadOutsideTemplateDir(self):
+        parser = templateparser.Parser(path=self.template_dir)
+        target_file = os.path.join(self.symlinked_dir, "file.html")
+        with open(target_file, "w") as f:
+            f.write(self.raw)
+        self.assertRaises(
+            templateparser.TemplateReadError, parser.AddTemplate, target_file
+        )
+
+    def testReadFromSymlinkedDir(self):
+        parser = templateparser.Parser(
+            path=self.template_dir, allowed_paths=[self.symlinked_dir]
+        )
+        target_file = os.path.join(self.symlinked_dir, "file.html")
+        with open(target_file, "w") as f:
+            f.write(self.raw)
+        self.assertEqual(self.template, parser[target_file])
+
+    def testAttemptReadOutsideSymlinkedDir(self):
+        parser = templateparser.Parser(
+            path=self.template_dir, allowed_paths=[self.symlinked_dir]
+        )
+        target_file = os.path.join(self.test_folder, "file.html")
+        with open(target_file, "w") as f:
+            f.write(self.raw)
+        self.assertRaises(
+            templateparser.TemplateReadError, parser.AddTemplate, target_file
+        )
 
 
 class ParserPerformance(unittest.TestCase):
