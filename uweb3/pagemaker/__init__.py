@@ -425,28 +425,29 @@ class BasePageMaker(Base):
         """Simple logger for an uweb3 application"""
         if not self._logger:
             logger = logging.getLogger("application_logger")
-            logger.setLevel(logging.DEBUG)
+            if not len(logger.handlers):
+                logger.setLevel(logging.DEBUG)
 
-            logpath = os.path.join(self.LOCAL_DIR, "application_logger.log")
+                logpath = os.path.join(self.LOCAL_DIR, "application_logger.log")
 
-            fh = logging.FileHandler(logpath, encoding="utf-8")
-            fh.setLevel(logging.ERROR)
+                fh = logging.FileHandler(logpath, encoding="utf-8")
+                fh.setLevel(logging.ERROR)
 
-            debug = logging.StreamHandler()
-            debug.setLevel(logging.DEBUG)
+                debug = logging.StreamHandler()
+                debug.setLevel(logging.DEBUG)
 
-            debug_format = logging.Formatter(
-                "\x1b[31;20m"
-                + "%(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
-                + "\x1b[0m"
-            )
-            debug.setFormatter(debug_format)
+                debug_format = logging.Formatter(
+                    "\x1b[31;20m"
+                    + "%(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
+                    + "\x1b[0m"
+                )
+                debug.setFormatter(debug_format)
 
-            formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-            fh.setFormatter(formatter)
+                formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+                fh.setFormatter(formatter)
 
-            logger.addHandler(debug)
-            logger.addHandler(fh)
+                logger.addHandler(debug)
+                logger.addHandler(fh)
             self._logger = logger
         return self._logger
 
