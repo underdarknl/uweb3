@@ -284,6 +284,7 @@ class BasePageMaker(Base):
                 "connection", ConnectionManager(self.config, self.options, self.debug)
             )
             self.connection = self.persistent.Get("connection")
+        self._logger = None
 
     def __str__(self):
         return str(type(self))
@@ -418,6 +419,42 @@ class BasePageMaker(Base):
         """Method that gets called after each request to close 'request' based
         connections like signedcookieStores"""
         self.connection.PostRequest()
+
+    @property
+    def logger(self):
+        """Simple logger for an uweb3 application"""
+        if not self._logger:
+            logger = logging.getLogger("application_logger")
+            if not len(logger.handlers):
+                logger.setLevel(logging.DEBUG)
+
+                logpath = os.path.join(self.LOCAL_DIR, "application_logger.log")
+
+                fh = logging.FileHandler(logpath, encoding="utf-8")
+                fh.setLevel(logging.ERROR)
+
+                debug = logging.StreamHandler()
+                debug.setLevel(logging.DEBUG)
+
+                debug_format = logging.Formatter(
+                    "\x1b[31;20m"
+                    + "%(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
+                    + "\x1b[0m"
+                )
+                debug.setFormatter(debug_format)
+
+                formatter = logging.Formatter(
+                    "%(asctime)s - %(levelname)s - %(page_maker)s - %(route)s - %(message)s"
+                )
+                fh.setFormatter(formatter)
+
+                logger.addHandler(debug)
+                logger.addHandler(fh)
+            logger = logging.LoggerAdapter(
+                logger, {"page_maker": self.__class__.__name__, "route": self.req.path}
+            )
+            self._logger = logger
+        return self._logger
 
 
 class XSRFMixin(BasePageMaker):
