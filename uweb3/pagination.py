@@ -48,7 +48,7 @@ class BasePagination:
     def __init__(
         self, data: Iterable, get_req_dict: Union[IndexedFieldStorage, None] = None
     ):
-        self.__parser = Parser(
+        self._parser = Parser(
             path=os.path.join(os.path.dirname(__file__), "templates"),
             templates=("simple_pagination.html",),
         )
@@ -108,14 +108,20 @@ class BasePagination:
     @property
     def render_nav(self):
         ranges = self._determine_page_numbers()
-        query_url = "".join(
-            [f"&{key}={self.get_data.getfirst(key)}" for key in self.relevant_keys()]
-        )
-        return self.__parser.Parse(
+        return self._parser.Parse(
             "simple_pagination.html",
             __paginator=self,
             __ranges=ranges,
-            __query_url=query_url,
+            __query_url=self._query_url(),
+        )
+
+    def _query_url(self):
+        return "".join(
+            [
+                f"&{key}={self.get_data.getfirst(key)}"
+                for key in self.relevant_keys()
+                if self.get_data.getfirst(key)
+            ]
         )
 
     def relevant_keys(self):
@@ -140,21 +146,16 @@ class BasePagination:
 
 
 class SortablePagination(BasePagination):
-    def __init__(
-        self, data: Iterable, get_req_dict: Union[IndexedFieldStorage, None] = None
-    ):
+    def __init__(self, data: Iterable, get_req_dict: IndexedFieldStorage):
         data = list(data)
+
         order = get_req_dict.getfirst("order", "ASC")
-        if get_req_dict.getfirst(
-            "sort",
-        ):
+        sort = get_req_dict.getfirst("sort")
+
+        if sort:
             if order == "ASC":
                 data.sort(
-                    key=itemgetter(
-                        get_req_dict.getfirst(
-                            "sort",
-                        )
-                    ),
+                    key=itemgetter(sort),
                     reverse=False,
                 )
             else:
@@ -165,3 +166,18 @@ class SortablePagination(BasePagination):
     def relevant_keys(self):
         keys = super().relevant_keys()
         return keys + ["sort", "order"]
+
+    @property
+    def render_nav(self):
+        ranges = self._determine_page_numbers()
+
+        return self._parser.Parse(
+            "simple_pagination.html",
+            __paginator=self,
+            __ranges=ranges,
+            __query_url=self._query_url(),
+        )
+
+    @property
+    def render_sortable_head(self):
+        return self._parser.Parse("sortable_table_head.html")
