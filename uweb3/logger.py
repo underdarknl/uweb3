@@ -13,7 +13,7 @@ RESET_COLOR = "\x1b[0m"
 
 def create_file_handler(path: str) -> logging.FileHandler:
     """Setup a Filehandler with a default configuration.
-    
+
     Returns:
         logging.FileHandler: The default FileHandler.
     """

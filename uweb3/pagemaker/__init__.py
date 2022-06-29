@@ -428,9 +428,10 @@ class BasePageMaker(Base):
     @property
     def logger(self):
         """Simple logger for an uweb3 application.
-        
+
         Only when the application is run in debug mode the debugging
-        stream and debug.log will be available."""
+        stream and debug.log will be available.
+        """
         if not self._logger:
             logger = logging.getLogger("application_logger")
 
