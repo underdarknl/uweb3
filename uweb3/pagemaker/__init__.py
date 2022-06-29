@@ -17,6 +17,11 @@ import magic
 from pymysql import Error as pymysqlerr
 
 import uweb3
+from uweb3.logger import (
+    setup_debug_logger,
+    setup_debug_stream_logger,
+    setup_error_logger,
+)
 from uweb3.request import IndexedFieldStorage
 
 from .. import response, templateparser
@@ -422,45 +427,33 @@ class BasePageMaker(Base):
 
     @property
     def logger(self):
-        """Simple logger for an uweb3 application"""
+        """Simple logger for an uweb3 application.
+        
+        Only when the application is run in debug mode the debugging
+        stream and debug.log will be available."""
         if not self._logger:
             logger = logging.getLogger("application_logger")
 
             if not len(logger.handlers):
                 logger.setLevel(logging.DEBUG)
-                logpath = os.path.join(self.LOCAL_DIR, "application_logger.log")
-
-                fh = logging.FileHandler(logpath, encoding="utf-8")
-                fh.setLevel(logging.ERROR)
-
-                debug = logging.StreamHandler()
-                debug.setLevel(logging.DEBUG)
-
-                debug_format = logging.Formatter(
-                    "\x1b[31;20m"
-                    + "%(levelname)s - %(page_maker)s - %(route)s - (%(filename)s:%(lineno)d) \n%(message)s"
-                    + "\x1b[0m"
+                fh_error_logger = setup_error_logger(
+                    os.path.join(self.LOCAL_DIR, "application_log.log")
                 )
-                debug.setFormatter(debug_format)
-
                 if self.debug:
-                    formatting = "%(asctime)s - %(levelname)s - %(page_maker)s - %(method)s - %(route)s - %(message)s"
-                else:
-                    formatting = "%(asctime)s - %(levelname)s - %(page_maker)s - %(route)s - %(message)s"
-
-                formatter = logging.Formatter(formatting)
-                fh.setFormatter(formatter)
-
-                logger.addHandler(debug)
-                logger.addHandler(fh)
+                    fh_debug_logger = setup_debug_logger(
+                        os.path.join(self.LOCAL_DIR, "application_debug.log")
+                    )
+                    logger.addHandler(fh_debug_logger)
+                    logger.addHandler(setup_debug_stream_logger())
+                logger.addHandler(fh_error_logger)
 
             extra_details = {
                 "page_maker": self.__class__.__name__,
                 "route": self.req.path,
+                "method": self.req.method,
+                "get": self.get,
+                "post": self.post,
             }
-
-            if self.debug:
-                extra_details["method"] = self.req.method
 
             logger = logging.LoggerAdapter(logger, extra_details)
             self._logger = logger
