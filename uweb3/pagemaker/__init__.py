@@ -438,7 +438,7 @@ class BasePageMaker(Base):
 
                 debug_format = logging.Formatter(
                     "\x1b[31;20m"
-                    + "%(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
+                    + "%(levelname)s - %(page_maker)s - %(route)s - (%(filename)s:%(lineno)d) \n%(message)s"
                     + "\x1b[0m"
                 )
                 debug.setFormatter(debug_format)
