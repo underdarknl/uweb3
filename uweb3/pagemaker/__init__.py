@@ -21,6 +21,9 @@ from uweb3.logger import (
     setup_debug_logger,
     setup_debug_stream_logger,
     setup_error_logger,
+    UwebDebuggingAdapter,
+    DebuggingDetails,
+    default_data_scrubber,
 )
 from uweb3.request import IndexedFieldStorage
 
@@ -294,6 +297,12 @@ class BasePageMaker(Base):
     def __str__(self):
         return str(type(self))
 
+    def _debugging_remove_sensitive_data(self):
+        """This hook can be overwritten to write a custom data scrubber for a PageMaker
+        to prevent sensitive data being added to the logfile.
+        """
+        return default_data_scrubber(self.post, self.get)
+
     @classmethod
     def LoadModules(cls, routes="routes/*.py"):
         """Loops over all .py files apart from some exceptions in target directory
@@ -448,15 +457,16 @@ class BasePageMaker(Base):
                     logger.addHandler(setup_debug_stream_logger())
                 logger.addHandler(fh_error_logger)
 
-            extra_details = {
-                "page_maker": self.__class__.__name__,
-                "route": self.req.path,
-                "method": self.req.method,
-                "get": self.get,
-                "post": self.post,
-            }
+            post, get = self._debugging_remove_sensitive_data()
+            extra_details = DebuggingDetails(
+                page_maker=self.__class__.__name__,
+                route=self.req.path,
+                method=self.req.method,
+                post=post,
+                get=get,
+            )
 
-            logger = logging.LoggerAdapter(logger, extra_details)
+            logger = UwebDebuggingAdapter(logger, extra_details)
             self._logger = logger
         return self._logger
 
