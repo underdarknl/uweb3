@@ -17,6 +17,14 @@ import magic
 from pymysql import Error as pymysqlerr
 
 import uweb3
+from uweb3.logger import (
+    setup_debug_logger,
+    setup_debug_stream_logger,
+    setup_error_logger,
+    UwebDebuggingAdapter,
+    DebuggingDetails,
+    default_data_scrubber,
+)
 from uweb3.request import IndexedFieldStorage
 
 from .. import response, templateparser
@@ -289,6 +297,12 @@ class BasePageMaker(Base):
     def __str__(self):
         return str(type(self))
 
+    def _debugging_remove_sensitive_data(self):
+        """This hook can be overwritten to write a custom data scrubber for a PageMaker
+        to prevent sensitive data being added to the logfile.
+        """
+        return default_data_scrubber(self.post, self.get)
+
     @classmethod
     def LoadModules(cls, routes="routes/*.py"):
         """Loops over all .py files apart from some exceptions in target directory
@@ -422,37 +436,37 @@ class BasePageMaker(Base):
 
     @property
     def logger(self):
-        """Simple logger for an uweb3 application"""
+        """Simple logger for an uweb3 application.
+
+        Only when the application is run in debug mode the debugging
+        stream and debug.log will be available.
+        """
         if not self._logger:
             logger = logging.getLogger("application_logger")
+
             if not len(logger.handlers):
                 logger.setLevel(logging.DEBUG)
-
-                logpath = os.path.join(self.LOCAL_DIR, "application_logger.log")
-
-                fh = logging.FileHandler(logpath, encoding="utf-8")
-                fh.setLevel(logging.ERROR)
-
-                debug = logging.StreamHandler()
-                debug.setLevel(logging.DEBUG)
-
-                debug_format = logging.Formatter(
-                    "\x1b[31;20m"
-                    + "%(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
-                    + "\x1b[0m"
+                fh_error_logger = setup_error_logger(
+                    os.path.join(self.LOCAL_DIR, "application_log.log")
                 )
-                debug.setFormatter(debug_format)
+                if self.debug:
+                    fh_debug_logger = setup_debug_logger(
+                        os.path.join(self.LOCAL_DIR, "application_debug.log")
+                    )
+                    logger.addHandler(fh_debug_logger)
+                    logger.addHandler(setup_debug_stream_logger())
+                logger.addHandler(fh_error_logger)
 
-                formatter = logging.Formatter(
-                    "%(asctime)s - %(levelname)s - %(page_maker)s - %(route)s - %(message)s"
-                )
-                fh.setFormatter(formatter)
-
-                logger.addHandler(debug)
-                logger.addHandler(fh)
-            logger = logging.LoggerAdapter(
-                logger, {"page_maker": self.__class__.__name__, "route": self.req.path}
+            post, get = self._debugging_remove_sensitive_data()
+            extra_details = DebuggingDetails(
+                page_maker=self.__class__.__name__,
+                route=self.req.path,
+                method=self.req.method,
+                post=post,
+                get=get,
             )
+
+            logger = UwebDebuggingAdapter(logger, extra_details)
             self._logger = logger
         return self._logger
 
