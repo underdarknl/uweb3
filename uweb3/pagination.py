@@ -1,3 +1,4 @@
+import os
 from operator import attrgetter, itemgetter
 from typing import Iterable, Union
 from uweb3.pagemaker import IndexedFieldStorage
@@ -47,6 +48,10 @@ class BasePagination:
     def __init__(
         self, data: Iterable, get_req_dict: Union[IndexedFieldStorage, None] = None
     ):
+        self.__parser = Parser(
+            path=os.path.join(os.path.dirname(__file__), "templates"),
+            templates=("simple_pagination.html",),
+        )
         self._page_number = 1
         self.get_data = get_req_dict
 
@@ -106,28 +111,8 @@ class BasePagination:
         query_url = "".join(
             [f"&{key}={self.get_data.getfirst(key)}" for key in self.relevant_keys()]
         )
-        return Parser().ParseString(
-            """
-            <nav class="pagination">
-                <ol>
-                    {{ if [__paginator:page_number] != 1 }}
-                        <li><a href="?page=first[__query_url]">First</a></li>
-                    {{ endif }}
-                    {{ for p in [__ranges] }}
-                        <li><a href="?page=[p][__query_url]">[p]</a></li>
-                    {{ endfor }}
-                    {{ if [__paginator:page_number] != 1 }}
-                        <li><a href="?page=[__paginator:previous_page][__query_url]">Previous</a></li>
-                    {{ endif }}
-                    {{ if [__paginator:page_number] <  [__paginator:total_pages]  }}
-                        <li><a href="?page=[__paginator:next_page][__query_url]">Next</a></li>
-                    {{ endif }}
-                    {{ if [__paginator:page_number] != [__paginator:total_pages] }}
-                        <li><a href="?page=last[__query_url]">Last</a></li>
-                    {{ endif }}
-                </ol>
-            </nav>
-            """,
+        return self.__parser.Parse(
+            "simple_pagination.html",
             __paginator=self,
             __ranges=ranges,
             __query_url=query_url,
@@ -160,10 +145,20 @@ class SortablePagination(BasePagination):
     ):
         data = list(data)
         order = get_req_dict.getfirst("order", "ASC")
-        if order == "ASC":
-            data.sort(key=itemgetter(get_req_dict.getfirst("sort")), reverse=False)
-        else:
-            data.sort(key=itemgetter(get_req_dict.getfirst("sort")), reverse=True)
+        if get_req_dict.getfirst(
+            "sort",
+        ):
+            if order == "ASC":
+                data.sort(
+                    key=itemgetter(
+                        get_req_dict.getfirst(
+                            "sort",
+                        )
+                    ),
+                    reverse=False,
+                )
+            else:
+                data.sort(key=itemgetter(get_req_dict.getfirst("sort")), reverse=True)
 
         super().__init__(data=data, get_req_dict=get_req_dict)
 
