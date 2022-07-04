@@ -83,8 +83,6 @@ class Page:
 
 
 class Base:
-    max_page_size = None
-
     def __init__(
         self,
         get_req_dict: Union[IndexedFieldStorage, None] = None,
@@ -95,7 +93,7 @@ class Base:
             templates=("simple_pagination.html",),
         )
         self.page_size = page_size
-        self.total_pages = 0
+        self.total_pages = 1
         self._page_number = 1
         self.get_data = get_req_dict
         self._pages = []
@@ -122,14 +120,15 @@ class Base:
     @page_number.setter
     def page_number(self, value):
         if isinstance(value, int):
-            if value > self.total_pages or (
-                self.max_page_size and value > self.max_page_size
-            ):
+            if (value > self.total_pages) and self.total_pages >= 1:
                 raise PageNumberOutOfRange("Page number is out of range")
             self._page_number = value
         elif isinstance(value, str) and value.isnumeric():
             self.page_number = int(value)
         else:
+            # Should not be reached when calling to_page_number
+            # method on request page number.
+            # Instead the user will be redirected to page_number 1
             raise InvalidPageNumber("Page number is of an invalid type")
 
     @property
@@ -174,7 +173,7 @@ class Base:
     def _determine_page_numbers(self):
         nav_end = min(self.previous_page + 4, self.total_pages + 1)
         if self.total_pages - self.page_number < 2:
-            return range(max(0, self.previous_page - 2), nav_end)
+            return range(max(1, self.previous_page - 2), nav_end)
         return range(self.previous_page, nav_end)
 
     def __iter__(self):
