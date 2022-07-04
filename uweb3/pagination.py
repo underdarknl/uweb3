@@ -59,18 +59,11 @@ def to_page_number(requested_number):
     Returns:
         int: The number of the requested page.
     """
-    number = 1
-
-    if not isinstance(requested_number, Number):
-        if isinstance(requested_number, str):
-            if requested_number.isnumeric():
-                number = int(requested_number)
-            else:
-                return 1
-        else:
-            return 1
-
-    return number if number > 1 else 1
+    try:
+        requested_number = int(requested_number)
+    except Exception:
+        requested_number = 1
+    return requested_number if int(requested_number) > 1 else 1
 
 
 class Page:
@@ -80,24 +73,28 @@ class Page:
 
     @property
     def items(self):
-        return [data for data in self.content]
+        return self.content
 
     def __iter__(self):
         return iter(self.content)
 
+    def __len__(self):
+        return len(self.content)
+
 
 class Base:
-    page_size = 10
     max_page_size = None
 
     def __init__(
         self,
         get_req_dict: Union[IndexedFieldStorage, None] = None,
+        page_size=10,
     ):
         self._parser = Parser(
             path=os.path.join(os.path.dirname(__file__), "templates"),
             templates=("simple_pagination.html",),
         )
+        self.page_size = page_size
         self.total_pages = 0
         self._page_number = 1
         self.get_data = get_req_dict
@@ -188,9 +185,11 @@ class BasePagination(Base):
     def __init__(
         self,
         data: Iterable,
+        *args,
         get_req_dict: Union[IndexedFieldStorage, None] = None,
+        **kwargs,
     ):
-        super().__init__(get_req_dict)
+        super().__init__(*args, get_req_dict=get_req_dict, **kwargs)
         self.pages = list(_chunkify(data, self.page_size))
 
         if self.get_data and self.get_data.getfirst("page"):
@@ -203,12 +202,14 @@ class SortableBase(BasePagination):
         data: Iterable,
         columns: tuple,
         get_req_dict: IndexedFieldStorage,
+        *args,
+        **kwargs,
     ):
         self.order = get_req_dict.getfirst("order", "ASC")
         self.sort = get_req_dict.getfirst("sort")
         self.columns = columns
         data = self.sort_data(data)
-        super().__init__(data=data, get_req_dict=get_req_dict)
+        super().__init__(data=data, *args, get_req_dict=get_req_dict, **kwargs)
 
     def sort_data(self, data: Iterable) -> Union[Iterable, list]:
         return NotImplemented
@@ -259,10 +260,13 @@ class OffsetPagination(Base):
     def __init__(
         self,
         method: Callable,
+        *args,
         get_req_dict: Union[IndexedFieldStorage, None] = None,
-        **modelargs,
+        modelargs,
+        **kwargs,
     ):
-        super().__init__(get_req_dict)
+        super().__init__(get_req_dict, *args, **kwargs)
+        self.requested_page = 1
         if self.get_data and self.get_data.getfirst("page"):
             # We cannot set self.page_number here because we need
             # to determine the total amount of pages first.
@@ -273,10 +277,18 @@ class OffsetPagination(Base):
         self._setup()
 
     def _setup(self):
-        offset = self.page_size * (self.requested_page - 1)
+        limit = self.page_size
+
+        if "limit" in self.modelargs:
+            offset = self.modelargs["limit"] * (self.requested_page - 1)
+            limit = self.modelargs["limit"]
+            self.modelargs.pop("limit")
+        else:
+            offset = self.page_size * (self.requested_page - 1)
+
         self.pages = self.method(
             offset=offset,
-            limit=self.page_size,
+            limit=limit,
             yield_unlimited_total_first=True,
             **self.modelargs,
         )
@@ -293,5 +305,5 @@ class OffsetPagination(Base):
     @pages.setter
     def pages(self, value):
         itemcount = next(value)
-        self._pages = [Page(self.requested_page, value)]
+        self._pages = [Page(self.requested_page, list(value))]
         self.total_pages = int(math.ceil(float(itemcount) / self.page_size))
