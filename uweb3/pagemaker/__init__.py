@@ -17,6 +17,14 @@ import magic
 from pymysql import Error as pymysqlerr
 
 import uweb3
+from uweb3.logger import (
+    setup_debug_logger,
+    setup_debug_stream_logger,
+    setup_error_logger,
+    UwebDebuggingAdapter,
+    DebuggingDetails,
+    default_data_scrubber,
+)
 from uweb3.request import IndexedFieldStorage
 
 from .. import response, templateparser
@@ -196,13 +204,18 @@ class Base:
         Otherwise, the `TEMPLATE_DIR` will be used to load templates from.
         """
         if "__parser" not in self.persistent:
+            allowed_paths = self.options.get("templates", {}).get("allowed_paths", None)
+            if allowed_paths:
+                allowed_paths = allowed_paths.split(",")
             self.persistent.Set(
                 "__parser",
                 templateparser.Parser(
-                    self.options.get("templates", {}).get("path", self.TEMPLATE_DIR)
+                    self.options.get("templates", {}).get("path", self.TEMPLATE_DIR),
+                    allowed_paths=allowed_paths,
                 ),
             )
         parser = self.persistent.Get("__parser")
+        parser.template_dir = self.TEMPLATE_DIR
         parser.dictoutput = self.req.noparse
         return parser
 
@@ -229,7 +242,7 @@ class LoginMixin:
     and related database/cookie interaction"""
 
     def _ReadSession(self):
-        return NotImplemented
+        raise NotImplementedError()
 
     @property
     def user(self):
@@ -284,9 +297,16 @@ class BasePageMaker(Base):
                 "connection", ConnectionManager(self.config, self.options, self.debug)
             )
             self.connection = self.persistent.Get("connection")
+        self._logger = None
 
     def __str__(self):
         return str(type(self))
+
+    def _debugging_remove_sensitive_data(self):
+        """This hook can be overwritten to write a custom data scrubber for a PageMaker
+        to prevent sensitive data being added to the logfile.
+        """
+        return default_data_scrubber(self.post, self.get)
 
     @classmethod
     def LoadModules(cls, routes="routes/*.py"):
@@ -418,6 +438,42 @@ class BasePageMaker(Base):
         """Method that gets called after each request to close 'request' based
         connections like signedcookieStores"""
         self.connection.PostRequest()
+
+    @property
+    def logger(self):
+        """Simple logger for an uweb3 application.
+
+        Only when the application is run in debug mode the debugging
+        stream and debug.log will be available.
+        """
+        if not self._logger:
+            logger = logging.getLogger("application_logger")
+
+            if not len(logger.handlers):
+                logger.setLevel(logging.DEBUG)
+                fh_error_logger = setup_error_logger(
+                    os.path.join(self.LOCAL_DIR, "application_log.log")
+                )
+                if self.debug:
+                    fh_debug_logger = setup_debug_logger(
+                        os.path.join(self.LOCAL_DIR, "application_debug.log")
+                    )
+                    logger.addHandler(fh_debug_logger)
+                    logger.addHandler(setup_debug_stream_logger())
+                logger.addHandler(fh_error_logger)
+
+            post, get = self._debugging_remove_sensitive_data()
+            extra_details = DebuggingDetails(
+                page_maker=self.__class__.__name__,
+                route=self.req.path,
+                method=self.req.method,
+                post=post,
+                get=get,
+            )
+
+            logger = UwebDebuggingAdapter(logger, extra_details)
+            self._logger = logger
+        return self._logger
 
 
 class XSRFMixin(BasePageMaker):
