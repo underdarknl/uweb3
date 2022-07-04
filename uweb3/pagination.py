@@ -3,7 +3,7 @@ import math
 from numbers import Number
 import os
 from operator import attrgetter, itemgetter
-from typing import Callable, Iterable, Union
+from typing import Callable, Iterable, List, Union
 from uweb3.pagemaker import IndexedFieldStorage
 from uweb3.templateparser import Parser
 
@@ -88,6 +88,15 @@ class Base:
         get_req_dict: Union[IndexedFieldStorage, None] = None,
         page_size=10,
     ):
+        """Base class for Paginators
+
+        Args:
+            get_req_dict (Union[IndexedFieldStorage, None], optional):
+                IndexedFieldStorage present in PageMaker.req.
+                This is used to determine page and sorting/ordering.
+            page_size (int, optional): Determines how many items are
+                allowed before creating a new page.
+        """
         self._parser = Parser(
             path=os.path.join(os.path.dirname(__file__), "templates"),
             templates=("simple_pagination.html",),
@@ -99,26 +108,44 @@ class Base:
         self._pages = []
 
     @property
-    def pages(self):
+    def pages(self) -> List[Page]:
+        """The list containg Page objects."""
         return self._pages
 
     @pages.setter
     def pages(self, value):
+        """Setter method for the list of Pages.
+
+        When populating the list of pages also calculate the
+        amount of total pages present"""
         self._pages = value
         self.total_pages = len(self._pages)
 
     @property
-    def current_page(self):
+    def current_page(self) -> Page:
+        """Return the Page object with the items for the current page"""
         if not self.pages:
             raise NoPageError(f"No page for page number {self.page_number}")
         return self.pages[self.page_number - 1]
 
     @property
-    def page_number(self):
+    def page_number(self) -> int:
+        """Return the number of the currently displayed page"""
         return self._page_number
 
     @page_number.setter
-    def page_number(self, value):
+    def page_number(self, value: Union[str, int]):
+        """Attempt to set the value of the page that should be displayed.
+
+        Args:
+            value (str|int): The number of the page that should be
+                displayed to the user. This value can be any format
+                that can be converted to an int, but really only integers
+                should be used to indicate a page.
+        Raises:
+            InvalidPageNumber: When the passed value could not be converted
+                to an int succesfully.
+        """
         if isinstance(value, int):
             if (value > self.total_pages) and self.total_pages >= 1:
                 raise PageNumberOutOfRange("Page number is out of range")
@@ -133,6 +160,8 @@ class Base:
 
     @property
     def next_page(self):
+        """Returns the number of the next page if possible, if this page
+        is the last page return the current page number instead."""
         if self.page_number < self.total_pages:
             return self.page_number + 1
         else:
@@ -140,6 +169,8 @@ class Base:
 
     @property
     def previous_page(self):
+        """Returns the previous page number, if the current page is the first
+        page already return the current page (1)."""
         if self.page_number > 1:
             return self.page_number - 1
         else:
@@ -147,15 +178,17 @@ class Base:
 
     @property
     def render_nav(self):
-        ranges = self._determine_page_numbers()
+        """Render navigation buttons for the Paginatior class.
+        To render as intended use css.underdark.nl"""
         return self._parser.Parse(
             "simple_pagination.html",
             __paginator=self,
-            __ranges=ranges,
+            __ranges=self._determine_page_numbers(),
             __query_url=self._query_url(),
         )
 
     def _query_url(self):
+        """Add all required keys to the redirect url of a navigation element."""
         if not self.get_data:
             return ""
 
@@ -168,9 +201,15 @@ class Base:
         )
 
     def relevant_keys(self):
+        """List of relevant keys for paginator class.
+        These are the keys that are allowed on a navigation element.
+
+        Overwrite this method to indicate which keys are allowed."""
         return []
 
     def _determine_page_numbers(self):
+        """Determine which numbers should be shown to the user depending
+        on current page and total pages."""
         nav_end = min(self.previous_page + 4, self.total_pages + 1)
         if self.total_pages - self.page_number < 2:
             return range(max(1, self.previous_page - 2), nav_end)
@@ -188,6 +227,18 @@ class BasePagination(Base):
         get_req_dict: Union[IndexedFieldStorage, None] = None,
         **kwargs,
     ):
+        """Simple pagination class for dumping short list objects
+        to a page with pagination options. This class should not be
+        used to render thousands of database objects as there is a dedicated
+        paginator class that uses offsets and limits to accomplish fast load times.
+
+        Args:
+            get_req_dict (Union[IndexedFieldStorage, None], optional):
+                IndexedFieldStorage present in PageMaker.req.
+                This is used to determine page and sorting/ordering.
+            page_size (int, optional): Determines how many items are
+                allowed before creating a new page.
+        """
         super().__init__(*args, get_req_dict=get_req_dict, **kwargs)
         self.pages = list(_chunkify(data, self.page_size))
 
@@ -213,6 +264,25 @@ class SortableBase(BasePagination):
     def sort_data(self, data: Iterable) -> Union[Iterable, list]:
         return NotImplemented
 
+    @property
+    def render_sortable_head(self):
+        """Used to render the table head based on the supplied columns."""
+        return self._parser.Parse(
+            "sortable_table_head.html",
+            __paginator=self,
+        )
+
+    @property
+    def render_table(self):
+        """Render the complete table based on the supplied columns and the
+        provided data."""
+        return self._parser.Parse(
+            "simple_table.html",
+            __paginator=self,
+            __ranges=self._determine_page_numbers(),
+            __query_url=self._query_url(),
+        )
+
 
 class SortablePagination(SortableBase):
     def sort_data(self, data: Iterable) -> Union[Iterable, list]:
@@ -229,31 +299,6 @@ class SortablePagination(SortableBase):
         keys = super().relevant_keys()
         return keys + ["sort", "order"]
 
-    @property
-    def render_nav(self):
-        return self._parser.Parse(
-            "simple_pagination.html",
-            __paginator=self,
-            __ranges=self._determine_page_numbers(),
-            __query_url=self._query_url(),
-        )
-
-    @property
-    def render_sortable_head(self):
-        return self._parser.Parse(
-            "sortable_table_head.html",
-            __paginator=self,
-        )
-
-    @property
-    def render_table(self):
-        return self._parser.Parse(
-            "simple_table.html",
-            __paginator=self,
-            __ranges=self._determine_page_numbers(),
-            __query_url=self._query_url(),
-        )
-
 
 class OffsetPagination(Base):
     def __init__(
@@ -264,6 +309,39 @@ class OffsetPagination(Base):
         modelargs,
         **kwargs,
     ):
+        """Paginator class used for pagination with model classes.
+        This paginator was created with the model.Record.List method in mind.
+
+        For successful use of this class the provided method should implement the
+        following parameters: connection, limit, offset, yield_unlimited_total_first.
+        By default this class is compatible with any uweb3 model.Record class as these come with the
+        List function by default.
+
+        yield_unlimited_total_first is used to determine the total amount of pages.
+        If you want to use a custom method for populating this class the data
+        supplied should look like this:
+            generator(
+                total_amount_of_items,
+                {item1: value, ...},
+                {item2: value, ...},
+                ...
+            ).
+        
+        args:
+            method (Callable): A callable function used to retrieve the data from.
+                read above for more information.
+            get_req_dict (Union[IndexedFieldStorage, None], optional):
+                IndexedFieldStorage present in PageMaker.req.
+                This is used to determine page and sorting/ordering.
+            modelargs: The arguments that should be supplied to your
+                callable method. This should be a dictionary that can be 
+                unpacked, and should at least contain the connection 
+                parameter (when using model methods). 
+                It is also possible to overwrite limit and offset, however
+                this is not advisable as the paginator class uses these values.
+                Any other parameters can be passed as long as your callable method
+                has support for this.
+        """
         super().__init__(get_req_dict, *args, **kwargs)
         self.requested_page = 1
         if self.get_data and self.get_data.getfirst("page"):
