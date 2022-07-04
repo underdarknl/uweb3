@@ -204,12 +204,7 @@ class Parser(dict):
     """
 
     def __init__(
-        self,
-        path=None,
-        templates=(),
-        dictoutput=False,
-        templateEncoding="utf-8",
-        allowed_paths=None,
+        self, path=None, templates=(), dictoutput=False, templateEncoding="utf-8"
     ):
         """Initializes a Parser instance.
 
@@ -225,12 +220,9 @@ class Parser(dict):
             structure and replaced values as a dict
           % templateEncoding: str ~~ utf-8
             Encoding of the template, used when reading the file.
-          % allowed_paths: [str] ~~ None
-            A list of allowed directories of which the templates can be loaded.
         """
         super().__init__()
         self.template_dir = path
-        self.allowed_paths = allowed_paths
         self.dictoutput = dictoutput
         self.tags = {}
         self.requesttags = {}
@@ -278,38 +270,22 @@ class Parser(dict):
           TemplateReadError: When the template file cannot be read
         """
         if self.template_dir:
-            template_path = self._check_allowed_path(location)
+            template_path = os.path.realpath(os.path.join(self.template_dir, location))
+            if (
+                os.path.commonprefix((template_path, self.template_dir))
+                != self.template_dir
+            ):
+                raise TemplateReadError(
+                    "Could not load template %r, not in template dir" % template_path
+                )
         else:
             template_path = location
-
         try:
             self[name or location] = FileTemplate(
                 template_path, parser=self, encoding=None
             )
         except IOError:
             raise TemplateReadError("Could not load template %r" % template_path)
-
-    def _check_allowed_path(self, location):
-        template_path = os.path.realpath(os.path.join(self.template_dir, location))
-        if (
-            os.path.commonprefix((template_path, self.template_dir))
-            == self.template_dir
-        ):
-            return template_path
-
-        if not self.allowed_paths:
-            raise TemplateReadError(
-                "Could not load template %r, not in template dir" % template_path
-            )
-
-        for path in self.allowed_paths:
-            template_path = os.path.realpath(os.path.join(path, location))
-            if os.path.commonprefix((template_path, path)) == path:
-                return template_path
-
-        raise TemplateReadError(
-            "Could not load template %r, not in template dir" % template_path
-        )
 
     def Parse(self, template, **replacements):
         """Returns the referenced template with its tags replaced by **replacements.
