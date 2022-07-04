@@ -1,6 +1,7 @@
 import unittest
 from typing import Dict, List, Iterable
 from uweb3 import model
+from uweb3.libs.safestring import HTMLsafestring
 from uweb3.pagination import (
     BasePagination,
     InvalidPageNumber,
@@ -8,9 +9,16 @@ from uweb3.pagination import (
     SortablePagination,
     OffsetPagination,
 )
+from uweb3.templateparser import Parser
 from functools import wraps
 from itertools import zip_longest
 from test.test_model import DatabaseConnection
+
+import string
+
+
+class Items(model.Record):
+    """Record class for OffsetPagination tests"""
 
 
 def dict_from_iterable(data: Iterable) -> List[Dict]:
@@ -31,6 +39,11 @@ def parameterize(params: str, values):
         return wrapper
 
     return decorator
+
+
+def htmlsafe_no_whitespace(target):
+    """Remove \n from string for string comparison purposes"""
+    return target.translate({ord(c): None for c in string.whitespace})
 
 
 class MockIndexedFieldStorage(dict):
@@ -87,7 +100,7 @@ class TestBasePagination(unittest.TestCase):
             page_size=1,
         )
         assert expected_page_number == paginator.page_number
-    
+
     def test_page_content(self):
         """Validate that no values are skipped when going to the next page.
 
@@ -192,6 +205,115 @@ class TestBasePagination(unittest.TestCase):
         )
         assert expected == paginator._determine_page_numbers()
 
+    def test_render_nav(self):
+        paginator = BasePagination(
+            "12345",
+            get_req_dict=MockIndexedFieldStorage({"page": 1}),  # type: ignore
+            page_size=5,
+        )
+
+        parsed = Parser().ParseString("[paginator:render_nav]", paginator=paginator)
+        expected = HTMLsafestring(
+            """
+                <nav class="pagination">
+                    <ol>
+                        <li>
+                            <a href="?page=1">1</a>
+                        </li>
+                    </ol>
+                </nav>
+                """
+        )
+
+        self.assertAlmostEqual(
+            htmlsafe_no_whitespace(parsed), htmlsafe_no_whitespace(expected)
+        )
+
+    def test_render_multi_pages_nav(self):
+        """Validate that the correct menu rendered."""
+        paginator = BasePagination(
+            "12345",
+            get_req_dict=MockIndexedFieldStorage({"page": 1}),  # type: ignore
+            page_size=1,
+        )
+
+        parsed = Parser().ParseString("[paginator:render_nav]", paginator=paginator)
+        expected = HTMLsafestring(
+            """
+            <nav class="pagination">
+                <ol>
+                    <li><a href="?page=1">1</a></li>
+                    <li><a href="?page=2">2</a></li>
+                    <li><a href="?page=3">3</a></li>
+                    <li><a href="?page=4">4</a></li>
+                    <li><a href="?page=2">Next</a></li>
+                    <li><a href="?page=5">Last</a></li>
+                </ol>
+            </nav>"""
+        )
+
+        self.assertAlmostEqual(
+            htmlsafe_no_whitespace(parsed), htmlsafe_no_whitespace(expected)
+        )
+
+    def test_render_from_page_nav(self):
+        """Validate that rendering from a specific page renders the
+        correct navigation menu."""
+        paginator = BasePagination(
+            "12345",
+            get_req_dict=MockIndexedFieldStorage({"page": 3}),  # type: ignore
+            page_size=1,
+        )
+
+        parsed = Parser().ParseString("[paginator:render_nav]", paginator=paginator)
+        expected = HTMLsafestring(
+            """
+            <nav class="pagination">
+                <ol>
+                    <li><a href="?page=1">First</a></li>
+                    <li><a href="?page=2">2</a></li>
+                    <li><a href="?page=3">3</a></li>
+                    <li><a href="?page=4">4</a></li>
+                    <li><a href="?page=5">5</a></li>
+                    <li><a href="?page=2">Previous</a></li>
+                    <li><a href="?page=4">Next</a></li>
+                    <li><a href="?page=5">Last</a></li>
+                </ol>
+            </nav>"""
+        )
+
+        self.assertAlmostEqual(
+            htmlsafe_no_whitespace(parsed), htmlsafe_no_whitespace(expected)
+        )
+
+    def test_render_last_page_nav(self):
+        """Validate that rendering from a specific page renders the
+        correct navigation menu."""
+        paginator = BasePagination(
+            "12345",
+            get_req_dict=MockIndexedFieldStorage({"page": 5}),  # type: ignore
+            page_size=1,
+        )
+
+        parsed = Parser().ParseString("[paginator:render_nav]", paginator=paginator)
+        expected = HTMLsafestring(
+            """
+            <nav class="pagination">
+                <ol>
+                    <li><a href="?page=1">First</a></li>
+                    <li><a href="?page=2">2</a></li>
+                    <li><a href="?page=3">3</a></li>
+                    <li><a href="?page=4">4</a></li>
+                    <li><a href="?page=5">5</a></li>
+                    <li><a href="?page=4">Previous</a></li>
+                </ol>
+            </nav>"""
+        )
+
+        self.assertAlmostEqual(
+            htmlsafe_no_whitespace(parsed), htmlsafe_no_whitespace(expected)
+        )
+
 
 class TestSortablePagination(unittest.TestCase):
     def setUp(self) -> None:
@@ -274,10 +396,6 @@ class TestSortablePagination(unittest.TestCase):
                 {"ID": 0, "name": "aaa"},
             ],
         )
-
-
-class Items(model.Record):
-    pass
 
 
 class RecordTests(unittest.TestCase):
