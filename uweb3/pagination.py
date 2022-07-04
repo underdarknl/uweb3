@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod, abstractproperty
 import math
+from numbers import Number
 import os
 from operator import attrgetter, itemgetter
 from typing import Callable, Iterable, Union
@@ -44,6 +45,32 @@ def sort_data(data, order, key):
     else:
         obj.sort(key=itemgetter(key), reverse=True)
     return obj
+
+
+def to_page_number(requested_number):
+    """Convert a request page number to an actual number.
+    Invalid values will be replaced with 1 to redirect
+    the user to the first page of the paginator object.
+
+    Args:
+        requested_number (str|Number): A string or Number
+            representing the requested page number.
+
+    Returns:
+        int: The number of the requested page.
+    """
+    number = 1
+
+    if not isinstance(requested_number, Number):
+        if isinstance(requested_number, str):
+            if requested_number.isnumeric():
+                number = int(requested_number)
+            else:
+                return 1
+        else:
+            return 1
+
+    return number if number > 1 else 1
 
 
 class Page:
@@ -167,7 +194,7 @@ class BasePagination(Base):
         self.pages = list(_chunkify(data, self.page_size))
 
         if self.get_data and self.get_data.getfirst("page"):
-            self.page_number = self.get_data.getfirst("page")
+            self.page_number = to_page_number(self.get_data.getfirst("page"))
 
 
 class SortableBase(BasePagination):
@@ -239,7 +266,8 @@ class OffsetPagination(Base):
         if self.get_data and self.get_data.getfirst("page"):
             # We cannot set self.page_number here because we need
             # to determine the total amount of pages first.
-            self.requested_page = int(self.get_data.getfirst("page"))
+            self.requested_page = to_page_number(self.get_data.getfirst("page"))
+
         self.modelargs = modelargs
         self.method = method
         self._setup()
