@@ -17,13 +17,15 @@ def dict_from_iterable(data: Iterable) -> List[Dict]:
     return [{"ID": k, "name": v} for k, v in enumerate(data)]
 
 
-def parameterize(names: str, data):
+def parameterize(params: str, values):
+    """Decorator that can be used like pytest.mark.parameterize."""
+
     def decorator(fun):
         @wraps(fun)
         def wrapper(*args, **kwargs):
-            parameters = [x.strip() for x in names.split(",")]
+            parameters = [x.strip() for x in params.split(",")]
 
-            for item in data:
+            for item in values:
                 fun(*args, **dict(zip_longest(parameters, item)), **kwargs)
 
         return wrapper
@@ -50,39 +52,42 @@ class TestBasePagination(unittest.TestCase):
         paginator = BasePagination(self.data, page_size=1)  # type: ignore
         assert 26 == paginator.total_pages
 
-        paginator = BasePagination("12345", page_size=1)  # type: ignore
-        assert 5 == paginator.total_pages
+    @parameterize(
+        "input, page_size, expected",
+        [
+            ("1", 1, 1),
+            ("12", 1, 2),
+            ("12345", 1, 5),
+            ("12345", 2, 3),
+            ("123456", 3, 2),
+            ("123456", 10, 1),
+        ],
+    )
+    def test_page_counts(self, input, page_size, expected):
+        paginator = BasePagination(input, page_size=page_size)  # type: ignore
+        assert expected == paginator.total_pages
 
-    def test_current_page_number(self):
+    @parameterize(
+        "page_number, expected_page_number",
+        [
+            (1, 1),
+            (10, 10),
+            ("10", 10),
+            ("-1", 1),
+            ("0", 1),
+            (0, 1),
+            ("-100", 1),
+        ],
+    )
+    def test_current_page_number(self, page_number, expected_page_number):
         """Validate that the correct page number is loaded"""
         paginator = BasePagination(
             self.data,
-            get_req_dict=MockIndexedFieldStorage({"page": 1}),  # type: ignore
+            get_req_dict=MockIndexedFieldStorage({"page": page_number}),  # type: ignore
             page_size=1,
         )
-        assert 1 == paginator.page_number
-
-        paginator = BasePagination(
-            self.data,
-            get_req_dict=MockIndexedFieldStorage({"page": 10}),  # type: ignore
-            page_size=1,
-        )
-        assert 10 == paginator.page_number
-
-        paginator = BasePagination(
-            self.data,
-            get_req_dict=MockIndexedFieldStorage({"page": "10"}),  # type: ignore
-            page_size=1,
-        )
-        assert 10 == paginator.page_number
-
-        paginator = BasePagination(
-            self.data,
-            get_req_dict=MockIndexedFieldStorage({"page": "-1"}),  # type: ignore
-            page_size=1,
-        )
-        assert 1 == paginator.page_number
-
+        assert expected_page_number == paginator.page_number
+    
     def test_page_content(self):
         """Validate that no values are skipped when going to the next page.
 
