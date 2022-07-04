@@ -397,6 +397,197 @@ class TestSortablePagination(unittest.TestCase):
             ],
         )
 
+    def test_render_nav_no_query(self):
+        """Validate that the navigation for the paginator is rendered
+        with no query parameters"""
+        paginator = SortablePagination(
+            [
+                {"ID": 1, "name": "test"},
+            ],
+            columns=("ID", "name"),
+            get_req_dict=MockIndexedFieldStorage({"page": 1}),  # type: ignore
+            page_size=5,
+        )
+
+        parsed = Parser().ParseString("[paginator:render_nav]", paginator=paginator)
+        expected = HTMLsafestring(
+            """
+                <nav class="pagination">
+                    <ol>
+                        <li>
+                            <a href="?page=1">1</a>
+                        </li>
+                    </ol>
+                </nav>
+                """
+        )
+        self.assertAlmostEqual(
+            htmlsafe_no_whitespace(parsed), htmlsafe_no_whitespace(expected)
+        )
+
+    def test_render_nav_query(self):
+        """Validate that the navigation for the paginator is rendered
+        with the correct query parameters."""
+        paginator = SortablePagination(
+            [
+                {"ID": 1, "name": "test"},
+            ],
+            columns=("ID", "name"),
+            get_req_dict=MockIndexedFieldStorage({"page": 1, "sort": "ID", "order": "ASC"}),  # type: ignore
+            page_size=5,
+        )
+
+        parsed = Parser().ParseString("[paginator:render_nav]", paginator=paginator)
+        expected = HTMLsafestring(
+            """
+                <nav class="pagination">
+                    <ol>
+                        <li>
+                            <a href="?page=1&amp;sort=ID&amp;order=ASC">1</a>
+                        </li>
+                    </ol>
+                </nav>
+                """
+        )
+        self.assertAlmostEqual(
+            htmlsafe_no_whitespace(parsed), htmlsafe_no_whitespace(expected)
+        )
+
+    def test_render_nav_other_key_query(self):
+        """Validate that the navigation for the paginator renders
+        different columns corretly too."""
+        paginator = SortablePagination(
+            [
+                {"ID": 1, "name": "test"},
+            ],
+            columns=("ID", "name"),
+            get_req_dict=MockIndexedFieldStorage({"page": 1, "sort": "name", "order": "DESC"}),  # type: ignore
+            page_size=5,
+        )
+
+        parsed = Parser().ParseString("[paginator:render_nav]", paginator=paginator)
+        expected = HTMLsafestring(
+            """
+                <nav class="pagination">
+                    <ol>
+                        <li>
+                            <a href="?page=1&amp;sort=name&amp;order=DESC">1</a>
+                        </li>
+                    </ol>
+                </nav>
+                """
+        )
+        self.assertAlmostEqual(
+            htmlsafe_no_whitespace(parsed), htmlsafe_no_whitespace(expected)
+        )
+
+    def test_render_sortable_head_desc(self):
+        """Validate that order key is ASC when the table is currently sorted
+        DESC on key name.
+
+        ID should default to ASC when its not being targeted.
+        """
+        paginator = SortablePagination(
+            [
+                {"ID": 1, "name": "test"},
+            ],
+            columns=("ID", "name"),
+            get_req_dict=MockIndexedFieldStorage({"page": 1, "sort": "name", "order": "DESC"}),  # type: ignore
+            page_size=5,
+        )
+
+        parsed = Parser().ParseString(
+            "[paginator:render_sortable_head]", paginator=paginator
+        )
+        expected = HTMLsafestring(
+            """
+            <thead>
+                <tr>
+                    <th class="sortable">ID
+                        <a href="?page=1&sort=ID&order=ASC"></a>
+                    </th>
+                    <th class="ascending">name
+                        <a href="?page=1&sort=name&order=ASC"></a>
+                    </th>
+                </tr>
+            </thead>"""
+        )
+        self.assertAlmostEqual(
+            htmlsafe_no_whitespace(parsed), htmlsafe_no_whitespace(expected)
+        )
+
+    def test_render_sortable_head_asc(self):
+        """Validate that order key is DESC when the table is currently sorted
+        ASC on key name.
+
+        Furthermore the ID should still be pointing towards the
+        default sort of ASC.
+        """
+        paginator = SortablePagination(
+            [
+                {"ID": 1, "name": "test"},
+            ],
+            columns=("ID", "name"),
+            get_req_dict=MockIndexedFieldStorage({"page": 1, "sort": "name", "order": "ASC"}),  # type: ignore
+            page_size=5,
+        )
+
+        parsed = Parser().ParseString(
+            "[paginator:render_sortable_head]", paginator=paginator
+        )
+        expected = HTMLsafestring(
+            """
+            <thead>
+                <tr>
+                    <th class="sortable">ID
+                        <a href="?page=1&sort=ID&order=ASC"></a>
+                    </th>
+                    <th class="descending">name
+                        <a href="?page=1&sort=name&order=DESC"></a>
+                    </th>
+                </tr>
+            </thead>"""
+        )
+        self.assertAlmostEqual(
+            htmlsafe_no_whitespace(parsed), htmlsafe_no_whitespace(expected)
+        )
+
+    def test_render_table(self):
+        """Test rendering a table as a whole."""
+        paginator = SortablePagination(
+            [
+                {"ID": 1, "name": "test"},
+            ],
+            columns=("ID", "name"),
+            get_req_dict=MockIndexedFieldStorage({"page": 1, "sort": "name", "order": "ASC"}),  # type: ignore
+            page_size=5,
+        )
+        parsed = Parser().ParseString("[paginator:render_table]", paginator=paginator)
+        expected = """
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="sortable">ID <a href="?page=1&sort=ID&order=ASC"></a> </th>
+                            <th class="descending">name <a href="?page=1&sort=name&order=DESC"></a> </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>test</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <nav class="pagination">
+                    <ol>
+                        <li><a href="?page=1&amp;sort=name&amp;order=ASC">1</a></li>
+                    </ol>
+                </nav>"""
+
+        self.assertAlmostEqual(
+            htmlsafe_no_whitespace(parsed), htmlsafe_no_whitespace(expected)
+        )
+
 
 class RecordTests(unittest.TestCase):
     """Online tests of methods and behavior of the Record class."""
