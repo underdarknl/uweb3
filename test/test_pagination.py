@@ -1,13 +1,34 @@
-from re import L
 import unittest
 from typing import Dict, List, Iterable
 from uweb3 import model
-from uweb3.pagination import BasePagination, SortablePagination, OffsetPagination
+from uweb3.pagination import (
+    BasePagination,
+    InvalidPageNumber,
+    PageNumberOutOfRange,
+    SortablePagination,
+    OffsetPagination,
+)
+from functools import wraps
+from itertools import zip_longest
 from test.test_model import DatabaseConnection
 
 
 def dict_from_iterable(data: Iterable) -> List[Dict]:
     return [{"ID": k, "name": v} for k, v in enumerate(data)]
+
+
+def parameterize(names: str, data):
+    def decorator(fun):
+        @wraps(fun)
+        def wrapper(*args, **kwargs):
+            parameters = [x.strip() for x in names.split(",")]
+
+            for item in data:
+                fun(*args, **dict(zip_longest(parameters, item)), **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 class MockIndexedFieldStorage(dict):
@@ -125,6 +146,47 @@ class TestBasePagination(unittest.TestCase):
                 {"ID": 25, "name": "z"},
             ],
         )
+
+    def test_page_out_of_range(self):
+        """Validate that PageNumberOutOfRange exception is riased when
+        attempting to access a page that is out of range."""
+        with self.assertRaises(PageNumberOutOfRange):
+            BasePagination(
+                self.data,
+                get_req_dict=MockIndexedFieldStorage({"page": 500}),  # type: ignore
+                page_size=1,
+            )
+
+    def test_invalid_page_number(self):
+        """Validate that when attempting to access an invalid page
+        the user will be redirected to page number 1."""
+        paginator = BasePagination(
+            self.data,
+            get_req_dict=MockIndexedFieldStorage({"page": "notanumber"}),  # type: ignore
+            page_size=1,
+        )
+
+        assert 1 == paginator.page_number
+
+    @parameterize(
+        "input, page, expected",
+        [
+            ([], 1, range(1, 1)),
+            ([1], 1, range(1, 2)),
+            ([1, 2], 1, range(1, 3)),
+            ([1, 2, 3], 1, range(1, 4)),
+            ([1, 2, 3], 2, range(1, 4)),
+            ([1, 2, 3], 3, range(1, 4)),
+        ],
+    )
+    def test_shown_page_numbers(self, input, page, expected):
+        paginator = BasePagination(
+            input,
+            get_req_dict=MockIndexedFieldStorage({"page": page}),  # type: ignore
+            page_size=1,
+        )
+        x = paginator._determine_page_numbers()
+        assert expected == paginator._determine_page_numbers()
 
 
 class TestSortablePagination(unittest.TestCase):
