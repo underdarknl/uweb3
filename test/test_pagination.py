@@ -185,7 +185,6 @@ class TestBasePagination(unittest.TestCase):
             get_req_dict=MockIndexedFieldStorage({"page": page}),  # type: ignore
             page_size=1,
         )
-        x = paginator._determine_page_numbers()
         assert expected == paginator._determine_page_numbers()
 
 
