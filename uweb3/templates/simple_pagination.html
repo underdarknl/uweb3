@@ -1,0 +1,19 @@
+<nav class="pagination">
+    <ol>
+        {{ if [__paginator:page_number] != 1 }}
+        <li><a href="?page=1[__query_url]">First</a></li>
+        {{ endif }}
+        {{ for p in [__ranges] }}
+        <li><a href="?page=[p][__query_url]">[p]</a></li>
+        {{ endfor }}
+        {{ if [__paginator:page_number] != 1 }}
+        <li><a href="?page=[__paginator:previous_page][__query_url]">Previous</a></li>
+        {{ endif }}
+        {{ if [__paginator:page_number] < [__paginator:total_pages] }} <li><a
+                href="?page=[__paginator:next_page][__query_url]">Next</a></li>
+            {{ endif }}
+            {{ if [__paginator:page_number] != [__paginator:total_pages] }}
+            <li><a href="?page=[__paginator:total_pages][__query_url]">Last</a></li>
+            {{ endif }}
+    </ol>
+</nav>

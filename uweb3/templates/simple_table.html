@@ -1,0 +1,12 @@
+<table>
+    [__paginator:render_sortable_head]
+    <tbody>
+        {{ for item in [__paginator:current_page] }}
+        <tr>
+            <td>[item:ID]</td>
+            <td>[item:name]</td>
+        </tr>
+        {{ endfor }}
+    </tbody>
+</table>
+[__paginator:render_nav]

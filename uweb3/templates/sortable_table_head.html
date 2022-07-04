@@ -1,0 +1,19 @@
+<thead>
+    <tr>
+    {{ for key in [__paginator:columns] }}
+        {{ if [__paginator:sort] == [key] and [__paginator:order] == "ASC" }}
+        <th class="descending">[key]
+            <a href="?page=[__paginator:page_number]&sort=[key]&order=DESC"></a>
+        </th>
+        {{ elif [__paginator:sort] == [key] and [__paginator:order] == "DESC" }}
+        <th class="ascending">[key]
+            <a href="?page=[__paginator:page_number]&sort=[key]&order=ASC"></a>
+        </th>
+        {{ else }}
+        <th class="sortable">[key]
+            <a href="?page=[__paginator:page_number]&sort=[key]&order=ASC"></a>
+        </th>
+        {{ endif }}
+    {{ endfor }}
+    </tr>
+</thead>
