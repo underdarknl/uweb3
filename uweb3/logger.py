@@ -1,7 +1,6 @@
 import logging
 from typing import NamedTuple
 
-
 from uweb3.request import IndexedFieldStorage
 
 DEBUG_FORMAT = (

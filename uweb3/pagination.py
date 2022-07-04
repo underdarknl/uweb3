@@ -1,9 +1,10 @@
-from abc import ABC, abstractmethod, abstractproperty
 import math
-from numbers import Number
 import os
+from abc import ABC, abstractmethod, abstractproperty
+from numbers import Number
 from operator import attrgetter, itemgetter
 from typing import Callable, Iterable, List, Union
+
 from uweb3.pagemaker import IndexedFieldStorage
 from uweb3.templateparser import Parser
 
@@ -326,7 +327,7 @@ class OffsetPagination(Base):
                 {item2: value, ...},
                 ...
             ).
-        
+
         args:
             method (Callable): A callable function used to retrieve the data from.
                 read above for more information.
@@ -334,9 +335,9 @@ class OffsetPagination(Base):
                 IndexedFieldStorage present in PageMaker.req.
                 This is used to determine page and sorting/ordering.
             modelargs: The arguments that should be supplied to your
-                callable method. This should be a dictionary that can be 
-                unpacked, and should at least contain the connection 
-                parameter (when using model methods). 
+                callable method. This should be a dictionary that can be
+                unpacked, and should at least contain the connection
+                parameter (when using model methods).
                 It is also possible to overwrite limit and offset, however
                 this is not advisable as the paginator class uses these values.
                 Any other parameters can be passed as long as your callable method

@@ -1,20 +1,20 @@
+import string
 import unittest
-from typing import Dict, List, Iterable
+from functools import wraps
+from itertools import zip_longest
+from test.test_model import DatabaseConnection
+from typing import Dict, Iterable, List
+
 from uweb3 import model
 from uweb3.libs.safestring import HTMLsafestring
 from uweb3.pagination import (
     BasePagination,
     InvalidPageNumber,
+    OffsetPagination,
     PageNumberOutOfRange,
     SortablePagination,
-    OffsetPagination,
 )
 from uweb3.templateparser import Parser
-from functools import wraps
-from itertools import zip_longest
-from test.test_model import DatabaseConnection
-
-import string
 
 
 class Items(model.Record):
