@@ -1,6 +1,7 @@
 """This file holds all the decorators we use in this project."""
 
 import codecs
+import hashlib
 import json
 import pickle
 import time
