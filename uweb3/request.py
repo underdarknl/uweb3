@@ -5,12 +5,10 @@
 # Standard modules
 import cgi
 import http.cookies as cookie
-import io
 import io as stringIO
 import json
 import re
-import sys
-import urllib
+import tempfile
 from urllib.parse import parse_qs, parse_qsl
 
 # uWeb modules
@@ -92,79 +90,11 @@ class Request:
                 except (json.JSONDecodeError, ValueError):
                     pass
             elif self.env["mimetype"] == "multipart/form-data":
-                boundary = (
-                    self.env.get("CONTENT_TYPE", "").split(";")[1].strip().split("=")[1]
-                )
-                request_payload = request_payload.split(
-                    b"--%s" % boundary.encode(self.charset)
-                )
-                self.vars["files"] = {}
-                fields = []
-                for item in request_payload:
-                    item = item.lstrip()
-                    if item.startswith(b"Content-Disposition: form-data"):
-                        nl = 0
-                        prevnl = 0
-                        itemlength = len(item)
-                        name = filename = ContentType = charset = None
-                        while nl < itemlength:
-                            nl = item.index(b"\n", prevnl + len(b"\n"))
-                            header = item[prevnl:nl]
-                            prevnl = nl
-                            if not header.strip():
-                                content = item[nl:].strip()
-                                break
-                            directives = header.strip().split(b";")
-                            for directive in directives:
-                                directive = directive.lstrip()
-                                if directive.startswith(b"name="):
-                                    name = directive.split(b"=", 1)[1][1:-1].decode(
-                                        self.charset
-                                    )
-                                    if (
-                                        name == "_charset_"
-                                    ):  # default charset default case
-                                        self.charset = item[nl:].strip()
-                                        break
-                                if directive.startswith(b"filename="):
-                                    filename = directive.split(b"=", 1)[1][1:-1].decode(
-                                        self.charset
-                                    )
-                                if directive.startswith(b"Content-Type="):
-                                    ContentType = (
-                                        directive.split(b"=", 1)[1]
-                                        .decode(self.charset)
-                                        .split(";")
-                                    )
-                                    if len(ContentType) > 1:
-                                        if ContentType[1].startswith("charset"):
-                                            charset = ContentType[1].split("=")[1]
-                                        # if ContentType[0].startswith("content-type"):
-                                        #     contenttype = (
-                                        #         ContentType[0].split(":")[1].strip()
-                                        #     )
-                        if charset:
-                            content = content.decode(charset)
-                        elif not ContentType:
-                            try:
-                                content = content.decode(charset or self.charset)
-                            except Exception:
-                                pass
-                        if filename:
-                            file_obj = {
-                                "filename": filename,
-                                "ContentType": ContentType,
-                                "content": content,
-                            }
-                            if self.vars["files"].get(name):
-                                self.vars["files"][name].append(file_obj)
-                            else:
-                                self.vars["files"][name] = [file_obj]
-                        else:
-                            fields.append("%s=%s" % (name, content))
+                temp_file = tempfile.TemporaryFile()
+                temp_file.write(request_payload)
+                temp_file.seek(0)
                 self.vars[self.method.lower()] = IndexedFieldStorage(
-                    stringIO.StringIO("&".join(fields)),
-                    environ={"REQUEST_METHOD": "POST"},
+                    temp_file, environ=env, keep_blank_values=True
                 )
             else:
                 self.vars[self.method.lower()] = IndexedFieldStorage(
@@ -311,6 +241,13 @@ class IndexedFieldStorage(cgi.FieldStorage):
         self.skip_lines()
 
     def __repr__(self):
+        if self.filename:
+            return "%s({filename: %s, value: %s, file: %s})" % (
+                self.__class__.__name__,
+                self.filename,
+                self.value,
+                self.file,
+            )
         return "{%s}" % ",".join(
             "'%s': '%s'" % (k, v if len(v) > 1 else v[0]) for k, v in self.iteritems()
         )
