@@ -105,10 +105,10 @@ class Request(BaseRequest):
         self._response = None
         self.logger = logger
         self.errorlogger = errorlogger
-        self.noparse = self.headers.get("accept", "").lower() == "application/json"
 
         if self.method in ("POST", "PUT", "DELETE"):
             request_body_size = 0
+            print(f"""CONTENT_LENGTH: {self.env.get("CONTENT_LENGTH", 0)}""")
             try:
                 request_body_size = int(self.env.get("CONTENT_LENGTH", 0))
             except Exception:
