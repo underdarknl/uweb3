@@ -14,8 +14,21 @@ from urllib.parse import parse_qs, parse_qsl
 # uWeb modules
 from . import response
 
-MAX_COOKIE_LENGTH = 4096
-MAX_REQUEST_BODY_SIZE = 20000000  # 20MB
+
+def headers_from_env(env):
+    for key, value in env.items():
+        if key.startswith("HTTP_"):
+            yield key[5:].lower().replace("_", "-"), value
+
+
+def return_real_remote_addr(env):
+    """Returns the remote ip-address,
+    if there is a proxy involved it will take the last IP addres from the HTTP_X_FORWARDED_FOR list
+    """
+    try:
+        return env["HTTP_X_FORWARDED_FOR"].split(",")[-1].strip()
+    except KeyError:
+        return env["REMOTE_ADDR"]
 
 
 class CookieTooBigError(Exception):
@@ -51,15 +64,21 @@ class Cookie(cookie.SimpleCookie):
             dict.__setitem__(self, key, morsel)
 
 
-class Request:
-    def __init__(self, env, logger, errorlogger):  # noqa: C901
+class BaseRequest:
+    MAX_COOKIE_LENGTH: int = 4 * 1024  # 4KB
+    MAX_REQUEST_BODY_SIZE: int = 20 * 1024 * 1024  # 20MB
+
+    def __init__(self, env):
         self.env = env
-        self.headers = dict(self.headers_from_env(env))
-        self._out_headers = []
-        self._out_status = 200
-        self._response = None
         self.charset = "utf-8"
+
+        self.headers = dict(headers_from_env(env))
+        self.noparse = self.headers.get("accept", "").lower() == "application/json"
+
+        self.env["host"] = self.headers.get("Host", "").strip().lower()
+        self.env["REAL_REMOTE_ADDR"] = return_real_remote_addr(self.env)
         self.method = self.env["REQUEST_METHOD"]
+
         self.vars = {
             "cookie": {
                 name: value.value
@@ -67,7 +86,19 @@ class Request:
             },
             "get": QueryArgsDict(parse_qs(self.env["QUERY_STRING"])),
         }
-        self.env["host"] = self.headers.get("Host", "").strip().lower()
+
+
+class Request(BaseRequest):
+    def __init__(
+        self,
+        env,
+        logger,
+        errorlogger,
+    ):  # noqa: C901
+        super().__init__(env=env)
+        self._out_headers = []
+        self._out_status = 200
+        self._response = None
         self.logger = logger
         self.errorlogger = errorlogger
         self.noparse = self.headers.get("accept", "").lower() == "application/json"
@@ -79,7 +110,7 @@ class Request:
             except Exception:
                 pass
             request_payload = self.env["wsgi.input"].read(
-                min(request_body_size, MAX_REQUEST_BODY_SIZE)
+                min(request_body_size, self.MAX_REQUEST_BODY_SIZE)
             )
             self.input = request_payload
             self.env["mimetype"] = self.env.get("CONTENT_TYPE", "").split(";")[0]
@@ -164,9 +195,13 @@ class Request:
             When True, the cookie is only used for http(s) requests, and is not
             accessible through Javascript (DOM).
         """
-        if isinstance(value, (str)) and len(value.encode("utf-8")) >= MAX_COOKIE_LENGTH:
+        if (
+            isinstance(value, (str))
+            and len(value.encode("utf-8")) >= self.MAX_COOKIE_LENGTH
+        ):
             raise CookieTooBigError(
-                "Cookie is larger than %d bytes and wont be set" % MAX_COOKIE_LENGTH
+                "Cookie is larger than %d bytes and wont be set"
+                % self.MAX_COOKIE_LENGTH
             )
 
         new_cookie = Cookie({key: value})
@@ -277,13 +312,3 @@ class QueryArgsDict(dict):
             return self[key]
         except KeyError:
             return []
-
-
-def return_real_remote_addr(env):
-    """Returns the remote ip-address,
-    if there is a proxy involved it will take the last IP addres from the HTTP_X_FORWARDED_FOR list
-    """
-    try:
-        return env["HTTP_X_FORWARDED_FOR"].split(",")[-1].strip()
-    except KeyError:
-        return env["REMOTE_ADDR"]
