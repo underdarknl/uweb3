@@ -15,7 +15,6 @@ import sys
 import time
 from importlib import reload
 from wsgiref.simple_server import make_server
-from wsgiref.validate import validator
 
 # Package modules
 from . import pagemaker, request
@@ -422,7 +421,7 @@ class uWeb:
             port = devconfig.get("port", port)
             hotreload = devconfig.get("reload", False) in ("True", "true")
 
-        server = make_server(host, int(port), validator(self))
+        server = make_server(host, int(port), self)
         print(
             f"Running µWeb3 server on http://{server.server_address[0]}:{server.server_address[1]}"
         )
