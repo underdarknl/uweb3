@@ -276,11 +276,10 @@ class BasePageMaker(Base):
         self.req = req
         self.cookies = req.vars["cookie"]
         self.get = req.vars["get"]
-        self.post = req.vars["post"] if "post" in req.vars else IndexedFieldStorage()
-        self.put = req.vars["put"] if "put" in req.vars else IndexedFieldStorage()
-        self.delete = (
-            req.vars["delete"] if "delete" in req.vars else IndexedFieldStorage()
-        )
+        self.post = req.vars["post"]
+        self.put = req.vars["put"]
+        self.delete = req.vars["delete"]
+
         self.files = req.vars["files"] if "files" in req.vars else {}
         self.config = config
         self.options = config.options if config else {}

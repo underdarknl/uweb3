@@ -85,6 +85,10 @@ class BaseRequest:
                 for name, value in Cookie(self.env.get("HTTP_COOKIE")).items()
             },
             "get": QueryArgsDict(parse_qs(self.env["QUERY_STRING"])),
+            "post": IndexedFieldStorage(),
+            "put": IndexedFieldStorage(),
+            "delete": IndexedFieldStorage(),
+            "files": IndexedFieldStorage(),
         }
 
 
