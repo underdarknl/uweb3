@@ -227,7 +227,6 @@ class uWeb:
         response and returns a response iterator.
         """
         req = request.Request(env, self.logger, self.errorlogger)
-        req.env["REAL_REMOTE_ADDR"] = request.return_real_remote_addr(req.env)
         response = None
         method = "_NotFound"
         args = None
@@ -305,6 +304,7 @@ class uWeb:
             response.text = ""
 
         self._logrequest(req, response)
+        # XXX: PEP 3333 says we should check for errors in headers
         start_response(response.status, response.headerlist)
         try:
             yield response.text.encode(response.charset)
