@@ -160,11 +160,6 @@ class Request(BaseRequest):
             headers=headers,
         )
 
-    def headers_from_env(self, env):
-        for key, value in env.items():
-            if key.startswith("HTTP_"):
-                yield key[5:].lower().replace("_", "-"), value
-
     def AddCookie(self, key, value, **attrs):
         """Adds a new cookie header to the response.
 
