@@ -9,6 +9,8 @@ import io as stringIO
 import json
 import re
 import tempfile
+from typing import Union
+import typing
 from urllib.parse import parse_qs, parse_qsl
 
 # uWeb modules
@@ -19,16 +21,6 @@ def headers_from_env(env):
     for key, value in env.items():
         if key.startswith("HTTP_"):
             yield key[5:].lower().replace("_", "-"), value
-
-
-def return_real_remote_addr(env):
-    """Returns the remote ip-address,
-    if there is a proxy involved it will take the last IP addres from the HTTP_X_FORWARDED_FOR list
-    """
-    try:
-        return env["HTTP_X_FORWARDED_FOR"].split(",")[-1].strip()
-    except KeyError:
-        return env["REMOTE_ADDR"]
 
 
 class CookieTooBigError(Exception):
@@ -71,13 +63,15 @@ class BaseRequest:
     def __init__(self, env):
         self.env = env
         self.charset = "utf-8"
-
         self.headers = dict(headers_from_env(env))
         self.noparse = self.headers.get("accept", "").lower() == "application/json"
 
         self.env["host"] = self.headers.get("Host", "").strip().lower()
-        self.env["REAL_REMOTE_ADDR"] = return_real_remote_addr(self.env)
+        self.env["REAL_REMOTE_ADDR"] = self._return_real_remote_addr()
+        self.env["mimetype"] = self._get_mimetype()
+
         self.method = self.env["REQUEST_METHOD"]
+        self.path = self.env["PATH_INFO"]
 
         self.vars = {
             "cookie": {
@@ -90,6 +84,72 @@ class BaseRequest:
             "delete": IndexedFieldStorage(),
             "files": IndexedFieldStorage(),
         }
+
+    def _get_mimetype(self):
+        return self.env.get("CONTENT_TYPE", "").split(";")[0]
+
+    def _return_real_remote_addr(self):
+        """Returns the remote ip-address,
+        if there is a proxy involved it will take the last IP addres from the HTTP_X_FORWARDED_FOR list
+        """
+        try:
+            return self.env["HTTP_X_FORWARDED_FOR"].split(",")[-1].strip()
+        except KeyError:
+            return self.env["REMOTE_ADDR"]
+
+
+class DataParser:
+    def __init__(
+        self,
+        env,
+        max_size: int,
+        content_length: int,
+        charset: str,
+    ):
+        self.env = env
+        self.charset = charset
+        self.input = env["wsgi.input"]
+        self.mimetype = env["mimetype"]
+
+        self.max_size = max_size
+        self.content_length = content_length
+        self.request_payload = None
+        self._parse_functions = {
+            "application/json": self._parse_multipart,
+            "multipart/form-data": self._parse_json,
+            "application/x-www-form-urlencoded": self._parse_urlencoded,
+        }
+
+    def parse(self):
+        # TODO: Handle streams
+        handler = self._parse_functions.get(self.mimetype, self._parse_regular)
+        print(self.content_length)
+        self.request_payload = self.input.read(min(self.content_length, self.max_size))
+        print(self.max_size)
+        print(len(self.request_payload))
+        return handler()
+        # return self.request_payload
+
+    def _parse_multipart(self):
+        temp_file = tempfile.TemporaryFile()
+        temp_file.write(self.request_payload)
+        temp_file.seek(0)
+        return IndexedFieldStorage(temp_file, environ=self.env, keep_blank_values=True)
+
+    def _parse_json(self):
+        try:
+            return json.loads(self.request_payload)
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+    def _parse_urlencoded(self):
+        return self._parse_regular()
+
+    def _parse_regular(self):
+        return IndexedFieldStorage(
+            stringIO.StringIO(self.request_payload.decode(self.charset)),
+            environ={"REQUEST_METHOD": "POST"},
+        )
 
 
 class Request(BaseRequest):
@@ -107,39 +167,30 @@ class Request(BaseRequest):
         self.errorlogger = errorlogger
 
         if self.method in ("POST", "PUT", "DELETE"):
-            request_body_size = 0
-            print(f"""CONTENT_LENGTH: {self.env.get("CONTENT_LENGTH", 0)}""")
-            try:
-                request_body_size = int(self.env.get("CONTENT_LENGTH", 0))
-            except Exception:
-                pass
-            request_payload = self.env["wsgi.input"].read(
-                min(request_body_size, self.MAX_REQUEST_BODY_SIZE)
-            )
-            self.input = request_payload
-            self.env["mimetype"] = self.env.get("CONTENT_TYPE", "").split(";")[0]
+            self.process_request()
 
-            if self.env["mimetype"] == "application/json":
-                try:
-                    self.vars[self.method.lower()] = json.loads(request_payload)
-                except (json.JSONDecodeError, ValueError):
-                    pass
-            elif self.env["mimetype"] == "multipart/form-data":
-                temp_file = tempfile.TemporaryFile()
-                temp_file.write(request_payload)
-                temp_file.seek(0)
-                self.vars[self.method.lower()] = IndexedFieldStorage(
-                    temp_file, environ=env, keep_blank_values=True
-                )
-            else:
-                self.vars[self.method.lower()] = IndexedFieldStorage(
-                    stringIO.StringIO(request_payload.decode(self.charset)),
-                    environ={"REQUEST_METHOD": "POST"},
-                )
+    def process_request(self):
+        if "CONTENT_LENGTH" not in self.env:
+            # We should not allowed requests where CONTENT_LENGTH is not specified
+            # https://peps.python.org/pep-3333#specification-details
+            # TODO: Throw error and log
+            raise NotImplementedError()
 
-    @property
-    def path(self):
-        return self.env["PATH_INFO"]
+        content_length = self.env["CONTENT_LENGTH"]
+
+        try:
+            content_length = int(content_length)
+        except Exception:
+            # TODO: If CONTENT_LENGTH is not a valid integer stop processing here.
+            raise NotImplementedError()
+
+        parser = DataParser(
+            env=self.env,
+            max_size=self.MAX_REQUEST_BODY_SIZE,
+            content_length=content_length,
+            charset=self.charset,
+        )
+        self.vars[self.method.lower()] = parser.parse()
 
     @property
     def response(self):
