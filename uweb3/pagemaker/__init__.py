@@ -18,12 +18,12 @@ from pymysql import Error as pymysqlerr
 
 import uweb3
 from uweb3.logger import (
+    DebuggingDetails,
+    UwebDebuggingAdapter,
+    default_data_scrubber,
     setup_debug_logger,
     setup_debug_stream_logger,
     setup_error_logger,
-    UwebDebuggingAdapter,
-    DebuggingDetails,
-    default_data_scrubber,
 )
 from uweb3.request import IndexedFieldStorage
 
@@ -282,7 +282,7 @@ class BasePageMaker(Base):
         self.delete = req.vars["delete"]
         self.json = req.vars["json"]
         self.files = req.vars["files"]
-        
+
         self.config = config
         self.options = config.options if config else {}
         self.debug = DebuggerMixin in self.__class__.__mro__

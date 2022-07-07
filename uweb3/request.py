@@ -5,8 +5,8 @@
 # Standard modules
 import cgi
 import http.cookies as cookie
-import json
 import io
+import json
 import re
 from urllib.parse import parse_qs, parse_qsl
 
@@ -251,7 +251,9 @@ class DataParser:
 
         self.max_size = max_size
         self.content_length = content_length
-        self.request_payload = LimitedStream(env["wsgi.input"], min(self.content_length, max_size))
+        self.request_payload = LimitedStream(
+            env["wsgi.input"], min(self.content_length, max_size)
+        )
         self._parse_functions = {
             "application/json": self._parse_json,
             "multipart/form-data": self._parse_multipart,
@@ -268,7 +270,7 @@ class DataParser:
             self.request_payload,
             environ=self.env,
             keep_blank_values=True,
-            limit=self.max_size
+            limit=self.max_size,
         )
 
     def _parse_json(self):
@@ -497,7 +499,7 @@ class IndexedFieldStorage(cgi.FieldStorage):
         try:
             return ((key, self.getlist(key)) for key in self)
         except Exception:
-            return (())
+            return ()
 
     def items(self):
         return list(self.iteritems())
