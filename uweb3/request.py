@@ -247,12 +247,11 @@ class DataParser:
     ):
         self.env = env
         self.charset = charset
-        self.input: io.IOBase = env["wsgi.input"]
         self.mimetype = env["mimetype"]
 
         self.max_size = max_size
         self.content_length = content_length
-        self.request_payload = LimitedStream(self.input, self.content_length)
+        self.request_payload = LimitedStream(env["wsgi.input"], min(self.content_length, max_size))
         self._parse_functions = {
             "application/json": self._parse_json,
             "multipart/form-data": self._parse_multipart,
@@ -269,11 +268,12 @@ class DataParser:
             self.request_payload,
             environ=self.env,
             keep_blank_values=True,
+            limit=self.max_size
         )
 
     def _parse_json(self):
         try:
-            return json.loads(self.request_payload.read())
+            return json.loads(self.request_payload.read(size=self.max_size))
         except (json.JSONDecodeError, ValueError):
             pass
 
@@ -338,7 +338,6 @@ class Request(BaseRequest):
     def process_request(self):
         if self.method not in ("POST", "PUT", "DELETE"):
             return
-
         if "CONTENT_LENGTH" not in self.env:
             # We should not allowed requests where CONTENT_LENGTH is not specified
             # https://peps.python.org/pep-3333#specification-details
@@ -495,7 +494,10 @@ class IndexedFieldStorage(cgi.FieldStorage):
     FIELD_AS_ARRAY = re.compile(r"(.*)\[(.*)\]")
 
     def iteritems(self):
-        return ((key, self.getlist(key)) for key in self)
+        try:
+            return ((key, self.getlist(key)) for key in self)
+        except:
+            return (())
 
     def items(self):
         return list(self.iteritems())
