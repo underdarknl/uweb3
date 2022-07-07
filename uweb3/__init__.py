@@ -234,7 +234,8 @@ class uWeb:
             pagemaker_instance = PageMaker(
                 req, config=self.config, executing_path=self.executing_path
             )
-            response = pagemaker_instance.BadRequest(exc)
+            response = pagemaker_instance.BadRequest(str(exc))
+            return self._finish_response(response, req, start_response)
 
         response = None
         method = "_NotFound"
@@ -310,6 +311,9 @@ class uWeb:
             response = pagemaker_instance._PostRequest(response) or response
         pagemaker_instance.CloseRequestConnections()
 
+        return self._finish_response(response, req, start_response)
+
+    def _finish_response(self, response, req, start_response):
         # we should at least send out something to make sure we are wsgi compliant.
         if not response.text:
             response.text = ""
