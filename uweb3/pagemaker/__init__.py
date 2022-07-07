@@ -237,7 +237,7 @@ class LoginMixin:
     and related database/cookie interaction"""
 
     def _ReadSession(self):
-        raise NotImplementedError()
+        return NotImplemented
 
     @property
     def user(self):
