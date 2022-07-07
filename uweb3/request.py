@@ -480,13 +480,11 @@ class IndexedFieldStorage(cgi.FieldStorage):
     """Adaption of cgi.FieldStorage with a few specific changes.
 
     Notable differences with cgi.FieldStorage:
-      1) `environ.QUERY_STRING` does not add to the returned FieldStorage
-         This way we maintain a strict separation between POST and GET variables.
-      2) Field names in the form 'foo[bar]=baz' will generate a dictionary:
+      1) Field names in the form 'foo[bar]=baz' will generate a dictionary:
            foo = {'bar': 'baz'}
          Multiple statements of the form 'foo[%s]' will expand this dictionary.
          Multiple occurrances of 'foo[bar]' will result in unspecified behavior.
-      3) Automatically attempts to parse all input as UTF8. This is the proposed
+      2) Automatically attempts to parse all input as UTF8. This is the proposed
          standard as of 2005: http://tools.ietf.org/html/rfc3986.
     """
 
