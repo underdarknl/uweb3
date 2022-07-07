@@ -103,7 +103,7 @@ class Router:
                     f"µWeb3 could not find a route handler called '{handler}' in any of the PageMakers, your application will not start."
                 )
             if not hasattr(page_maker, handler):
-                raise NoRouteError(f'Route {handler} not present in {page_maker}')
+                raise NoRouteError(f"Route {handler} not present in {page_maker}")
             req_routes.append(
                 (
                     re.compile(pattern + "$", re.UNICODE),
@@ -227,9 +227,19 @@ class uWeb:
         response and returns a response iterator.
         """
         req = request.Request(env, self.logger, self.errorlogger)
+        try:
+            req.process_request()
+        except request.HeaderError as exc:
+            self.log_request_error(req)
+            pagemaker_instance = PageMaker(
+                req, config=self.config, executing_path=self.executing_path
+            )
+            response = pagemaker_instance.BadRequest(exc)
+
         response = None
         method = "_NotFound"
         args = None
+
         try:
             method, args, hostargs, page_maker = self.router(
                 req.path, req.env["REQUEST_METHOD"], req.env["host"]
@@ -239,6 +249,7 @@ class uWeb:
             # If this happens we default to the initial pagemaker because we don't know what the target pagemaker should be.
             # Then we set an internalservererror and move on
             page_maker = self.initial_pagemaker
+
         try:
             # instantiate the pagemaker for this request
             pagemaker_instance = page_maker(
