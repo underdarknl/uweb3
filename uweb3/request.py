@@ -496,7 +496,7 @@ class IndexedFieldStorage(cgi.FieldStorage):
     def iteritems(self):
         try:
             return ((key, self.getlist(key)) for key in self)
-        except:
+        except Exception:
             return (())
 
     def items(self):
