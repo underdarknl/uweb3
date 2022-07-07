@@ -368,11 +368,35 @@ class uWeb:
         protocol = req.env.get("SERVER_PROTOCOL")
         if not response.log:
             return self.logger.info(
-                f"""{host} - - [{date}] \"{method} {path} {get} {status} {protocol}\""""
+                """%s - - [%s] \"%s %s %s %s %s\"""",
+                host,
+                date,
+                method,
+                path,
+                get,
+                status,
+                protocol,
             )
         data = response.log
         return self.logger.info(
-            f"""{host} - - [{date}] \"{method} {path} {get} {status} {protocol} {data}\""""
+            """%s - - [%s] \"%s %s %s %s %s %s\"""",
+            host,
+            date,
+            method,
+            path,
+            get,
+            status,
+            protocol,
+            data,
+        )
+
+    def log_request_error(self, req):
+        host = req.env["HTTP_HOST"].split(":")[0]
+        date = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        path = req.path
+        protocol = req.env.get("SERVER_PROTOCOL")
+        return self.errorlogger.exception(
+            """%s - - [%s] \"%s %s\"""", host, date, path, protocol
         )
 
     def logerror(self, req, page_maker, pythonmethod, args):
@@ -384,7 +408,15 @@ class uWeb:
         protocol = req.env.get("SERVER_PROTOCOL")
         args = [str(arg) for arg in args]
         return self.errorlogger.exception(
-            f"""{host} - - [{date}] \"{method} {path} {protocol} {page_maker}.{pythonmethod}({args})\""""
+            """%s - - [%s] \"%s %s %s %s.%s(%s)\"""",
+            host,
+            date,
+            method,
+            path,
+            protocol,
+            page_maker,
+            pythonmethod,
+            args,
         )
 
     def get_response(self, req, page_maker, method, args):
