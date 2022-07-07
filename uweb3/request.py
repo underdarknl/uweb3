@@ -363,13 +363,17 @@ class Request(BaseRequest):
             charset=self.charset,
         )
         data = parser.parse()
-        
-        for key, values in data.items():
-            for v in values:
-                if hasattr(v, 'filename'):
-                    self.vars['files'].append(v)
-                    del data[v]
-                    
+
+        # TODO: Its not allowed to remove items from a FieldStorage object
+        # so we can not actually delete the files from the post object.
+        # This will also mean that the whole file object will be dumped
+        # into the log, resulting in a logfile with the contents of the whole
+        # file on every request.
+        for _, values in data.items():
+            for f in values:
+                if hasattr(f, "filename"):
+                    self.vars["files"].append(f)
+
         self.vars[self.method.lower()] = data
         # XXX: JSON data can not be an instance of cgi.FieldStorage, so we cannot
         # create an IndexedFieldstorage for this type of request.
@@ -562,6 +566,7 @@ class IndexedFieldStorage(cgi.FieldStorage):
                 return [value.value]
         else:
             return []
+
 
 class QueryArgsDict(dict):
     def getfirst(self, key, default=None):
