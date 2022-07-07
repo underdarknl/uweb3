@@ -532,6 +532,35 @@ class IndexedFieldStorage(cgi.FieldStorage):
             for key, value in self.iteritems()
         }
 
+    def getfirst(self, key, default=None):
+        """Return the first value received.
+
+        If the first value has a filename return the whole object
+        this allows access to value.file, value.filename, etc.
+        """
+        if key in self:
+            value = self[key]
+            if isinstance(value, list):
+                return value[0].value
+            elif value.filename:
+                return value
+            else:
+                return value.value
+        else:
+            return default
+
+    def getlist(self, key):
+        """Return list of received values."""
+        if key in self:
+            value = self[key]
+            if isinstance(value, list):
+                return [x.value if not x.filename else x for x in value]
+            if value.filename:
+                return [value]
+            else:
+                return [value.value]
+        else:
+            return []
 
 class QueryArgsDict(dict):
     def getfirst(self, key, default=None):
