@@ -5,12 +5,9 @@
 # Standard modules
 import cgi
 import http.cookies as cookie
-import io as stringIO
 import json
+import io
 import re
-import tempfile
-from typing import Union
-import typing
 from urllib.parse import parse_qs, parse_qsl
 
 # uWeb modules
@@ -250,48 +247,78 @@ class DataParser:
     ):
         self.env = env
         self.charset = charset
-        self.input = env["wsgi.input"]
+        self.input: io.IOBase = env["wsgi.input"]
         self.mimetype = env["mimetype"]
 
         self.max_size = max_size
         self.content_length = content_length
-        self.request_payload = None
+        self.request_payload = LimitedStream(self.input, self.content_length)
         self._parse_functions = {
-            "application/json": self._parse_multipart,
-            "multipart/form-data": self._parse_json,
-            "application/x-www-form-urlencoded": self._parse_urlencoded,
+            "application/json": self._parse_json,
+            "multipart/form-data": self._parse_multipart,
+            "application/x-www-form-urlencoded": self._parse_multipart,
         }
 
     def parse(self):
         # TODO: Handle streams
-        handler = self._parse_functions.get(self.mimetype, self._parse_regular)
-        print(self.content_length)
-        self.request_payload = self.input.read(min(self.content_length, self.max_size))
-        print(self.max_size)
-        print(len(self.request_payload))
+        handler = self._parse_functions.get(self.mimetype, self._parse_multipart)
         return handler()
-        # return self.request_payload
 
     def _parse_multipart(self):
-        temp_file = tempfile.TemporaryFile()
-        temp_file.write(self.request_payload)
-        temp_file.seek(0)
-        return IndexedFieldStorage(temp_file, environ=self.env, keep_blank_values=True)
+        return IndexedFieldStorage(
+            self.request_payload,
+            environ=self.env,
+            keep_blank_values=True,
+        )
 
     def _parse_json(self):
         try:
-            return json.loads(self.request_payload)
+            return json.loads(self.request_payload.read())
         except (json.JSONDecodeError, ValueError):
             pass
 
-    def _parse_urlencoded(self):
-        return self._parse_regular()
 
-    def _parse_regular(self):
-        return IndexedFieldStorage(
-            stringIO.StringIO(self.request_payload.decode(self.charset)),
-            environ={"REQUEST_METHOD": "POST"},
-        )
+class BaseRequest:
+    MAX_COOKIE_LENGTH: int = 4 * 1024  # 4KB
+    MAX_REQUEST_BODY_SIZE: int = 20 * 1024 * 1024  # 20MB
+
+    def __init__(self, env):
+        self.env = env
+        self.charset = "utf-8"
+        self.headers = dict(headers_from_env(env))
+        self.noparse = self.headers.get("accept", "").lower() == "application/json"
+
+        self.env["host"] = self.headers.get("Host", "").strip().lower()
+        self.env["REAL_REMOTE_ADDR"] = self._return_real_remote_addr()
+        self.env["mimetype"] = self._get_mimetype()
+
+        self.method = self.env["REQUEST_METHOD"]
+        self.path = self.env["PATH_INFO"]
+
+        self.vars = {
+            "cookie": {
+                name: value.value
+                for name, value in Cookie(self.env.get("HTTP_COOKIE")).items()
+            },
+            "get": QueryArgsDict(parse_qs(self.env["QUERY_STRING"])),
+            "post": IndexedFieldStorage(),
+            "put": IndexedFieldStorage(),
+            "json": {},
+            "delete": IndexedFieldStorage(),
+            "files": [],
+        }
+
+    def _get_mimetype(self):
+        return self.env.get("CONTENT_TYPE", "").split(";")[0]
+
+    def _return_real_remote_addr(self):
+        """Returns the remote ip-address,
+        if there is a proxy involved it will take the last IP addres from the HTTP_X_FORWARDED_FOR list
+        """
+        try:
+            return self.env["HTTP_X_FORWARDED_FOR"].split(",")[-1].strip()
+        except KeyError:
+            return self.env["REMOTE_ADDR"]
 
 
 class Request(BaseRequest):
@@ -308,23 +335,26 @@ class Request(BaseRequest):
         self.logger = logger
         self.errorlogger = errorlogger
 
-        if self.method in ("POST", "PUT", "DELETE"):
-            self.process_request()
-
     def process_request(self):
+        if self.method not in ("POST", "PUT", "DELETE"):
+            return
+
         if "CONTENT_LENGTH" not in self.env:
             # We should not allowed requests where CONTENT_LENGTH is not specified
             # https://peps.python.org/pep-3333#specification-details
-            # TODO: Throw error and log
-            raise NotImplementedError()
+            raise MissingContentLengthError(
+                "No CONTENT_LENGTH header present in the request."
+            )
 
         content_length = self.env["CONTENT_LENGTH"]
 
         try:
             content_length = int(content_length)
-        except Exception:
-            # TODO: If CONTENT_LENGTH is not a valid integer stop processing here.
-            raise NotImplementedError()
+        except Exception as exc:
+            raise InvalidContentLengthError(
+                "The CONTENT_LENGTH header has an invalid"
+                + f"format: {content_length!r}"
+            ) from exc
 
         parser = DataParser(
             env=self.env,
@@ -332,7 +362,23 @@ class Request(BaseRequest):
             content_length=content_length,
             charset=self.charset,
         )
-        self.vars[self.method.lower()] = parser.parse()
+        data = parser.parse()
+        
+        for key, values in data.items():
+            for v in values:
+                if hasattr(v, 'filename'):
+                    self.vars['files'].append(v)
+                    del data[v]
+                    
+        self.vars[self.method.lower()] = data
+        # XXX: JSON data can not be an instance of cgi.FieldStorage, so we cannot
+        # create an IndexedFieldstorage for this type of request.
+        # We could create a class that has the same behaviour as the
+        # IndexedFieldStorage, or we could just point out that json
+        # data is available in the PageMaker.json attribute, which is
+        # a dictionary by default.
+        if parser.mimetype == "application/json":
+            self.vars["json"] = self.vars[self.method.lower()]
 
     @property
     def response(self):
