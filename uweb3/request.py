@@ -251,9 +251,7 @@ class DataParser:
 
         self.max_size = max_size
         self.content_length = content_length
-        self.request_payload = LimitedStream(
-            env["wsgi.input"], min(self.content_length, max_size)
-        )
+        self.request_payload = LimitedStream(env["wsgi.input"], self.content_length)
         self._parse_functions = {
             "application/json": self._parse_json,
             "multipart/form-data": self._parse_multipart,
@@ -267,7 +265,7 @@ class DataParser:
 
     def _parse_multipart(self):
         return IndexedFieldStorage(
-            self.request_payload,
+            io.BytesIO(self.request_payload.read(size=self.max_size)),
             environ=self.env,
             keep_blank_values=True,
             limit=self.max_size,
@@ -353,7 +351,7 @@ class Request(BaseRequest):
             content_length = int(content_length)
         except Exception as exc:
             raise InvalidContentLengthError(
-                "The CONTENT_LENGTH header has an invalid"
+                "The CONTENT_LENGTH header has an invalid "
                 + f"format: {content_length!r}"
             ) from exc
 
@@ -498,7 +496,7 @@ class IndexedFieldStorage(cgi.FieldStorage):
     def iteritems(self):
         try:
             return ((key, self.getlist(key)) for key in self)
-        except Exception:
+        except:
             return ()
 
     def items(self):
