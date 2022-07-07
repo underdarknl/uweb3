@@ -389,9 +389,9 @@ class Request(BaseRequest):
     def Redirect(self, location, httpcode=307):
         REDIRECT_PAGE = (
             "<!DOCTYPE html><html><head><title>Page moved</title></head>"
-            '<body>Page moved, please follow <a href="{}">this link</a>'
+            f'<body>Page moved, please follow <a href="{location}">this link</a>'
             "</body></html>"
-        ).format(location)
+        )
 
         headers = {"Location": location}
         if self.response.headers.get("Set-Cookie"):
