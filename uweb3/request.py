@@ -49,6 +49,10 @@ class CookieTooBigError(Exception):
     """Error class for cookie when size is bigger than 4096 bytes"""
 
 
+class ClientDisconnected(Exception):
+    """"""
+
+
 class Cookie(cookie.SimpleCookie):
     """Cookie class that uses the most specific value for a cookie name.
 
