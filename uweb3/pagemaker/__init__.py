@@ -274,13 +274,15 @@ class BasePageMaker(Base):
         super(BasePageMaker, self).__init__()
         self.__SetupPaths(executing_path)
         self.req = req
+
         self.cookies = req.vars["cookie"]
         self.get = req.vars["get"]
         self.post = req.vars["post"]
         self.put = req.vars["put"]
         self.delete = req.vars["delete"]
-
-        self.files = req.vars["files"] if "files" in req.vars else {}
+        self.json = req.vars["json"]
+        self.files = req.vars["files"]
+        
         self.config = config
         self.options = config.options if config else {}
         self.debug = DebuggerMixin in self.__class__.__mro__
@@ -422,6 +424,11 @@ class BasePageMaker(Base):
             self.req.path
         )
         return response.Response(content=error, content_type="text/plain", httpcode=500)
+
+    def BadRequest(self, message):
+        return response.Response(
+            content=message, content_type="text/plain", httpcode=400
+        )
 
     @staticmethod
     def Reload():
