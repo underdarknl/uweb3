@@ -23,6 +23,28 @@ def headers_from_env(env):
             yield key[5:].lower().replace("_", "-"), value
 
 
+class RequestError(Exception):
+    """Base class for request errors"""
+
+
+class HeaderError(RequestError):
+    """Base class for HTTP request header errors"""
+
+
+class MissingContentLengthError(HeaderError):
+    """Error that is raised when the CONTENT_LENGTH header is missing"""
+
+
+class IncorrectContentLengthError(HeaderError):
+    """Error that is raised when the supplied CONTENT_LENGTH does
+    not match the provided data length."""
+
+
+class InvalidContentLengthError(HeaderError):
+    """Error that is raised when the provided CONTENT_LENGTH header
+    is of an invalid format (non integer)."""
+
+
 class CookieTooBigError(Exception):
     """Error class for cookie when size is bigger than 4096 bytes"""
 
