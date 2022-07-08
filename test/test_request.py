@@ -27,6 +27,7 @@ def CreateRequest(headers: Union[dict, None] = None):
         "REQUEST_METHOD": "GET",
         "PATH_INFO": "path",
         "QUERY_STRING": "",
+        "CONTENT_TYPE": "application/x-www-form-urlencoded",
         "HTTP_X_FORWARDED_FOR": "127.0.0.1",
         "HTTP_HOST": "test",
     }
@@ -264,7 +265,7 @@ class IndexedFieldStorageTest(unittest.TestCase):
             req.process_request()
 
     def testInvalidContentLengthHeader(self):
-        """Validate that an error is raised when the content_length 
+        """Validate that an error is raised when the content_length
         header is an invalid integer"""
         data = urlencode({"username": "username"})
         fp = stringIO.BytesIO(data.encode())
