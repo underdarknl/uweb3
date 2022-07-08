@@ -619,6 +619,7 @@ class CookieTests(unittest.TestCase):
     def setUp(self):
         """Sets up the tests for the VersionedRecord class."""
         self.connection = CookieConnection()
+        Session.autocommit(self.connection, True)
 
     def get_response_cookie_header(self):
         return self.connection.request_object.response.headers.setdefault(
@@ -675,12 +676,20 @@ def DatabaseConnection():
 
 
 def CookieConnection():
+    req = request.Request(
+        {
+            "REQUEST_METHOD": "GET",
+            "host": "localhost",
+            "QUERY_STRING": "",
+            "HTTP_X_FORWARDED_FOR": "127.0.0.1",
+            "PATH_INFO": "info"
+        },
+        None,
+        None,
+    )
+    req.process_request()
     return safe_cookie.Connect(
-        request.Request(
-            {"REQUEST_METHOD": "GET", "host": "localhost", "QUERY_STRING": ""},
-            None,
-            None,
-        ),
+        req,
         {},
         "secret",
     )
