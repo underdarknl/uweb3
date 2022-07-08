@@ -189,6 +189,65 @@ class IndexedFieldStorageTest(unittest.TestCase):
         post_data = req.vars["post"]
         self.assertEqual(post_data.__dict__, expected)
 
+    @parameterize(
+        "input, expected, max_size",
+        [
+            ({"username": "username"}, {"u": ""}, 1),
+            ({"username": "username"}, {"us": ""}, 2),
+            ({"username": "username"}, {"username": "u"}, 10),
+            ({"username": "username"}, {"username": "username"}, 17),
+        ],
+    )
+    def testRequestMaxuploadSetting(self, input, expected, max_size):
+        """Validate that the request does not read further than the
+        specified MAX_REQUEST_BODY_SIZE attribute from the request class"""
+        data = urlencode(input)
+        fp = stringIO.BytesIO(data.encode())
+
+        req = CreateRequest(
+            {
+                "wsgi.input": fp,
+                "CONTENT_LENGTH": len(data),
+                "REQUEST_METHOD": "POST",
+            }
+        )
+        req.MAX_REQUEST_BODY_SIZE = max_size
+        req.process_request()
+        post_data = req.vars["post"]
+        self.assertEqual(post_data.__dict__, expected)
+
+    @parameterize(
+        "input, expected, max_size, content_length",
+        [
+            ({"username": "username"}, {"u": ""}, 1, 17),
+            ({"username": "username"}, {"us": ""}, 2, 17),
+            ({"username": "username"}, {"username": "u"}, 10, 17),
+            ({"username": "username"}, {"username": "username"}, 17, 17),
+            ({"username": "username"}, {"u": ""}, 17, 1),
+            ({"username": "username"}, {"username": "usernam"}, 17, 16),
+        ],
+    )
+    def testRequestMaxuploadSettingAndContentLength(
+        self, input, expected, max_size, content_length
+    ):
+        """Validate that the request does not read further than the maximum
+        allowed size specified in the request class, even if the content-length
+        attribute is set and or longer than said value on request class."""
+        data = urlencode(input)
+        fp = stringIO.BytesIO(data.encode())
+
+        req = CreateRequest(
+            {
+                "wsgi.input": fp,
+                "CONTENT_LENGTH": content_length,
+                "REQUEST_METHOD": "POST",
+            }
+        )
+        req.MAX_REQUEST_BODY_SIZE = max_size
+        req.process_request()
+        post_data = req.vars["post"]
+        self.assertEqual(post_data.__dict__, expected)
+
     def testMissingContentLengthHeader(self):
         """Validate that an error is raised when attempting to post data
         without a content-length header present"""
