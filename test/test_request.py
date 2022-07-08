@@ -9,16 +9,34 @@
 # pylint: disable-msg=R0904
 
 # Standard modules
-try:
-    import cStringIO as stringIO
-except ImportError:
-    import io as stringIO
+import cgi
+import io as stringIO
+from typing import Union
 
 import unittest
 import urllib
 
 # Unittest target
 from uweb3 import request
+
+
+def CreateRequest(headers: Union[dict, None] = None):
+    default_headers = {
+        "REQUEST_METHOD": "GET",
+        "PATH_INFO": "path",
+        "QUERY_STRING": "",
+        "CONTENT_TYPE": "application/json",
+        "HTTP_X_FORWARDED_FOR": "127.0.0.1",
+        "HTTP_HOST": "test",
+    }
+    if headers:
+        default_headers.update(headers)
+
+    return request.Request(
+        default_headers,
+        None,
+        None,
+    )
 
 
 class IndexedFieldStorageTest(unittest.TestCase):
@@ -79,6 +97,54 @@ class IndexedFieldStorageTest(unittest.TestCase):
         self.assertEqual(form_data[0], {"first": "1", "second": "2"})
         self.assertEqual(form_data[1], "third")
         self.assertEqual(form_data[2], "fourth")
+
+    def testRequestCorrectValues(self):
+        """Validate that the attributes on the request object are set accordingly"""
+        req = CreateRequest()
+        self.assertEqual(req.method, "GET")
+        self.assertEqual(req.path, "path")
+        self.assertEqual(req.env["mimetype"], "application/json")
+        self.assertEqual(req.env["HTTP_X_FORWARDED_FOR"], "127.0.0.1")
+        self.assertEqual(req.env["HTTP_HOST"], "test")
+
+    def testGetQueryString(self):
+        """Validate that the request GET parameters are parsed correctly"""
+        req = CreateRequest({"QUERY_STRING": "foo=hello&bar=world"})
+        self.assertDictEqual(req.vars["get"], {"foo": ["hello"], "bar": ["world"]})
+
+    def testGetQueryStringMultiple(self):
+        """Validate that the request GET parameters are parsed correctly"""
+        req = CreateRequest({"QUERY_STRING": "d=third&d[first]=1&d[second]=2&d=fourth"})
+        self.assertDictEqual(
+            req.vars["get"],
+            {"d": ["third", "fourth"], "d[first]": ["1"], "d[second]": ["2"]},
+        )
+
+    def testHeadersFromEnv(self):
+        """Validate that HTTP_XXX_XXX headers are converted to XXX-XXX"""
+        result = dict(
+            request.headers_from_env(
+                {
+                    "HTTP_CONTENT_TYPE": "ctype",
+                    "HTTP_X_FORWARD_FOR": "forward",
+                    "HTTP_HOST": "host",
+                }
+            )
+        )
+        self.assertEqual(
+            result,
+            {"content-type": "ctype", "x-forward-for": "forward", "host": "host"},
+        )
+
+    def testCookie(self):
+        """Validate that the HTTP_COOKIE header is parsed correctly"""
+        req = CreateRequest(
+            {"HTTP_COOKIE": "cookie=first_cookie;another_cookie=second_cookie"}
+        )
+        self.assertDictEqual(
+            req.vars["cookie"],
+            {"cookie": "first_cookie", "another_cookie": "second_cookie"},
+        )
 
 
 if __name__ == "__main__":
