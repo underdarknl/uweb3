@@ -9,12 +9,14 @@
 # pylint: disable-msg=R0904
 
 # Standard modules
-import cgi
+import unittest
 import io as stringIO
 from typing import Union
+from itertools import zip_longest
 
-import unittest
 import urllib
+from functools import wraps
+from urllib.parse import urlencode
 
 # Unittest target
 from uweb3 import request
@@ -25,7 +27,6 @@ def CreateRequest(headers: Union[dict, None] = None):
         "REQUEST_METHOD": "GET",
         "PATH_INFO": "path",
         "QUERY_STRING": "",
-        "CONTENT_TYPE": "application/json",
         "HTTP_X_FORWARDED_FOR": "127.0.0.1",
         "HTTP_HOST": "test",
     }
@@ -37,6 +38,22 @@ def CreateRequest(headers: Union[dict, None] = None):
         None,
         None,
     )
+
+
+def parameterize(params: str, values):
+    """Decorator that can be used like pytest.mark.parameterize."""
+
+    def decorator(fun):
+        @wraps(fun)
+        def wrapper(*args, **kwargs):
+            parameters = [x.strip() for x in params.split(",")]
+
+            for item in values:
+                fun(*args, **dict(zip_longest(parameters, item)), **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 class IndexedFieldStorageTest(unittest.TestCase):
@@ -103,7 +120,6 @@ class IndexedFieldStorageTest(unittest.TestCase):
         req = CreateRequest()
         self.assertEqual(req.method, "GET")
         self.assertEqual(req.path, "path")
-        self.assertEqual(req.env["mimetype"], "application/json")
         self.assertEqual(req.env["HTTP_X_FORWARDED_FOR"], "127.0.0.1")
         self.assertEqual(req.env["HTTP_HOST"], "test")
 
@@ -145,6 +161,62 @@ class IndexedFieldStorageTest(unittest.TestCase):
             req.vars["cookie"],
             {"cookie": "first_cookie", "another_cookie": "second_cookie"},
         )
+
+    @parameterize(
+        "input, expected, content_length",
+        [
+            ({"username": "username"}, {"u": ""}, 1),
+            ({"username": "username"}, {"us": ""}, 2),
+            ({"username": "username"}, {"username": "u"}, 10),
+            ({"username": "username"}, {"username": "username"}, 17),
+        ],
+    )
+    def testReadLimited(self, input, expected, content_length):
+        """Validate that the request does not read further than the
+        specified content-length header"""
+        data = urlencode(input)
+        fp = stringIO.BytesIO(data.encode())
+
+        req = CreateRequest(
+            {
+                "wsgi.input": fp,
+                "CONTENT_LENGTH": content_length,
+                "REQUEST_METHOD": "POST",
+            }
+        )
+        req.process_request()
+
+        post_data = req.vars["post"]
+        self.assertEqual(post_data.__dict__, expected)
+
+    def testMissingContentLengthHeader(self):
+        """Validate that an error is raised when attempting to post data
+        without a content-length header present"""
+        data = urlencode({"username": "username"})
+        fp = stringIO.BytesIO(data.encode())
+
+        req = CreateRequest(
+            {
+                "wsgi.input": fp,
+                "REQUEST_METHOD": "POST",
+            }
+        )
+        with self.assertRaises(request.MissingContentLengthError):
+            req.process_request()
+
+    def testInvalidContentLengthHeader(self):
+        data = urlencode({"username": "username"})
+        fp = stringIO.BytesIO(data.encode())
+
+        req = CreateRequest(
+            {
+                "wsgi.input": fp,
+                "REQUEST_METHOD": "POST",
+                "CONTENT_LENGTH": "invalid format",
+            }
+        )
+        with self.assertRaises(request.InvalidContentLengthError):
+            req.process_request()
 
 
 if __name__ == "__main__":
