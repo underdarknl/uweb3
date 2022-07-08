@@ -258,12 +258,12 @@ class DataParser:
             "application/x-www-form-urlencoded": self._parse_multipart,
         }
 
-    def parse(self):
+    def parse(self) -> IndexedFieldStorage:
         # TODO: Handle streams
         handler = self._parse_functions.get(self.mimetype, self._parse_multipart)
         return handler()
 
-    def _parse_multipart(self):
+    def _parse_multipart(self) -> IndexedFieldStorage:
         return IndexedFieldStorage(
             io.BytesIO(self.request_payload.read(size=self.max_size)),
             environ=self.env,
@@ -271,11 +271,16 @@ class DataParser:
             limit=self.max_size,
         )
 
-    def _parse_json(self):
+    def _parse_json(self) -> IndexedFieldStorage:
+        storage = IndexedFieldStorage()
         try:
-            return json.loads(self.request_payload.read(size=self.max_size))
+            json_data = json.loads(self.request_payload.read(size=self.max_size))
+            storage.list = [
+                cgi.MiniFieldStorage(key, value) for key, value in json_data.items()
+            ]
+            return storage
         except (json.JSONDecodeError, ValueError):
-            pass
+            return storage
 
 
 class BaseRequest:
@@ -303,7 +308,7 @@ class BaseRequest:
             "get": QueryArgsDict(parse_qs(self.env["QUERY_STRING"])),
             "post": IndexedFieldStorage(),
             "put": IndexedFieldStorage(),
-            "json": {},
+            "json": IndexedFieldStorage(),
             "delete": IndexedFieldStorage(),
             "files": IndexedFieldStorage(),
         }
@@ -354,7 +359,7 @@ class Request(BaseRequest):
                 "The CONTENT_LENGTH header has an invalid "
                 + f"format: {content_length!r}"
             ) from exc
-            
+
         parser = DataParser(
             env=self.env,
             max_size=self.MAX_REQUEST_BODY_SIZE,
@@ -362,19 +367,14 @@ class Request(BaseRequest):
             charset=self.charset,
         )
         data = parser.parse()
+
         files = [item for item in data.list if item.filename]
         data.list = [item for item in data.list if not item.filename]
-        
+
         if files:
-            self.vars['files'].list = files
-            
+            self.vars["files"].list = files
+
         self.vars[self.method.lower()] = data
-        # XXX: JSON data can not be an instance of cgi.FieldStorage, so we cannot
-        # create an IndexedFieldstorage for this type of request.
-        # We could create a class that has the same behaviour as the
-        # IndexedFieldStorage, or we could just point out that json
-        # data is available in the PageMaker.json attribute, which is
-        # a dictionary by default.
         if parser.mimetype == "application/json":
             self.vars["json"] = self.vars[self.method.lower()]
 
