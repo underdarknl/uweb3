@@ -237,6 +237,97 @@ class LimitedStream(io.IOBase):
         return True
 
 
+class IndexedFieldStorage(cgi.FieldStorage):
+    """Adaption of cgi.FieldStorage with a few specific changes.
+
+    Notable differences with cgi.FieldStorage:
+      1) Field names in the form 'foo[bar]=baz' will generate a dictionary:
+           foo = {'bar': 'baz'}
+         Multiple statements of the form 'foo[%s]' will expand this dictionary.
+         Multiple occurrances of 'foo[bar]' will result in unspecified behavior.
+      2) Automatically attempts to parse all input as UTF8. This is the proposed
+         standard as of 2005: http://tools.ietf.org/html/rfc3986.
+    """
+
+    FIELD_AS_ARRAY = re.compile(r"(.*)\[(.*)\]")
+
+    def iteritems(self):
+        try:
+            return ((key, self.getlist(key)) for key in self)
+        except Exception:
+            return ()
+
+    def items(self):
+        return list(self.iteritems())
+
+    def read_urlencoded(self):
+        indexed = {}
+        self.list = []
+        qs = self.fp.read(self.length)
+
+        if isinstance(qs, bytes):
+            qs = qs.decode(self.encoding, self.errors)
+
+        for field, value in parse_qsl(qs, self.keep_blank_values, self.strict_parsing):
+            if self.FIELD_AS_ARRAY.match(str(field)):
+                field_group, field_key = self.FIELD_AS_ARRAY.match(field).groups()
+                indexed.setdefault(field_group, cgi.MiniFieldStorage(field_group, {}))
+                indexed[field_group].value[field_key] = value
+            else:
+                self.list.append(cgi.MiniFieldStorage(field, value))
+        self.list = list(indexed.values()) + self.list
+        self.skip_lines()
+
+    def __repr__(self):
+        if self.filename:
+            return "%s({filename: %s, value: %s, file: %s})" % (
+                self.__class__.__name__,
+                self.filename,
+                self.value,
+                self.file,
+            )
+        return "{%s}" % ",".join(
+            "'%s': '%s'" % (k, v if len(v) > 1 else v[0]) for k, v in self.iteritems()
+        )
+
+    @property
+    def __dict__(self):
+        return {
+            key: value if len(value) > 1 else value[0]
+            for key, value in self.iteritems()
+        }
+
+    def getfirst(self, key, default=None):
+        """Return the first value received.
+
+        If the first value has a filename return the whole object
+        this allows access to value.file, value.filename, etc.
+        """
+        if key in self:
+            value = self[key]
+            if isinstance(value, list):
+                return value[0].value
+            elif value.filename:
+                return value
+            else:
+                return value.value
+        else:
+            return default
+
+    def getlist(self, key):
+        """Return list of received values."""
+        if key in self:
+            value = self[key]
+            if isinstance(value, list):
+                return [x.value if not x.filename else x for x in value]
+            if value.filename:
+                return [value]
+            else:
+                return [value.value]
+        else:
+            return []
+
+
 class DataParser:
     def __init__(
         self,
@@ -472,97 +563,6 @@ class Request(BaseRequest):
             "Set-Cookie",
             "{}=deleted; expires=Thu, 01 Jan 1970 00:00:00 GMT;".format(name),
         )
-
-
-class IndexedFieldStorage(cgi.FieldStorage):
-    """Adaption of cgi.FieldStorage with a few specific changes.
-
-    Notable differences with cgi.FieldStorage:
-      1) Field names in the form 'foo[bar]=baz' will generate a dictionary:
-           foo = {'bar': 'baz'}
-         Multiple statements of the form 'foo[%s]' will expand this dictionary.
-         Multiple occurrances of 'foo[bar]' will result in unspecified behavior.
-      2) Automatically attempts to parse all input as UTF8. This is the proposed
-         standard as of 2005: http://tools.ietf.org/html/rfc3986.
-    """
-
-    FIELD_AS_ARRAY = re.compile(r"(.*)\[(.*)\]")
-
-    def iteritems(self):
-        try:
-            return ((key, self.getlist(key)) for key in self)
-        except Exception:
-            return ()
-
-    def items(self):
-        return list(self.iteritems())
-
-    def read_urlencoded(self):
-        indexed = {}
-        self.list = []
-        qs = self.fp.read(self.length)
-
-        if isinstance(qs, bytes):
-            qs = qs.decode(self.encoding, self.errors)
-
-        for field, value in parse_qsl(qs, self.keep_blank_values, self.strict_parsing):
-            if self.FIELD_AS_ARRAY.match(str(field)):
-                field_group, field_key = self.FIELD_AS_ARRAY.match(field).groups()
-                indexed.setdefault(field_group, cgi.MiniFieldStorage(field_group, {}))
-                indexed[field_group].value[field_key] = value
-            else:
-                self.list.append(cgi.MiniFieldStorage(field, value))
-        self.list = list(indexed.values()) + self.list
-        self.skip_lines()
-
-    def __repr__(self):
-        if self.filename:
-            return "%s({filename: %s, value: %s, file: %s})" % (
-                self.__class__.__name__,
-                self.filename,
-                self.value,
-                self.file,
-            )
-        return "{%s}" % ",".join(
-            "'%s': '%s'" % (k, v if len(v) > 1 else v[0]) for k, v in self.iteritems()
-        )
-
-    @property
-    def __dict__(self):
-        return {
-            key: value if len(value) > 1 else value[0]
-            for key, value in self.iteritems()
-        }
-
-    def getfirst(self, key, default=None):
-        """Return the first value received.
-
-        If the first value has a filename return the whole object
-        this allows access to value.file, value.filename, etc.
-        """
-        if key in self:
-            value = self[key]
-            if isinstance(value, list):
-                return value[0].value
-            elif value.filename:
-                return value
-            else:
-                return value.value
-        else:
-            return default
-
-    def getlist(self, key):
-        """Return list of received values."""
-        if key in self:
-            value = self[key]
-            if isinstance(value, list):
-                return [x.value if not x.filename else x for x in value]
-            if value.filename:
-                return [value]
-            else:
-                return [value.value]
-        else:
-            return []
 
 
 class QueryArgsDict(dict):
