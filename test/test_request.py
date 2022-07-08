@@ -264,6 +264,8 @@ class IndexedFieldStorageTest(unittest.TestCase):
             req.process_request()
 
     def testInvalidContentLengthHeader(self):
+        """Validate that an error is raised when the content_length 
+        header is an invalid integer"""
         data = urlencode({"username": "username"})
         fp = stringIO.BytesIO(data.encode())
 
