@@ -305,7 +305,7 @@ class BaseRequest:
             "put": IndexedFieldStorage(),
             "json": {},
             "delete": IndexedFieldStorage(),
-            "files": [],
+            "files": IndexedFieldStorage(),
         }
 
     def _get_mimetype(self):
@@ -354,7 +354,7 @@ class Request(BaseRequest):
                 "The CONTENT_LENGTH header has an invalid "
                 + f"format: {content_length!r}"
             ) from exc
-
+            
         parser = DataParser(
             env=self.env,
             max_size=self.MAX_REQUEST_BODY_SIZE,
@@ -362,17 +362,12 @@ class Request(BaseRequest):
             charset=self.charset,
         )
         data = parser.parse()
-
-        # TODO: Its not allowed to remove items from a FieldStorage object
-        # so we can not actually delete the files from the post object.
-        # This will also mean that the whole file object will be dumped
-        # into the log, resulting in a logfile with the contents of the whole
-        # file on every request.
-        for _, values in data.items():
-            for f in values:
-                if hasattr(f, "filename"):
-                    self.vars["files"].append(f)
-
+        files = [item for item in data.list if item.filename]
+        data.list = [item for item in data.list if not item.filename]
+        
+        if files:
+            self.vars['files'].list = files
+            
         self.vars[self.method.lower()] = data
         # XXX: JSON data can not be an instance of cgi.FieldStorage, so we cannot
         # create an IndexedFieldstorage for this type of request.
