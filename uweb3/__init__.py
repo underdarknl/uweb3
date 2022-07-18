@@ -230,6 +230,7 @@ class uWeb:
             request (request.Request): Uweb3 Request object.
         """
         max_request_body_size = None
+        remote_addr_config = None
 
         # Attempt to load the max request size setting from the config
         try:
@@ -239,14 +240,25 @@ class uWeb:
         except Exception:
             pass
 
+        try:
+            remote_addr_config = self.config.options["headers"]
+        except Exception:
+            pass
+
         if max_request_body_size:
             return request.Request(
                 env,
                 self.logger,
                 self.errorlogger,
                 max_request_body_size=max_request_body_size,
+                remote_addr_config=remote_addr_config,
             )
-        return request.Request(env, self.logger, self.errorlogger)
+        return request.Request(
+            env,
+            self.logger,
+            self.errorlogger,
+            remote_addr_config=remote_addr_config,
+        )
 
     def __call__(self, env, start_response):  # noqa: C901
         """WSGI request handler.

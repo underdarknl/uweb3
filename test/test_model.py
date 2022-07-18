@@ -682,7 +682,7 @@ def CookieConnection():
             "host": "localhost",
             "QUERY_STRING": "",
             "HTTP_X_FORWARDED_FOR": "127.0.0.1",
-            "PATH_INFO": "info"
+            "PATH_INFO": "info",
         },
         None,
         None,
