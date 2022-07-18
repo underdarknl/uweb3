@@ -681,7 +681,7 @@ def CookieConnection():
             "REQUEST_METHOD": "GET",
             "host": "localhost",
             "QUERY_STRING": "",
-            "HTTP_X_FORWARDED_FOR": "127.0.0.1",
+            "REMOTE_ADDR": "127.0.0.1",
             "PATH_INFO": "info",
         },
         None,
