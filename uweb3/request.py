@@ -8,6 +8,7 @@ import http.cookies as cookie
 import io
 import json
 import re
+from typing import Union
 from urllib.parse import parse_qs, parse_qsl
 
 # uWeb modules
@@ -380,7 +381,12 @@ class DataParser:
 class BaseRequest:
     MAX_COOKIE_LENGTH: int = 4 * 1024  # 4KB
 
-    def __init__(self, env, max_request_body_size: int = 20 * 1024 * 1024):
+    def __init__(
+        self,
+        env,
+        max_request_body_size: int = 20 * 1024 * 1024,
+        remote_addr_config: Union[dict, None] = None,
+    ):
         self.env = env
         self.charset = "utf-8"
         self.max_request_body_size = max_request_body_size
@@ -388,7 +394,7 @@ class BaseRequest:
         self.noparse = self.headers.get("accept", "").lower() == "application/json"
 
         self.env["host"] = self.headers.get("Host", "").strip().lower()
-        self.env["REAL_REMOTE_ADDR"] = self._return_real_remote_addr()
+        self.env["REAL_REMOTE_ADDR"] = self._return_real_remote_addr(remote_addr_config)
         self.env["mimetype"] = self._get_mimetype()
 
         self.method = self.env["REQUEST_METHOD"]
@@ -410,14 +416,43 @@ class BaseRequest:
     def _get_mimetype(self):
         return self.env.get("CONTENT_TYPE", "").split(";")[0]
 
-    def _return_real_remote_addr(self):
-        """Returns the remote ip-address,
-        if there is a proxy involved it will take the last IP addres from the HTTP_X_FORWARDED_FOR list
+    def _return_real_remote_addr(self, remote_addr_config: Union[dict, None]):
+        """Returns the remote ip-address based on the supplied config.
+
+        The config to determine which header to use should look like this:
+            {
+                "use_http_x_forwarded_for": bool,
+                "address_header": the_header,
+            }
+        When use_http_x_forwarded_for is set to true it will default and use
+        the HTTP_X_FORWARDED_FOR header, unless the address_header key is supplied.
+        If the config is missing, or use_http_x_forwarded_for is false use the
+        default REMOTE_ADDR header.
+
+        When an address_header is supplied it will attempt to use this header, however
+        if this header is not present it will fallback to the following headers in order:
+        - HTTP_X_FORWARDED_FOR
+        - REMOTE_ADDR
         """
-        try:
-            return self.env["HTTP_X_FORWARDED_FOR"].split(",")[-1].strip()
-        except KeyError:
+        if not remote_addr_config:
             return self.env["REMOTE_ADDR"]
+
+        use_http_x_forwarded_for = bool(
+            remote_addr_config.get("use_http_x_forwarded_for", False)
+        )
+
+        if not use_http_x_forwarded_for:
+            return self.env["REMOTE_ADDR"]
+
+        target_header = remote_addr_config.get("address_header", "HTTP_X_FORWARDED_FOR")
+
+        # XXX: What if REMOTE_ADDR is also missing? Is this even possible, if so
+        # raise an error?
+        for header in (target_header, "HTTP_X_FORWARDED_FOR", "REMOTE_ADDR"):
+            try:
+                return self.env[header]
+            except KeyError:
+                continue
 
 
 class Request(BaseRequest):
@@ -426,9 +461,10 @@ class Request(BaseRequest):
         env,
         logger,
         errorlogger,
-        max_request_body_size: int = 20 * 1024 * 1024,
+        **kwargs,
+        # max_request_body_size: int = 20 * 1024 * 1024,
     ):  # noqa: C901
-        super().__init__(env=env, max_request_body_size=max_request_body_size)
+        super().__init__(env=env, **kwargs)
         self._out_headers = []
         self._out_status = 200
         self._response = None
@@ -488,11 +524,11 @@ class Request(BaseRequest):
 
     def _process(self, content_length: int):
         """Parse the incoming WSGI.input and set the parsed result to the
-        correct request method variable for storage. 
-        
+        correct request method variable for storage.
+
         Files are removed from vars['post'] and stored in vars['files'].
         JSON data is now stored in vars['post'] and vars['json'] to
-        be backwards compatible. 
+        be backwards compatible.
         """
         parser = DataParser(
             env=self.env,
@@ -501,10 +537,10 @@ class Request(BaseRequest):
             charset=self.charset,
         )
         result = parser.parse()
-        
+
         # Iterate over the IndexedFieldStorage.list object to find
-        # all file-like objects and store them seperatly from the 
-        # regular post data. 
+        # all file-like objects and store them seperatly from the
+        # regular post data.
         files = [item for item in result.list if item.filename]
         result.list = [item for item in result.list if not item.filename]
 
