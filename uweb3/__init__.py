@@ -221,12 +221,40 @@ class uWeb:
         )
         self._logerror = self.logerror if errorlogging else lambda *args: None
 
+    def _create_request(self, env):
+        """Creates the request.Request object with all required parameters.
+
+        Args:
+            env (wsgi Environment): The WSGI environment dictionary
+        Returns:
+            request (request.Request): Uweb3 Request object.
+        """
+        max_request_body_size = None
+
+        # Attempt to load the max request size setting from the config
+        try:
+            max_request_body_size = self.config.options["general"][
+                "max_request_body_size"
+            ]
+        except Exception:
+            pass
+
+        if max_request_body_size:
+            return request.Request(
+                env,
+                self.logger,
+                self.errorlogger,
+                max_request_body_size=max_request_body_size,
+            )
+        return request.Request(env, self.logger, self.errorlogger)
+
     def __call__(self, env, start_response):  # noqa: C901
         """WSGI request handler.
         Accepts the WSGI `environment` dictionary and a function to start the
         response and returns a response iterator.
         """
-        req = request.Request(env, self.logger, self.errorlogger)
+        req = self._create_request(env)
+
         try:
             req.process_request()
         except request.HeaderError as exc:
