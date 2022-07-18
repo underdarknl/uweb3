@@ -30,7 +30,7 @@ def CreateRequest(
         "PATH_INFO": "path",
         "QUERY_STRING": "",
         "CONTENT_TYPE": "application/x-www-form-urlencoded",
-        "HTTP_X_FORWARDED_FOR": "127.0.0.1",
+        "REMOTE_ADDR": "127.0.0.1",
         "HTTP_HOST": "test",
     }
     if headers:
@@ -121,7 +121,7 @@ class IndexedFieldStorageTest(unittest.TestCase):
         req = CreateRequest()
         self.assertEqual(req.method, "GET")
         self.assertEqual(req.path, "path")
-        self.assertEqual(req.env["HTTP_X_FORWARDED_FOR"], "127.0.0.1")
+        self.assertEqual(req.env["REMOTE_ADDR"], "127.0.0.1")
         self.assertEqual(req.env["HTTP_HOST"], "test")
 
     def testGetQueryString(self):
