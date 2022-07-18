@@ -307,7 +307,11 @@ class IndexedFieldStorage(cgi.FieldStorage):
         if key in self:
             value = self[key]
             if isinstance(value, list):
-                return value[0].value
+                if len(value) >= 1 and value[0].filename:
+                    return value[0]
+                elif len(value) >= 1:
+                    return value[0].value
+                return None
             elif value.filename:
                 return value
             else:
