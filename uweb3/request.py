@@ -316,7 +316,7 @@ class IndexedFieldStorage(cgi.FieldStorage):
 
     def get(self, key, default=None):
         return self.getfirst(key, default)
-    
+
     def getlist(self, key):
         """Return list of received values."""
         if key in self:
@@ -379,11 +379,11 @@ class DataParser:
 
 class BaseRequest:
     MAX_COOKIE_LENGTH: int = 4 * 1024  # 4KB
-    MAX_REQUEST_BODY_SIZE: int = 20 * 1024 * 1024  # 20MB
 
-    def __init__(self, env):
+    def __init__(self, env, max_request_body_size: int = 20 * 1024 * 1024):
         self.env = env
         self.charset = "utf-8"
+        self.max_request_body_size = max_request_body_size
         self.headers = dict(headers_from_env(env))
         self.noparse = self.headers.get("accept", "").lower() == "application/json"
 
@@ -426,8 +426,9 @@ class Request(BaseRequest):
         env,
         logger,
         errorlogger,
+        max_request_body_size: int = 20 * 1024 * 1024,
     ):  # noqa: C901
-        super().__init__(env=env)
+        super().__init__(env=env, max_request_body_size=max_request_body_size)
         self._out_headers = []
         self._out_status = 200
         self._response = None
