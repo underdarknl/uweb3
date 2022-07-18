@@ -22,7 +22,7 @@ from urllib.parse import urlencode
 from uweb3 import request
 
 
-def CreateRequest(headers: Union[dict, None] = None):
+def CreateRequest(headers: Union[dict, None] = None, max_request_body_size=20 * 1024 * 1024):
     default_headers = {
         "REQUEST_METHOD": "GET",
         "PATH_INFO": "path",
@@ -38,6 +38,7 @@ def CreateRequest(headers: Union[dict, None] = None):
         default_headers,
         None,
         None,
+        max_request_body_size=max_request_body_size
     )
 
 
@@ -210,9 +211,9 @@ class IndexedFieldStorageTest(unittest.TestCase):
                 "wsgi.input": fp,
                 "CONTENT_LENGTH": len(data),
                 "REQUEST_METHOD": "POST",
-            }
+            },
+            max_request_body_size=max_size
         )
-        req.MAX_REQUEST_BODY_SIZE = max_size
         req.process_request()
         post_data = req.vars["post"]
         self.assertEqual(post_data.__dict__, expected)
@@ -242,9 +243,9 @@ class IndexedFieldStorageTest(unittest.TestCase):
                 "wsgi.input": fp,
                 "CONTENT_LENGTH": content_length,
                 "REQUEST_METHOD": "POST",
-            }
+            },
+            max_request_body_size=max_size
         )
-        req.MAX_REQUEST_BODY_SIZE = max_size
         req.process_request()
         post_data = req.vars["post"]
         self.assertEqual(post_data.__dict__, expected)
