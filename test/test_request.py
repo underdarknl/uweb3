@@ -8,6 +8,7 @@
 # Too many public methods
 # pylint: disable-msg=R0904
 
+from collections import namedtuple
 import io as stringIO
 
 # Standard modules
@@ -279,6 +280,50 @@ class IndexedFieldStorageTest(unittest.TestCase):
         )
         with self.assertRaises(request.InvalidContentLengthError):
             req.process_request()
+
+    def testGetfirstWithMultipleFiles(self):
+        """Validate that when multiple files are present getfirst returns
+        IndexedFieldStorage object instead of a regular value."""
+        fieldstorage = request.IndexedFieldStorage()
+        fakefile = namedtuple("fakefile", "filename value name")
+
+        file_one = fakefile(
+            filename="fakefile1.jpg", value="some fake file", name="fakefile"
+        )
+        file_two = fakefile(
+            filename="fakefile2.jpg", value="another fake file", name="fakefile"
+        )
+        fieldstorage.list = [file_one, file_two]
+        self.assertEqual(fieldstorage.getfirst("fakefile"), file_one)
+
+    def testGetfirstWithSingleFile(self):
+        """Validate that when a single file is present getfirst returns the
+        IndexedFieldStorage object."""
+        fieldstorage = request.IndexedFieldStorage()
+        fakefile = namedtuple("fakefile", "filename value name")
+
+        file_one = fakefile(
+            filename="fakefile1.jpg", value="some fake file", name="fakefile"
+        )
+
+        fieldstorage.list = [file_one]
+        self.assertEqual(fieldstorage.getfirst("fakefile"), file_one)
+
+    def testGetFirstWithValues(self):
+        """Validate that values without a filename are returned as raw value
+        and now an IndexedFieldStorage object."""
+        fieldstorage = request.IndexedFieldStorage()
+        fakevalue = namedtuple("fakefile", "filename value name")
+
+        file_one = fakevalue(filename=None, value="some fake value", name="fakevalue")
+
+        fieldstorage.list = [file_one]
+        self.assertEqual(fieldstorage.getfirst("fakevalue"), "some fake value")
+
+    def testGetFirstNoExist(self):
+        """Validate that attempting to retrieve a non-existand value None is returned"""
+        fieldstorage = request.IndexedFieldStorage()
+        self.assertEqual(fieldstorage.getfirst("test"), None)
 
 
 class RequestTests(unittest.TestCase):
