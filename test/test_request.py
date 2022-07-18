@@ -352,6 +352,57 @@ class RequestTests(unittest.TestCase):
         req = request.Request(default_headers, None, None, remote_addr_config=config)
         self.assertEqual(req.env["REAL_REMOTE_ADDR"], expected)
 
+    @parameterize(
+        "headers, expected, config",
+        [
+            (
+                {"LIST_OF_IPS": "127.0.0.1,127.0.0.2,127.0.0.3"},
+                "127.0.0.3",  # Return last IP by default
+                {
+                    "use_http_x_forwarded_for": True,
+                    "address_header": "LIST_OF_IPS",
+                },
+            ),
+            (
+                {"LIST_OF_IPS": "127.0.0.1,127.0.0.2,127.0.0.3"},
+                "127.0.0.1",  # Return last IP by default
+                {
+                    "use_http_x_forwarded_for": True,
+                    "address_header": "LIST_OF_IPS",
+                    "return_header_at_index": 0,
+                },
+            ),
+            (
+                {"LIST_OF_IPS": "127.0.0.1,127.0.0.2,127.0.0.3"},
+                "127.0.0.1",  # Return the configured IP at index 0
+                {
+                    "use_http_x_forwarded_for": True,
+                    "address_header": "LIST_OF_IPS",
+                    "return_header_at_index": "0",
+                },
+            ),
+            (
+                {"LIST_OF_IPS": "127.0.0.1,127.0.0.2,127.0.0.3"},
+                "127.0.0.3",  # When no config supplied use the last by default
+                {
+                    "use_http_x_forwarded_for": True,
+                    "address_header": "LIST_OF_IPS",
+                },
+            ),
+        ],
+    )
+    def test_multiple_ips(self, headers, expected, config):
+        default_headers = {
+            "REQUEST_METHOD": "GET",
+            "PATH_INFO": "path",
+            "QUERY_STRING": "",
+            "CONTENT_TYPE": "application/x-www-form-urlencoded",
+            "HTTP_HOST": "test",
+        }
+        default_headers.update(headers)
+        req = request.Request(default_headers, None, None, remote_addr_config=config)
+        self.assertEqual(req.env["REAL_REMOTE_ADDR"], expected)
+
 
 if __name__ == "__main__":
     unittest.main(testRunner=unittest.TextTestRunner(verbosity=2))
