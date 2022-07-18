@@ -314,6 +314,9 @@ class IndexedFieldStorage(cgi.FieldStorage):
         else:
             return default
 
+    def get(self, key, default=None):
+        return self.getfirst(key, default)
+    
     def getlist(self, key):
         """Return list of received values."""
         if key in self:
