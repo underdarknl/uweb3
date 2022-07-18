@@ -436,8 +436,37 @@ class Request(BaseRequest):
         self.errorlogger = errorlogger
 
     def process_request(self):
+        """Handler for POST/PUT/DELETE requests.
+
+        Checks if the CONTENT_LENGTH header is present and if its a valid
+        integer. If this is not the case an error will be raised.
+        According to WSGI a missing CONTENT_LENGTH header is allowed to be
+        passed from the WSGI handler, but the server may decide if this
+        request should be processed or not. It is adviced to discard requests
+        with an invalid or missing CONTENT_LENGHT header, so we abandon the request
+        when this is the case.
+
+        Raises:
+            MissingContentLengthError: When the CONTENT_LENGTH header is missing
+            InvalidContentLengthError: When the CONTENT_LENGTH header is of an
+                invalid format.
+
+        """
         if self.method not in ("POST", "PUT", "DELETE"):
             return
+
+        content_length = self.get_and_check_content_length()
+        self._process(content_length)
+
+    def get_and_check_content_length(self):
+        """Check for presence of the CONTENT_LENGTH header and also
+        check if this header is a valid integer.
+
+        Raises:
+            MissingContentLengthError: When the CONTENT_LENGTH header is missing
+            InvalidContentLengthError: When the CONTENT_LENGTH header is of an
+                invalid format.
+        """
         if "CONTENT_LENGTH" not in self.env:
             # We should not allowed requests where CONTENT_LENGTH is not specified
             # https://peps.python.org/pep-3333#specification-details
@@ -455,23 +484,38 @@ class Request(BaseRequest):
                 + f"format: {content_length!r}"
             ) from exc
 
+        return content_length
+
+    def _process(self, content_length: int):
+        """Parse the incoming WSGI.input and set the parsed result to the
+        correct request method variable for storage. 
+        
+        Files are removed from vars['post'] and stored in vars['files'].
+        JSON data is now stored in vars['post'] and vars['json'] to
+        be backwards compatible. 
+        """
         parser = DataParser(
             env=self.env,
-            max_size=self.MAX_REQUEST_BODY_SIZE,
+            max_size=self.max_request_body_size,
             content_length=content_length,
             charset=self.charset,
         )
-        data = parser.parse()
-
-        files = [item for item in data.list if item.filename]
-        data.list = [item for item in data.list if not item.filename]
+        result = parser.parse()
+        
+        # Iterate over the IndexedFieldStorage.list object to find
+        # all file-like objects and store them seperatly from the 
+        # regular post data. 
+        files = [item for item in result.list if item.filename]
+        result.list = [item for item in result.list if not item.filename]
 
         if files:
             self.vars["files"].list = files
 
-        self.vars[self.method.lower()] = data
+        method = self.method.lower()
+        self.vars[method] = result
+
         if parser.mimetype == "application/json":
-            self.vars["json"] = self.vars[self.method.lower()]
+            self.vars["json"] = self.vars[method]
 
     @property
     def response(self):
