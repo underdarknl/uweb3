@@ -335,6 +335,13 @@ class IndexedFieldStorage(cgi.FieldStorage):
         else:
             return []
 
+    def __bool__(self):
+        if self.list is None:
+            if self.filename and self.value:
+                return True
+            raise TypeError("Cannot be converted to bool.")
+        return bool(self.list)
+
 
 class DataParser:
     def __init__(
