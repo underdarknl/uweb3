@@ -423,6 +423,7 @@ class BaseRequest:
             {
                 "use_http_x_forwarded_for": bool,
                 "address_header": the_header,
+                "return_header_at_index": int
             }
         When use_http_x_forwarded_for is set to true it will default and use
         the HTTP_X_FORWARDED_FOR header, unless the address_header key is supplied.
@@ -433,6 +434,9 @@ class BaseRequest:
         if this header is not present it will fallback to the following headers in order:
         - HTTP_X_FORWARDED_FOR
         - REMOTE_ADDR
+
+        If the targeted header returns a list of values returns the last value by default,
+        except for when the return_header_at_index key is set to a value.
         """
         if not remote_addr_config:
             return self.env["REMOTE_ADDR"]
@@ -446,11 +450,22 @@ class BaseRequest:
 
         target_header = remote_addr_config.get("address_header", "HTTP_X_FORWARDED_FOR")
 
+        try:
+            header_at_index = int(remote_addr_config.get("return_header_at_index", -1))
+        except Exception:
+            header_at_index = -1
+
         # XXX: What if REMOTE_ADDR is also missing? Is this even possible, if so
         # raise an error?
         for header in (target_header, "HTTP_X_FORWARDED_FOR", "REMOTE_ADDR"):
             try:
-                return self.env[header]
+                result = self.env[header]
+                splitted_result = result.split(",")
+
+                if len(splitted_result):
+                    return splitted_result[header_at_index]
+
+                return result
             except KeyError:
                 continue
 
