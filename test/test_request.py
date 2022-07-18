@@ -8,21 +8,23 @@
 # Too many public methods
 # pylint: disable-msg=R0904
 
+import io as stringIO
+
 # Standard modules
 import unittest
-import io as stringIO
-from typing import Union
-from itertools import zip_longest
-
 import urllib
 from functools import wraps
+from itertools import zip_longest
+from typing import Union
 from urllib.parse import urlencode
 
 # Unittest target
 from uweb3 import request
 
 
-def CreateRequest(headers: Union[dict, None] = None, max_request_body_size=20 * 1024 * 1024):
+def CreateRequest(
+    headers: Union[dict, None] = None, max_request_body_size=20 * 1024 * 1024
+):
     default_headers = {
         "REQUEST_METHOD": "GET",
         "PATH_INFO": "path",
@@ -35,10 +37,7 @@ def CreateRequest(headers: Union[dict, None] = None, max_request_body_size=20 * 
         default_headers.update(headers)
 
     return request.Request(
-        default_headers,
-        None,
-        None,
-        max_request_body_size=max_request_body_size
+        default_headers, None, None, max_request_body_size=max_request_body_size
     )
 
 
@@ -212,7 +211,7 @@ class IndexedFieldStorageTest(unittest.TestCase):
                 "CONTENT_LENGTH": len(data),
                 "REQUEST_METHOD": "POST",
             },
-            max_request_body_size=max_size
+            max_request_body_size=max_size,
         )
         req.process_request()
         post_data = req.vars["post"]
@@ -244,7 +243,7 @@ class IndexedFieldStorageTest(unittest.TestCase):
                 "CONTENT_LENGTH": content_length,
                 "REQUEST_METHOD": "POST",
             },
-            max_request_body_size=max_size
+            max_request_body_size=max_size,
         )
         req.process_request()
         post_data = req.vars["post"]
@@ -280,6 +279,78 @@ class IndexedFieldStorageTest(unittest.TestCase):
         )
         with self.assertRaises(request.InvalidContentLengthError):
             req.process_request()
+
+
+class RequestTests(unittest.TestCase):
+    @parameterize(
+        "headers, expected",
+        [
+            ({"REMOTE_ADDR": "127.0.0.1"}, "127.0.0.1"),
+            ({"REMOTE_ADDR": "127.0.0.2"}, "127.0.0.2"),
+        ],
+    )
+    def test_no_config(self, headers, expected):
+        req = CreateRequest(headers)
+        self.assertEqual(req.env["REAL_REMOTE_ADDR"], expected)
+
+    @parameterize(
+        "headers, expected, config",
+        [
+            (
+                {"REMOTE_ADDR": "127.0.0.1"},
+                "127.0.0.1",  # Expected fallback to REMOTE_ADDR
+                {"use_http_x_forwarded_for": False, "address_header": "not_used"},
+            ),
+            (
+                {"REMOTE_ADDR": "127.0.0.1", "HTTP_X_FORWARDED_FOR": "123.456.789"},
+                "123.456.789",  # Expected fallback to HTTP_X_FORWARDED_FOR
+                {"use_http_x_forwarded_for": True},
+            ),
+            (
+                {
+                    "REMOTE_ADDR": "127.0.0.1",
+                    "HTTP_X_FORWARDED_FOR": "123.456.789",
+                    "custom": "custom-value",
+                },
+                "custom-value",  # Expected to use the provided 'custom' header.
+                {"use_http_x_forwarded_for": True, "address_header": "custom"},
+            ),
+            (
+                {
+                    "REMOTE_ADDR": "127.0.0.1",
+                    "HTTP_X_FORWARDED_FOR": "123.456.789",
+                    "custom": "custom-value",
+                },
+                "123.456.789",  # Expected fallback to HTTP_X_FORWARDED_FOR
+                {"use_http_x_forwarded_for": True, "address_header": "missing-header"},
+            ),
+            (
+                {
+                    "REMOTE_ADDR": "127.0.0.1",
+                    "custom": "custom-value",
+                },
+                "127.0.0.1",  # Expected fallback to HTTP_X_FORWARDED_FOR, but
+                # this header is missing so fallback to REMOTE_ADDR
+                {"use_http_x_forwarded_for": True, "address_header": "missing-header"},
+            ),
+            (
+                {},
+                None,  # When none of the headers are present returns None
+                {"use_http_x_forwarded_for": True},
+            ),
+        ],
+    )
+    def test_config(self, headers, expected, config):
+        default_headers = {
+            "REQUEST_METHOD": "GET",
+            "PATH_INFO": "path",
+            "QUERY_STRING": "",
+            "CONTENT_TYPE": "application/x-www-form-urlencoded",
+            "HTTP_HOST": "test",
+        }
+        default_headers.update(headers)
+        req = request.Request(default_headers, None, None, remote_addr_config=config)
+        self.assertEqual(req.env["REAL_REMOTE_ADDR"], expected)
 
 
 if __name__ == "__main__":
