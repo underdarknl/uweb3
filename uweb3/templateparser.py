@@ -20,6 +20,9 @@ import math
 # Standard modules
 import os
 import re
+from typing import Any, Callable, Tuple, Union
+
+from pyparsing import Mapping
 
 from .libs.safestring import (
     Basesafestring,
@@ -399,20 +402,46 @@ class Parser(dict):
         """
         self.templateEncoding = templateEncoding
 
-    def SetEvalWhitelist(self, evalwhitelist=None, append=False):
+    def SetEvalWhitelist(
+        self,
+        evalwhitelist: Union[
+            None, dict[dict[str, Callable[[Any], Any]], dict[str, Tuple[ast.AST]]]
+        ] = None,
+        append=False,
+    ):
         """Allows the user to set the Eval Whitelist which limits the python
         operations allowed within this templateParsers Context. These are usually
         triggered by If/Elif conditions and the like.
 
         Arguments:
-          % evalwhitelist: Dict ~~ None
-            The new Dict of whitelisted eval AST items.
-          % append: bool ~~ False
-            When true, add the new items to the current list, else overwrite.
+            % evalwhitelist: None | dict(dict(str, Callable), dict(str, Tuple()))
+                The new Dict of whitelisted eval AST items.
+                for example:
+                {
+                    "functions": {
+                        "float": "float",
+                        ....
+                    },
+                    "operators": (op1, op2, ...)
+                }
+            % append: bool ~~ False
+                When true, add the new items to the current list, else overwrite.
         """
-        if append:
-            evalwhitelist = EVALWHITELIST.update(evalwhitelist)
-        self.astvisitor = AstVisitor(evalwhitelist)
+        if append and evalwhitelist:
+            # Create a copy to prevent mutating constant value
+            whitelist_copy = EVALWHITELIST.copy()
+            # dict.update() does not update nested dictionaries as we want
+            # it overwrites all keys with the keys of the 2nd dict, in this
+            # case we want to append, using regular dict.update() results in
+            # the loss of all keys present in EVALWHITELIST.
+            if "operators" in evalwhitelist:
+                whitelist_copy["operators"] += evalwhitelist["operators"]
+
+            if "functions" in evalwhitelist:
+                whitelist_copy["functions"].update(evalwhitelist["functions"])
+            self.astvisitor = AstVisitor(whitelist_copy)
+        else:
+            self.astvisitor = AstVisitor(evalwhitelist)
 
     TemplateReadError = TemplateReadError
 

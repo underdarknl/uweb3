@@ -1191,5 +1191,40 @@ class DictTemplateTagBasic(unittest.TestCase):
         self.assertEqual(self.tmpl(template, dictoutput=True) % {"name": "Bob"}, output)
 
 
+class TestParserEvalWhitelist(unittest.TestCase):
+    def setUp(self):
+        self.parser = templateparser.Parser()
+
+    def test_append_func(self):
+        """Validate that appending to the evalwhitelist works correctly"""
+        old_func_count = len(self.parser.astvisitor.whitelists["functions"].keys())
+        self.assertFalse(
+            bool(self.parser.astvisitor.whitelists["functions"].get("testfunc", False))
+        )
+
+        self.parser.SetEvalWhitelist(
+            evalwhitelist={"functions": {"testfunc": "testfunc"}}, append=True
+        )
+        new_func_count = len(self.parser.astvisitor.whitelists["functions"].keys())
+        self.assertEqual(old_func_count + 1, new_func_count)
+        self.assertTrue(
+            bool(self.parser.astvisitor.whitelists["functions"]["testfunc"])
+        )
+
+    def test_append_operator(self):
+        """Validate that appending to the evalwhitelist works correctly"""
+        old_operator_count = len(self.parser.astvisitor.whitelists["operators"])
+        self.parser.SetEvalWhitelist(
+            evalwhitelist={"operators": ("someoperator",)},
+            append=True,
+        )
+        new_operator_count = len(self.parser.astvisitor.whitelists["operators"])
+        self.assertEqual(old_operator_count + 1, new_operator_count)
+
+    def test_overwrite_astlist(self):
+        self.parser.SetEvalWhitelist(evalwhitelist=None, append=False)
+        self.assertEqual(self.parser.astvisitor.whitelists, None)
+
+
 if __name__ == "__main__":
     unittest.main(testRunner=unittest.TextTestRunner(verbosity=2))
