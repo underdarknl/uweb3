@@ -286,6 +286,8 @@ class Parser(dict):
             self[name or location] = FileTemplate(
                 template_path, parser=self, encoding=None
             )
+        except TemplateReadError as error:
+            raise error
         except IOError:
             raise TemplateReadError("Could not load template %r" % template_path)
 
@@ -740,6 +742,8 @@ class FileTemplate(Template):
                 raw_template = templatefile.read()
                 self._template_hash = HashContent(raw_template)
             super().__init__(raw_template, parser=parser)
+        except TemplateReadError as error:
+            raise error
         except (IOError, OSError) as error:
             raise TemplateReadError("Cannot open: %r %r" % (template_path, error))
 
