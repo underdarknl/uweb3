@@ -207,7 +207,12 @@ class Parser(dict):
     """
 
     def __init__(
-        self, path=None, templates=(), dictoutput=False, templateEncoding="utf-8"
+        self,
+        path=None,
+        templates=(),
+        dictoutput=False,
+        templateEncoding="utf-8",
+        allowed_paths=(),
     ):
         """Initializes a Parser instance.
 
@@ -227,12 +232,16 @@ class Parser(dict):
         super().__init__()
         self.template_dir = path
         self.dictoutput = dictoutput
+        self.allowed_paths = allowed_paths
         self.tags = {}
         self.requesttags = {}
         self.astvisitor = AstVisitor(EVALWHITELIST)
         self.templateEncoding = templateEncoding
         for template in templates:
             self.AddTemplate(template)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(template_dir={self.template_dir})"
 
     def __getitem__(self, template):
         """Retrieves a stored template by name.
@@ -255,6 +264,43 @@ class Parser(dict):
             self.AddTemplate(template)
         return super().__getitem__(template)
 
+    def AddExternal(self, location, name=None):
+        if location in self:
+            return super().__getitem__(location)
+
+        if self.template_dir and self.allowed_paths:
+            allowed_paths = (self.template_dir,) + self.allowed_paths
+            
+            for path in allowed_paths:
+                template_path = os.path.realpath(os.path.join(path, location))
+                
+                if path == os.path.commonprefix((template_path, path)):
+                    
+                    self[name or location] = FileTemplate(
+                        template_path,
+                        parser=Parser(
+                            path=path,
+                            allowed_paths=self.allowed_paths,
+                            dictoutput=self.dictoutput,
+                            templateEncoding=self.templateEncoding,
+                        ),
+                        encoding=None,
+                    )
+                    return super().__getitem__(location)
+
+            raise TemplateReadError(
+                "External template '%s' was not within an allowed path." % template_path
+            )
+        else:
+            template_path = location
+
+        try:
+            self[name or location] = FileTemplate(
+                template_path, parser=self, encoding=None
+            )
+        except IOError:
+            raise TemplateReadError("Could not load template %r" % template_path)
+
     def AddTemplate(self, location, name=None):
         """Reads the given `template` filename and adds it to the cache.
 
@@ -274,9 +320,8 @@ class Parser(dict):
         """
         if self.template_dir:
             template_path = os.path.realpath(os.path.join(self.template_dir, location))
-            if (
-                os.path.commonprefix((template_path, self.template_dir))
-                != self.template_dir
+            if self.template_dir != os.path.commonprefix(
+                (template_path, self.template_dir)
             ):
                 raise TemplateReadError(
                     "Could not load template %r, not in template dir" % template_path
@@ -478,11 +523,11 @@ class Template(list):
 
         """
         super().__init__()
-        self.parser = parser
+        self.name = None
+        self.parser: Parser = parser
         self.dictoutput = dictoutput
         self.scopes = [self]
         self.AddString(raw_template)
-        self.name = None
 
     def __eq__(self, other):
         """Returns the equality to another Template.
@@ -516,9 +561,19 @@ class Template(list):
           TypeError: There is no parser associated with the template.
         """
         self.name = name
+
         if self.parser is None:
             raise TypeError("The template requires parser for adding template files.")
+
         return self._AddToOpenScope(self.parser[name])
+
+    def AddExternal(self, name):
+        self.name = os.path.abspath(name)
+
+        if self.parser is None:
+            raise TypeError("The template requires parser for adding template files.")
+
+        return self._AddToOpenScope(self.parser.AddExternal(self.name))
 
     def AddString(self, raw_template, filename=None):
         """Extends the Template by adding a raw template string.
@@ -553,6 +608,7 @@ class Template(list):
         The template is parsed by parsing each of its members and combining that.
         """
         dictoutput = self.parser and self.parser.dictoutput or self.dictoutput
+
         if dictoutput:
             output = {"tags": {}}
             if self.name:
@@ -570,6 +626,7 @@ class Template(list):
                 if isinstance(tag, TemplateTag):
                     output["tags"][str(tag)] = tag.Parse(**kwds)
             return output
+
         return HTMLsafestring("").join(
             HTMLsafestring(tag.Parse(**kwds)) for tag in self
         )
@@ -621,6 +678,10 @@ class Template(list):
     def _TemplateConstructInline(self, name):
         """Processing for {{ inline }} template syntax."""
         self.AddFile(name)
+
+    def _TemplateConstructExternalinline(self, name):
+        """Processing for {{ externalinline }} template syntax."""
+        self.AddExternal(name)
 
     def _TemplateConstructFor(self, *nodes):
         """Processing for {{ for }} template syntax."""

@@ -8,6 +8,7 @@ import logging
 import mimetypes
 import os
 import pyclbr
+from re import template
 import sys
 import threading
 import time
@@ -204,13 +205,18 @@ class Base:
         Otherwise, the `TEMPLATE_DIR` will be used to load templates from.
         """
         if "__parser" not in self.persistent:
+            allowed_paths = self.options.get("templates", {}).get("allowed_paths", "")
+            allowed_paths_tuple = tuple(allowed_paths.replace(" ", "").split(","))
+            
             self.persistent.Set(
                 "__parser",
                 templateparser.Parser(
-                    self.options.get("templates", {}).get("path", self.TEMPLATE_DIR)
+                    self.options.get("templates", {}).get("path", self.TEMPLATE_DIR),
+                    allowed_paths=allowed_paths_tuple,
                 ),
             )
-        parser = self.persistent.Get("__parser")
+        parser: templateparser.Parser = self.persistent.Get("__parser")
+        parser.template_dir = self.TEMPLATE_DIR
         parser.dictoutput = self.req.noparse
         return parser
 
