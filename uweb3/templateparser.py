@@ -213,6 +213,7 @@ class Parser(dict):
         dictoutput=False,
         templateEncoding="utf-8",
         allowed_paths=(),
+        executing_path=None,
     ):
         """Initializes a Parser instance.
 
@@ -231,6 +232,7 @@ class Parser(dict):
         """
         super().__init__()
         self.template_dir = path
+        self.executing_path = executing_path
         self.dictoutput = dictoutput
         self.allowed_paths = allowed_paths
         self.tags = {}
