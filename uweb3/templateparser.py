@@ -359,12 +359,8 @@ class Parser(dict):
                 )
         else:
             template_path = location
-        try:
-            self[name or location] = FileTemplate(
-                template_path, parser=self, encoding=None
-            )
-        except IOError:
-            raise TemplateReadError("Could not load template %r" % template_path)
+
+        return self.CreateFileTemplate(location, template_path, name=name)
 
     def Parse(self, template, **replacements):
         """Returns the referenced template with its tags replaced by **replacements.
