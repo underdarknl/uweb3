@@ -2,10 +2,7 @@
 """uWeb3 response classes."""
 
 # Standard modules
-try:
-    import httplib
-except ImportError:
-    import http.client as httplib
+import http.client as httplib
 
 
 class Response(object):
