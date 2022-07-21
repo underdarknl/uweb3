@@ -351,9 +351,10 @@ class Parser(dict):
         """
         if self.template_dir:
             template_path = os.path.realpath(os.path.join(self.template_dir, location))
-            if self.template_dir != os.path.commonprefix(
+            prefix = os.path.commonprefix(
                 (template_path, self.template_dir)
-            ):
+            )
+            if self.template_dir != prefix:
                 raise TemplateReadError(
                     "Could not load template %r, not in template dir" % template_path
                 )
