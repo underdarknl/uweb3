@@ -299,38 +299,23 @@ class Parser(dict):
         if location in self:
             return super().__getitem__(location)
 
-        if self.template_dir and self.allowed_paths:
-            allowed_paths = (self.template_dir,) + self.allowed_paths
-            
-            for path in allowed_paths:
+        if not self.allowed_paths:
+            raise TemplateReadError("Externalinline is not allowed without specifying allowed_paths.")
+        
+        if self.template_dir:
+            for path in self.allowed_paths:
                 template_path = os.path.realpath(os.path.join(path, location))
-                
-                if path == os.path.commonprefix((template_path, path)):
-                    
-                    self[name or location] = FileTemplate(
-                        template_path,
-                        parser=Parser(
-                            path=path,
-                            allowed_paths=self.allowed_paths,
-                            dictoutput=self.dictoutput,
-                            templateEncoding=self.templateEncoding,
-                        ),
-                        encoding=None,
+                prefix = os.path.commonprefix((template_path, path))
+
+                if path == prefix:
+                    self.CreateFileTemplate(
+                        location, template_path, name=name, path=path
                     )
                     return super().__getitem__(location)
 
             raise TemplateReadError(
-                "External template '%s' was not within an allowed path." % template_path
+                "External template '%s' was not within an allowed path." % location
             )
-        else:
-            template_path = location
-
-        try:
-            self[name or location] = FileTemplate(
-                template_path, parser=self, encoding=None
-            )
-        except IOError:
-            raise TemplateReadError("Could not load template %r" % template_path)
 
     def AddTemplate(self, location, name=None):
         """Reads the given `template` filename and adds it to the cache.
