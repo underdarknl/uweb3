@@ -234,7 +234,12 @@ class Parser(dict):
         self.template_dir = path
         self.executing_path = executing_path
         self.dictoutput = dictoutput
-        self.allowed_paths = allowed_paths
+        
+        if self.template_dir:
+            self.allowed_paths = (self.template_dir,) + allowed_paths
+        else:
+            self.allowed_paths = allowed_paths
+            
         self.tags = {}
         self.requesttags = {}
         self.astvisitor = AstVisitor(EVALWHITELIST)
