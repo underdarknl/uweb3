@@ -599,8 +599,7 @@ class Template(list):
         return self._AddToOpenScope(self.parser[name])
 
     def AddExternal(self, name):
-        self.name = os.path.abspath(name)
-
+        """Allows loading in external files from directories outside of the
         if self.parser is None:
             raise TypeError("The template requires parser for adding template files.")
 
