@@ -6,6 +6,8 @@
 
 # Standard modules
 import os
+import shutil
+from pathlib import Path
 import re
 import time
 import unittest
@@ -1224,6 +1226,180 @@ class TestParserEvalWhitelist(unittest.TestCase):
     def test_overwrite_astlist(self):
         self.parser.SetEvalWhitelist(evalwhitelist=None, append=False)
         self.assertEqual(self.parser.astvisitor.whitelists, None)
+
+
+class TestExternalInline(unittest.TestCase):
+    def setUp(self):
+        self.base_folder = Path(f"{os.path.dirname(__file__)}/templatetests")
+        self.app_one = Path(f"{self.base_folder}/app_one/templates")
+        self.app_two = Path(f"{self.base_folder}/app_two/templates")
+
+        self.app_one.mkdir(parents=True, exist_ok=True)
+        self.app_two.mkdir(parents=True, exist_ok=True)
+        self.parser = templateparser.Parser(
+            path=str(self.app_one),
+            allowed_paths=(str(self.app_two),),
+            executing_path=str(self.base_folder),
+        )
+
+    def tearDown(self):
+        shutil.rmtree(self.base_folder, ignore_errors=True)
+
+    def _create_basic_files(self):
+        """Setup basic file structure for testing purposes."""
+        file = Path(f"{self.app_one}/test.html")
+
+        with file.open("w", encoding="utf-8") as f:
+            f.write(
+                """
+                hello from test.html
+                {{ externalinline app_two/templates/another_template.html }}                    
+                """
+            )
+
+        file_two = Path(f"{self.app_two}/another_template.html")
+
+        with file_two.open("w", encoding="utf-8") as f:
+            f.write("hello from another_template")
+
+        return file, file_two
+
+    def test_externalinline(self):
+        """Validate that loading a template from a folder that is within allowed_paths
+        but outside of the template path works correctly using {{ externalinline }}."""
+        file, _ = self._create_basic_files()
+        result = self.parser.Parse(str(file))
+        expected = """hello from test.html
+                hello from another_template                   
+                """
+
+        self.assertEqual(str(result).strip(), expected.strip())
+
+    def test_attempt_externalinline_outside_dir(self):
+        """Validate that attempting to load a template with {{ externalinline }}
+        that is not within allowed_paths results in a TemplateReadError."""
+        file, _ = self._create_basic_files()
+        self.parser = templateparser.Parser(
+            path=str(self.app_one),
+            # Only have app_one in allowed_paths, another_template is in app_two.
+            allowed_paths=(str(self.app_one),),
+            executing_path=str(self.base_folder),
+        )
+
+        with self.assertRaises(templateparser.TemplateReadError):
+            self.parser.Parse(str(file))
+
+    def test_attempt_inline_outside_dir(self):
+        """Validate that attempting to use {{ inline }}
+        outside the template directory, but inside the allowed_paths
+        results into a TemplateReadError."""
+        file = Path(f"{self.app_one}/test.html")
+
+        with file.open("w", encoding="utf-8") as f:
+            f.write(
+                """
+                hello from test.html
+                {{ inline app_two/templates/another_template.html }}                    
+                """
+            )
+
+        file_two = Path(f"{self.app_two}/another_template.html")
+
+        with file_two.open("w", encoding="utf-8") as f:
+            f.write("hello from another_template")
+
+        with self.assertRaises(templateparser.TemplateReadError):
+            self.parser.Parse(str(file))
+
+    def test_attempted_path_traversal(self):
+        """Validate that path_traversal outside of an allowed directory is not
+        working and raises an error."""
+        file = Path(f"{self.app_one}/test.html")
+
+        with file.open("w", encoding="utf-8") as f:
+            f.write(
+                """
+                hello from test.html
+                {{ externalinline app_two/../another_template.html }}                    
+                """
+            )
+
+        file_two = Path(f"{self.base_folder}/another_template.html")
+
+        with file_two.open("w", encoding="utf-8") as f:
+            f.write("this template is outside of the allowed directory")
+
+        with self.assertRaises(templateparser.TemplateReadError):
+            self.parser.Parse(str(file))
+
+    def test_nested_externalinline(self):
+        """Validate that using nested {{ externalinline }} to bounce between
+        allowed directories works correctly."""
+        self.parser = templateparser.Parser(
+            path=str(self.app_one),
+            allowed_paths=(str(self.app_two),),
+            executing_path=str(self.base_folder),
+        )
+        app_one_template_1 = {
+            "path": Path(f"{self.app_one}/app_one_t1.html"),
+            "contents": """app_one_template_1 {{ externalinline app_two/templates/app_two_t1.html }}""",
+        }
+        app_one_template_2 = {
+            "path": Path(f"{self.app_one}/app_one_t2.html"),
+            "contents": """app_one_template_2 {{ externalinline app_two/templates/app_two_t2.html }}""",
+        }
+
+        app_two_template_1 = {
+            "path": Path(f"{self.app_two}/app_two_t1.html"),
+            "contents": """app_two_template_1 {{ externalinline app_one/templates/app_one_t2.html }}""",
+        }
+
+        app_two_template_2 = {
+            "path": Path(f"{self.app_two}/app_two_t2.html"),
+            "contents": """app_two_template_2""",
+        }
+
+        for template in [
+            app_one_template_1,
+            app_one_template_2,
+            app_two_template_1,
+            app_two_template_2,
+        ]:
+            with template["path"].open("w", encoding="utf-8") as f:
+                f.write(template["contents"])
+        result = str(self.parser.Parse(str(app_one_template_1["path"])))
+        self.assertEqual(
+            result.strip(),
+            "app_one_template_1 app_two_template_1 app_one_template_2 app_two_template_2".strip(),
+        )
+
+    def test_externalinline_and_inline(self):
+        """Validate that using a mix of {{ externalinline }} and {{ inline }}
+        works correctly"""
+        file = Path(f"{self.app_one}/test.html")
+
+        with file.open("w", encoding="utf-8") as f:
+            f.write(
+                """hello from test.html
+                {{ externalinline app_two/templates/another_template.html }}
+                {{ inline local_file.html }}               
+                """
+            )
+
+        file_two = Path(f"{self.app_two}/another_template.html")
+
+        with file_two.open("w", encoding="utf-8") as f:
+            f.write("hello from another_template")
+
+        local_file = Path(f"{self.app_one}/local_file.html")
+        with local_file.open("w", encoding="utf-8") as f:
+            f.write("hello from local file")
+
+        result = self.parser.Parse(str(file))
+        expected = """hello from test.html
+                hello from another_template
+                hello from local file"""
+        self.assertEqual(str(result).strip(), expected.strip())
 
 
 if __name__ == "__main__":
