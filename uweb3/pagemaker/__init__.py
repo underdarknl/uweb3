@@ -213,6 +213,7 @@ class Base:
                 templateparser.Parser(
                     self.options.get("templates", {}).get("path", self.TEMPLATE_DIR),
                     allowed_paths=allowed_paths_tuple,
+                    executing_path=self.LOCAL_DIR,
                 ),
             )
         parser: templateparser.Parser = self.persistent.Get("__parser")
