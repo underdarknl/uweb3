@@ -234,12 +234,12 @@ class Parser(dict):
         self.template_dir = path
         self.executing_path = executing_path
         self.dictoutput = dictoutput
-        
+
         if self.template_dir:
             self.allowed_paths = (self.template_dir,) + allowed_paths
         else:
             self.allowed_paths = allowed_paths
-            
+
         self.tags = {}
         self.requesttags = {}
         self.astvisitor = AstVisitor(EVALWHITELIST)
@@ -300,8 +300,10 @@ class Parser(dict):
             return super().__getitem__(location)
 
         if not self.allowed_paths:
-            raise TemplateReadError("Externalinline is not allowed without specifying allowed_paths.")
-        
+            raise TemplateReadError(
+                "Externalinline is not allowed without specifying allowed_paths."
+            )
+
         if self.template_dir:
             for path in self.allowed_paths:
                 template_path = os.path.realpath(os.path.join(path, location))
@@ -336,9 +338,7 @@ class Parser(dict):
         """
         if self.template_dir:
             template_path = os.path.realpath(os.path.join(self.template_dir, location))
-            prefix = os.path.commonprefix(
-                (template_path, self.template_dir)
-            )
+            prefix = os.path.commonprefix((template_path, self.template_dir))
             if self.template_dir != prefix:
                 raise TemplateReadError(
                     "Could not load template %r, not in template dir" % template_path
@@ -582,13 +582,13 @@ class Template(list):
 
     def AddExternal(self, name):
         """Allows loading in external files from directories outside of the
-        current templateparser template_dir. 
-        
+        current templateparser template_dir.
+
         When using {{ externalinline }} allowed_paths must be provided to the
-        templateparser. 
-        
+        templateparser.
+
         Arguments:
-            name (str): Relative path seen to the executing path of the project. 
+            name (str): Relative path seen to the executing path of the project.
         """
         self.name = os.path.join(self.parser.executing_path, name)
         if self.parser is None:

@@ -6,11 +6,11 @@
 
 # Standard modules
 import os
-import shutil
-from pathlib import Path
 import re
+import shutil
 import time
 import unittest
+from pathlib import Path
 
 # Unittest target
 from uweb3 import templateparser
@@ -1253,7 +1253,7 @@ class TestExternalInline(unittest.TestCase):
             f.write(
                 """
                 hello from test.html
-                {{ externalinline app_two/templates/another_template.html }}                    
+                {{ externalinline app_two/templates/another_template.html }}
                 """
             )
 
@@ -1270,7 +1270,7 @@ class TestExternalInline(unittest.TestCase):
         file, _ = self._create_basic_files()
         result = self.parser.Parse(str(file))
         expected = """hello from test.html
-                hello from another_template                   
+                hello from another_template
                 """
 
         self.assertEqual(str(result).strip(), expected.strip())
@@ -1299,7 +1299,7 @@ class TestExternalInline(unittest.TestCase):
             f.write(
                 """
                 hello from test.html
-                {{ inline app_two/templates/another_template.html }}                    
+                {{ inline app_two/templates/another_template.html }}
                 """
             )
 
@@ -1320,7 +1320,7 @@ class TestExternalInline(unittest.TestCase):
             f.write(
                 """
                 hello from test.html
-                {{ externalinline app_two/../another_template.html }}                    
+                {{ externalinline app_two/../another_template.html }}
                 """
             )
 
@@ -1382,7 +1382,7 @@ class TestExternalInline(unittest.TestCase):
             f.write(
                 """hello from test.html
                 {{ externalinline app_two/templates/another_template.html }}
-                {{ inline local_file.html }}               
+                {{ inline local_file.html }}
                 """
             )
 

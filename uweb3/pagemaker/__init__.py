@@ -8,23 +8,23 @@ import logging
 import mimetypes
 import os
 import pyclbr
-from re import template
 import sys
 import threading
 import time
 from base64 import b64encode
+from re import template
 
 import magic
 from pymysql import Error as pymysqlerr
 
 import uweb3
 from uweb3.logger import (
+    DebuggingDetails,
+    UwebDebuggingAdapter,
+    default_data_scrubber,
     setup_debug_logger,
     setup_debug_stream_logger,
     setup_error_logger,
-    UwebDebuggingAdapter,
-    DebuggingDetails,
-    default_data_scrubber,
 )
 from uweb3.request import IndexedFieldStorage
 
@@ -207,7 +207,7 @@ class Base:
         if "__parser" not in self.persistent:
             allowed_paths = self.options.get("templates", {}).get("allowed_paths", "")
             allowed_paths_tuple = tuple(allowed_paths.replace(" ", "").split(","))
-            
+
             self.persistent.Set(
                 "__parser",
                 templateparser.Parser(
