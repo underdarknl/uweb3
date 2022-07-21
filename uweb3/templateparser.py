@@ -266,6 +266,30 @@ class Parser(dict):
             self.AddTemplate(template)
         return super().__getitem__(template)
 
+    def CreateFileTemplate(self, location, template_path, name=None, path=None):
+        if path:
+            try:
+                self[name or location] = FileTemplate(
+                    template_path,
+                    parser=Parser(
+                        path=path,
+                        allowed_paths=self.allowed_paths,
+                        dictoutput=self.dictoutput,
+                        templateEncoding=self.templateEncoding,
+                        executing_path=self.executing_path,
+                    ),
+                    encoding=None,
+                )
+            except IOError:
+                raise TemplateReadError("Could not load template %r" % template_path)
+        else:
+            try:
+                self[name or location] = FileTemplate(
+                    template_path, parser=self, encoding=None
+                )
+            except IOError:
+                raise TemplateReadError("Could not load template %r" % template_path)
+
     def AddExternal(self, location, name=None):
         if location in self:
             return super().__getitem__(location)
