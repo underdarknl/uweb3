@@ -600,6 +600,15 @@ class Template(list):
 
     def AddExternal(self, name):
         """Allows loading in external files from directories outside of the
+        current templateparser template_dir. 
+        
+        When using {{ externalinline }} allowed_paths must be provided to the
+        templateparser. 
+        
+        Arguments:
+            name (str): Relative path seen to the executing path of the project. 
+        """
+        self.name = os.path.join(self.parser.executing_path, name)
         if self.parser is None:
             raise TypeError("The template requires parser for adding template files.")
 
