@@ -22,8 +22,6 @@ import os
 import re
 from typing import Any, Callable, Tuple, Union
 
-from pyparsing import Mapping
-
 from .libs.safestring import (
     Basesafestring,
     HTMLsafestring,
