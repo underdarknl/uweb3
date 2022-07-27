@@ -47,3 +47,9 @@ jobs:
         python3 -m unittest test.test_model
         python3 -m unittest test.test_request
         python3 -m unittest test.test_templateparser
+    - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: underdarknl/uweb3tests
+          event-type: uweb3event
