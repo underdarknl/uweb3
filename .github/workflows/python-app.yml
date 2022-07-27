@@ -34,7 +34,7 @@ jobs:
         python-version: "3.10"
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
+        python3 -m pip install --upgrade pip
         pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: set pythonpath
@@ -43,12 +43,9 @@ jobs:
     - name: Install uweb3tests
       run: |
         pip install git+https://github.com/stefvanhouten/uweb3tests.git@as_package
-    - name: Run Python Script
-      uses: jannekem/run-python-script-action@v1.2
-      with:
-        script: |
-          from uweb3tests import serve
-          serve.main()
+    - name: Run tests
+        run: |
+          python3 serve_uweb3tests.py & sleep 5 && python3 testrunner.py
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
