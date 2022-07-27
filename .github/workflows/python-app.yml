@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ dev ]
+    branches: [ dev, uweb3tests ]
   pull_request:
     branches: [ dev ]
 permissions:
@@ -47,3 +47,13 @@ jobs:
         python3 -m unittest test.test_model
         python3 -m unittest test.test_request
         python3 -m unittest test.test_templateparser
+    - name: Install uweb3tests
+      run: |
+        pip install git+https://github.com/stefvanhouten/uweb3tests.git@as_package
+    - name: Run Python Script
+      uses: jannekem/run-python-script-action@v1.2
+      with:
+        script: |
+          from uweb3tests import serve
+          serve.main()
+
