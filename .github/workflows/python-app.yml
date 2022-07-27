@@ -37,6 +37,18 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: set pythonpath
+      run: |
+        echo "PYTHONPATH=." >> $GITHUB_ENV
+    - name: Install uweb3tests
+      run: |
+        pip install git+https://github.com/stefvanhouten/uweb3tests.git@as_package
+    - name: Run Python Script
+      uses: jannekem/run-python-script-action@v1.2
+      with:
+        script: |
+          from uweb3tests import serve
+          serve.main()
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -47,13 +59,5 @@ jobs:
         python3 -m unittest test.test_model
         python3 -m unittest test.test_request
         python3 -m unittest test.test_templateparser
-    - name: Install uweb3tests
-      run: |
-        pip install git+https://github.com/stefvanhouten/uweb3tests.git@as_package
-    - name: Run Python Script
-      uses: jannekem/run-python-script-action@v1.2
-      with:
-        script: |
-          from uweb3tests import serve
-          serve.main()
+    
 
