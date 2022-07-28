@@ -267,7 +267,7 @@ class CookieTests(unittest.TestCase):
         """Lets see if we can set a cookie, and not have it reflected when we dont send it in for a second request."""
 
         url_set = baseurl + "signedcookie/set"
-        r_set = requests.get(url_set)
+        requests.get(url_set)
 
         url_fetch = baseurl + "signedcookie/reflect"
         r_fetch = requests.get(url_fetch)
