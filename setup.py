@@ -23,7 +23,7 @@ def Version():
     """Returns the version of the library as read from the __init__.py file"""
     main_lib = os.path.join(os.path.dirname(__file__), "uweb3", "__init__.py")
     with open(main_lib) as v_file:
-        return re.match(".*__version__ = \"(.*?)\"", v_file.read(), re.S).group(1)
+        return re.match('.*__version__ = "(.*?)"', v_file.read(), re.S).group(1)
 
 
 setup(
