@@ -242,7 +242,7 @@ def DatabaseConnection():
     """Returns an SQLTalk database connection to 'uWeb3_model_test'."""
     return create_engine(
         "mysql://{user}:{passwd}@{host}/{db}".format(
-            host="localhost", user="uweb3test", passwd="uweb3test", db="uweb_test"
+            host="localhost", user="testuser", passwd="uweb3test", db="uweb_test"
         )
     )
 
