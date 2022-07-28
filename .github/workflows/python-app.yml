@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ dev, uweb3tests_intergration ]
+    branches: [ dev ]
   pull_request:
     branches: [ dev ]
 permissions:
