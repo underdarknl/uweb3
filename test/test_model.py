@@ -670,7 +670,7 @@ class CookieTests(unittest.TestCase):
 def DatabaseConnection():
     """Returns an SQLTalk database connection to 'uWeb3_model_test'."""
     return mysql.Connect(
-        host="localhost", user="stef", passwd="password", db="uweb_test", charset="utf8"
+        host="localhost", user="uweb3test", passwd="uweb3test", db="uweb_test", charset="utf8"
     )
 
 
