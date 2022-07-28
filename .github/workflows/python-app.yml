@@ -47,3 +47,4 @@ jobs:
         python3 -m unittest test.test_model
         python3 -m unittest test.test_request
         python3 -m unittest test.test_templateparser
+        python3 -m test.uweb3tests.serve & sleep 5 && python3 -m unittest test_uweb3tests
