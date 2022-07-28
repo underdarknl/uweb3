@@ -6,10 +6,11 @@ directory. It communicates over http and checks the output of each route.
 You can start the webserver by issuing: python3 serve.py
 You can test test all the functions by issuing: python3 testrunner.py -v
 """
+import hashlib
 import os
 import unittest
+
 import requests
-import hashlib
 
 baseurl = "http://127.0.0.1:8002/"
 BASE_DIR = os.path.join(os.path.dirname(__file__), "uweb3tests")

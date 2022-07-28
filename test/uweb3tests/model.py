@@ -21,7 +21,9 @@ class Fish(model.Record):
                 "CREATE TABLE fish(ID INTEGER, name TEXT, species TEXT, tank INTEGER)"
             )
             cursor.Execute("CREATE TABLE tank(ID INTEGER, name TEXT)")
-            cursor.Execute("""INSERT INTO tank(ID, name) VALUES (1, "Living Room sqlite")""")
+            cursor.Execute(
+                """INSERT INTO tank(ID, name) VALUES (1, "Living Room sqlite")"""
+            )
             cursor.Execute(
                 """INSERT INTO fish(ID, name, species, tank) VALUES (1, "sammy", "shark", 1)"""
             )
@@ -40,7 +42,7 @@ class Tank(model.Record):
                 `ID` int(10) unsigned NOT NULL AUTO_INCREMENT,
                 `name` varchar(45) DEFAULT NULL,
                 PRIMARY KEY (`ID`)
-                ) 
+                )
                 """
             )
             cursor.Execute(
