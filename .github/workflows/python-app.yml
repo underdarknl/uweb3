@@ -47,6 +47,7 @@ jobs:
     - name: Setup uweb3tests database
       run: |
           mysql -h 127.0.0.1 --port 3306 -u root -puweb3test -e 'CREATE DATABASE IF NOT EXISTS aquarium;'
+          mysql -h 127.0.0.1 --port 3306 -u root -puweb3test -e "GRANT ALL PRIVILEGES ON *.* TO 'uweb3test'@'localhost' WITH GRANT OPTION;"
     - name: Run tests
       run: |
         python3 serve_uweb3tests.py & sleep 5 && python3 testrunner.py
