@@ -155,7 +155,7 @@ class PageMaker(uweb3.DebuggingPageMaker, uweb3.SparseAsyncPages):
 
     def ThrowError(self):
         """The request could not be fulfilled, this returns a 500."""
-        return test
+        raise Exception("error")
 
     def ReturnNone(self):
         """returns a Python None."""

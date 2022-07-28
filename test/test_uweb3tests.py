@@ -422,7 +422,6 @@ class EscapingTest(unittest.TestCase):
         """Lets see if the page returns a posted and insterted mysql record"""
         url = baseurl + "mysql/write"
         data = {"name": "Squid <b>Tank</b>"}
-        returnvalue = """Tank({'ID': 2, 'name': 'Squid Tank'})"""
         r = requests.post(url, data)
         self.assertEqual(r.status_code, 200)
         self.assertTrue("<b>Tank</b>" not in r.text)
