@@ -45,8 +45,8 @@ jobs:
     - name: Setup uweb3tests database
       run: |
           mysql -h 127.0.0.1 --port 3306 -u root -puweb3test -e 'CREATE DATABASE IF NOT EXISTS aquarium;'
-          mysql -h 127.0.0.1 --port 3306 -u root -puweb3test -e "CREATE USER 'uweb3test'@'127.0.0.1' IDENTIFIED BY 'uweb3test';"
-          mysql -h 127.0.0.1 --port 3306 -u root -puweb3test -e "GRANT ALL PRIVILEGES ON *.* TO 'uweb3test'@'127.0.0.1' WITH GRANT OPTION; flush privileges;"
+          mysql -h 127.0.0.1 --port 3306 -u root -puweb3test -e "CREATE USER 'uweb3test'@'%' IDENTIFIED BY 'uweb3test';"
+          mysql -h 127.0.0.1 --port 3306 -u root -puweb3test -e "GRANT ALL PRIVILEGES ON *.* TO 'uweb3test'@'%' WITH GRANT OPTION; flush privileges;"
           
     - name: Run tests
       run: |
