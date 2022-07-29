@@ -284,6 +284,18 @@ class RecordTests(unittest.TestCase):
             model.NotExistError, Author.FromPrimary, self.connection, new_author.key
         )
 
+    def testFailedUpdate(self):
+        """Author_two's values should default back to the original record stored
+        values after the update has failed."""
+        Author.Create(self.connection, {"name": "W. Shakespeare"})
+        author_two = Author.Create(self.connection, {"name": "W. Shakespeare"})
+        author_two.update({"ID": 1})
+        try:
+            author_two.Save()
+        except self.connection.IntegrityError:
+            pass
+        self.assertDictEqual(dict(author_two), {"ID": 2, "name": "W. Shakespeare"})
+
 
 class NonStandardTableAndRelations(unittest.TestCase):
     """Verified autoloading works for records with an alternate table name."""
