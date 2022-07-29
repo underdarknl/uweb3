@@ -1213,10 +1213,15 @@ class Record(BaseRecord):
         """
         self._PreSave(cursor)
         difference = self._Changes()
-        if difference:
-            self._RecordUpdate(cursor)
-            self._record.update(difference)
-        self._PostSave(cursor)
+        try:
+            if difference:
+                self._RecordUpdate(cursor)
+                self._record.update(difference)
+            self._PostSave(cursor)
+        except Exception as exc:
+            # After a failed save rollback the record to the stored database values
+            self.update(self._record)
+            raise exc
 
     # ############################################################################
     # Public methods for creation, deletion and storing Record objects.
