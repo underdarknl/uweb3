@@ -195,7 +195,7 @@ def CSP(resourcetype, urls, append=True):
     return csp_decorator
 
 
-def TemplateParser(template, *t_args, **t_kwargs):
+def TemplateParser(template, **t_kwargs):
     """Decorator that wraps and returns the output.
 
     The output is wrapped in a templateparser call if its not already something
@@ -206,7 +206,8 @@ def TemplateParser(template, *t_args, **t_kwargs):
         def wrapper(*args, **kwargs):
             pageresult = f(*args, **kwargs) or {}
             if not isinstance(pageresult, (str, uweb3.Response, uweb3.Redirect)):
-                return args[0].parser.Parse(template, **pageresult)
+                t_kwargs.update(pageresult)
+                return args[0].parser.Parse(template, **t_kwargs)
             return pageresult
 
         return wrapper
