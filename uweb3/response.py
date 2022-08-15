@@ -3,6 +3,7 @@
 
 # Standard modules
 import http.client as httplib
+from typing import Union
 
 
 class Response(object):
@@ -16,12 +17,12 @@ class Response(object):
     CONTENT_TYPE = "text/html"
 
     def __init__(
-        self, content="", content_type=CONTENT_TYPE, httpcode=200, headers=None, **kwds
+        self, content: Union[str, dict]="", content_type=CONTENT_TYPE, httpcode=200, headers=None, **kwds
     ):
         """Initializes a Response object.
 
         Arguments:
-          @ content: str
+          @ content: Union[str, dict]
             The content to return to the client. This can be either plain text, html
             or the contents of a file (images for example).
           % content_type: str ~~ CONTENT_TYPE ('text/html' by default)
