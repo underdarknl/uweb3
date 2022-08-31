@@ -567,8 +567,12 @@ class Request(BaseRequest):
         # Iterate over the IndexedFieldStorage.list object to find
         # all file-like objects and store them seperatly from the
         # regular post data.
-        files = [item for item in result.list if item.filename]
-        result.list = [item for item in result.list if not item.filename]
+        if result.list:
+            files = [item for item in result.list if item.filename]
+            result.list = [item for item in result.list if not item.filename]
+        else:
+            files = []
+            result.list = []
 
         if files:
             self.vars["files"].list = files
