@@ -379,6 +379,7 @@ class DataParser:
 
     def _parse_json(self) -> IndexedFieldStorage:
         storage = IndexedFieldStorage()
+        storage.list = []
         try:
             json_data = json.loads(self.request_payload.read(size=self.max_size))
             storage.list = [
