@@ -1,7 +1,7 @@
 """This file holds all the decorators we use in this project."""
 
 import codecs
-import hashlib
+import os
 import json
 import pickle
 import time
@@ -206,7 +206,9 @@ def TemplateParser(template, *t_args, **t_kwargs):
         def wrapper(*args, **kwargs):
             pageresult = f(*args, **kwargs) or {}
             if not isinstance(pageresult, (str, uweb3.Response, uweb3.Redirect)):
-                return args[0].parser.Parse(template, **pageresult)
+                return args[0].parser.Parse(
+                    os.path.join(args[0].TEMPLATE_DIR, template), **pageresult
+                )
             return pageresult
 
         return wrapper
