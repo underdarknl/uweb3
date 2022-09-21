@@ -205,8 +205,14 @@ class Base:
         Otherwise, the `TEMPLATE_DIR` will be used to load templates from.
         """
         if "__parser" not in self.persistent:
-            allowed_paths = self.options.get("templates", {}).get("allowed_paths", "")
-            allowed_paths_tuple = tuple(allowed_paths.replace(" ", "").split(","))
+            allowed_paths = self.options.get("templates", {}).get("allowed_paths", None)
+            # Make sure that the tuple does not contain an empty "", this
+            # would match all routes and allow for arbitrary template loading.
+            if allowed_paths:
+                allowed_paths_tuple = tuple(allowed_paths.replace(" ", "").split(","))
+                allowed_paths_tuple = tuple(path for path in allowed_paths_tuple if path)
+            else:
+                allowed_paths_tuple = None
 
             self.persistent.Set(
                 "__parser",
