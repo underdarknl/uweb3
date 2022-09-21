@@ -1286,7 +1286,7 @@ class TestExternalInline(unittest.TestCase):
             executing_path=str(self.base_folder),
         )
 
-        with self.assertRaises(templateparser.TemplateReadError):
+        with self.assertRaises(templateparser.ExternalInlineTemplateNotAllowedError):
             self.parser.Parse(str(file))
 
     def test_attempt_inline_outside_dir(self):
@@ -1329,7 +1329,7 @@ class TestExternalInline(unittest.TestCase):
         with file_two.open("w", encoding="utf-8") as f:
             f.write("this template is outside of the allowed directory")
 
-        with self.assertRaises(templateparser.TemplateReadError):
+        with self.assertRaises(templateparser.ExternalInlineTemplateNotAllowedError):
             self.parser.Parse(str(file))
 
     def test_nested_externalinline(self):
