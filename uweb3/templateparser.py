@@ -581,12 +581,15 @@ class Template(list):
           TemplateReadError: The template file could not be read by the Parser.
           TypeError: There is no parser associated with the template.
         """
-        self.name = name
+        if self.parser.template_dir:
+            self.name = os.path.join(self.parser.template_dir, name)
+        else:
+            self.name = name
 
         if self.parser is None:
             raise TypeError("The template requires parser for adding template files.")
 
-        return self._AddToOpenScope(self.parser[name])
+        return self._AddToOpenScope(self.parser[self.name])
 
     def AddExternal(self, name):
         """Allows loading in external files from directories outside of the
