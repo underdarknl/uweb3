@@ -63,6 +63,16 @@ class TemplateReadError(Error, IOError):
     """Template file could not be read or found."""
 
 
+class ExternalInlineTemplateNotAllowedError(TemplateReadError):
+    """External inline template was not allowed because the path was
+    not in the allowed paths."""
+
+
+class ExternalInlineUsedWithoutAllowedPathsError(TemplateReadError):
+    """Template contained {{ externalinline }} tag but no allowed paths were
+    defined."""
+
+
 class TemplateEvaluationError(Error):
     """Template condition was not within allowed set of operators."""
 
@@ -211,7 +221,7 @@ class Parser(dict):
         templates=(),
         dictoutput=False,
         templateEncoding="utf-8",
-        allowed_paths=(),
+        allowed_paths=None,
         executing_path=None,
     ):
         """Initializes a Parser instance.
@@ -233,12 +243,7 @@ class Parser(dict):
         self.template_dir = path
         self.executing_path = executing_path
         self.dictoutput = dictoutput
-
-        if self.template_dir:
-            self.allowed_paths = (self.template_dir,) + allowed_paths
-        else:
-            self.allowed_paths = allowed_paths
-
+        self.allowed_paths = allowed_paths
         self.tags = {}
         self.requesttags = {}
         self.astvisitor = AstVisitor(EVALWHITELIST)
@@ -284,6 +289,8 @@ class Parser(dict):
                     ),
                     encoding=None,
                 )
+            except (ExternalInlineTemplateNotAllowedError, ExternalInlineUsedWithoutAllowedPathsError) as err:
+                raise err
             except IOError:
                 raise TemplateReadError("Could not load template %r" % template_path)
         else:
@@ -291,6 +298,8 @@ class Parser(dict):
                 self[name or location] = FileTemplate(
                     template_path, parser=self, encoding=None
                 )
+            except (ExternalInlineTemplateNotAllowedError, ExternalInlineUsedWithoutAllowedPathsError) as err:
+                raise err
             except IOError:
                 raise TemplateReadError("Could not load template %r" % template_path)
 
@@ -299,7 +308,7 @@ class Parser(dict):
             return super().__getitem__(location)
 
         if not self.allowed_paths:
-            raise TemplateReadError(
+            raise ExternalInlineUsedWithoutAllowedPathsError(
                 "Externalinline is not allowed without specifying allowed_paths."
             )
 
@@ -314,7 +323,7 @@ class Parser(dict):
                     )
                     return super().__getitem__(location)
 
-            raise TemplateReadError(
+            raise ExternalInlineTemplateNotAllowedError(
                 "External template '%s' was not within an allowed path." % location
             )
 
@@ -590,6 +599,7 @@ class Template(list):
             name (str): Relative path seen to the executing path of the project.
         """
         self.name = os.path.join(self.parser.executing_path, name)
+
         if self.parser is None:
             raise TypeError("The template requires parser for adding template files.")
 
@@ -826,6 +836,8 @@ class FileTemplate(Template):
                 raw_template = templatefile.read()
                 self._template_hash = HashContent(raw_template)
             super().__init__(raw_template, parser=parser)
+        except (ExternalInlineTemplateNotAllowedError, ExternalInlineUsedWithoutAllowedPathsError) as err:
+            raise err
         except (IOError, OSError) as error:
             raise TemplateReadError("Cannot open: %r %r" % (template_path, error))
 
