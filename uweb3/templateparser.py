@@ -20,7 +20,7 @@ import math
 # Standard modules
 import os
 import re
-from typing import Any, Callable, Tuple, Union
+from typing import Any, Callable, Dict, Tuple, Union
 
 
 from .libs.safestring import (
@@ -471,7 +471,7 @@ class Parser(dict):
     def SetEvalWhitelist(
         self,
         evalwhitelist: Union[
-            None, dict[dict[str, Callable[[Any], Any]], dict[str, Tuple[ast.AST]]]
+            None, Dict[Dict[str, Callable[[Any], Any]], Dict[str, Tuple[ast.AST]]]
         ] = None,
         append=False,
     ):
@@ -1328,7 +1328,7 @@ class TemplateTag(object):
                 # KeyError, `haystack` has no key `needle` but may have matching attr.
                 # TypeError: `haystack` is no mapping but may have a matching attr.
                 return getattr(haystack, needle)
-        except (AttributeError, LookupError):
+        except (AttributeError, LookupError) as err:
             raise TemplateKeyError("Item has no index, key or attribute %r" % needle)
 
 
