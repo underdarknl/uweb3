@@ -20,6 +20,8 @@ import math
 # Standard modules
 import os
 import re
+from typing import Any, Callable, Dict, Tuple, Union
+
 
 from .libs.safestring import (
     Basesafestring,
@@ -59,6 +61,16 @@ class TemplateSyntaxError(Error):
 
 class TemplateReadError(Error, IOError):
     """Template file could not be read or found."""
+
+
+class ExternalInlineTemplateNotAllowedError(TemplateReadError):
+    """External inline template was not allowed because the path was
+    not in the allowed paths."""
+
+
+class ExternalInlineUsedWithoutAllowedPathsError(TemplateReadError):
+    """Template contained {{ externalinline }} tag but no allowed paths were
+    defined."""
 
 
 class TemplateEvaluationError(Error):
@@ -210,6 +222,7 @@ class Parser(dict):
         dictoutput=False,
         templateEncoding="utf-8",
         allowed_paths=None,
+        executing_path=None,
     ):
         """Initializes a Parser instance.
 
@@ -230,14 +243,18 @@ class Parser(dict):
         """
         super().__init__()
         self.template_dir = path
-        self.allowed_paths = allowed_paths
+        self.executing_path = executing_path
         self.dictoutput = dictoutput
+        self.allowed_paths = allowed_paths
         self.tags = {}
         self.requesttags = {}
         self.astvisitor = AstVisitor(EVALWHITELIST)
         self.templateEncoding = templateEncoding
         for template in templates:
             self.AddTemplate(template)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(template_dir={self.template_dir})"
 
     def __getitem__(self, template):
         """Retrieves a stored template by name.
@@ -260,6 +277,58 @@ class Parser(dict):
             self.AddTemplate(template)
         return super().__getitem__(template)
 
+    def CreateFileTemplate(self, location, template_path, name=None, path=None):
+        if path:
+            try:
+                self[name or location] = FileTemplate(
+                    template_path,
+                    parser=Parser(
+                        path=path,
+                        allowed_paths=self.allowed_paths,
+                        dictoutput=self.dictoutput,
+                        templateEncoding=self.templateEncoding,
+                        executing_path=self.executing_path,
+                    ),
+                    encoding=None,
+                )
+            except (ExternalInlineTemplateNotAllowedError, ExternalInlineUsedWithoutAllowedPathsError) as err:
+                raise err
+            except IOError:
+                raise TemplateReadError("Could not load template %r" % template_path)
+        else:
+            try:
+                self[name or location] = FileTemplate(
+                    template_path, parser=self, encoding=None
+                )
+            except (ExternalInlineTemplateNotAllowedError, ExternalInlineUsedWithoutAllowedPathsError) as err:
+                raise err
+            except IOError:
+                raise TemplateReadError("Could not load template %r" % template_path)
+
+    def AddExternal(self, location, name=None):
+        if location in self:
+            return super().__getitem__(location)
+
+        if not self.allowed_paths:
+            raise ExternalInlineUsedWithoutAllowedPathsError(
+                "Externalinline is not allowed without specifying allowed_paths."
+            )
+
+        if self.template_dir:
+            for path in self.allowed_paths:
+                template_path = os.path.realpath(os.path.join(path, location))
+                prefix = os.path.commonprefix((template_path, path))
+
+                if path == prefix:
+                    self.CreateFileTemplate(
+                        location, template_path, name=name, path=path
+                    )
+                    return super().__getitem__(location)
+
+            raise ExternalInlineTemplateNotAllowedError(
+                "External template '%s' was not within an allowed path." % location
+            )
+
     def AddTemplate(self, location, name=None):
         """Reads the given `template` filename and adds it to the cache.
 
@@ -278,16 +347,16 @@ class Parser(dict):
           TemplateReadError: When the template file cannot be read
         """
         if self.template_dir:
-            template_path = self._check_allowed_path(location)
+            template_path = os.path.realpath(os.path.join(self.template_dir, location))
+            prefix = os.path.commonprefix((template_path, self.template_dir))
+            if self.template_dir != prefix:
+                raise TemplateReadError(
+                    "Could not load template %r, not in template dir" % template_path
+                )
         else:
             template_path = location
 
-        try:
-            self[name or location] = FileTemplate(
-                template_path, parser=self, encoding=None
-            )
-        except IOError:
-            raise TemplateReadError("Could not load template %r" % template_path)
+        return self.CreateFileTemplate(location, template_path, name=name)
 
     def _check_allowed_path(self, location):
         template_path = os.path.realpath(os.path.join(self.template_dir, location))
@@ -423,20 +492,46 @@ class Parser(dict):
         """
         self.templateEncoding = templateEncoding
 
-    def SetEvalWhitelist(self, evalwhitelist=None, append=False):
+    def SetEvalWhitelist(
+        self,
+        evalwhitelist: Union[
+            None, Dict[Dict[str, Callable[[Any], Any]], Dict[str, Tuple[ast.AST]]]
+        ] = None,
+        append=False,
+    ):
         """Allows the user to set the Eval Whitelist which limits the python
         operations allowed within this templateParsers Context. These are usually
         triggered by If/Elif conditions and the like.
 
         Arguments:
-          % evalwhitelist: Dict ~~ None
-            The new Dict of whitelisted eval AST items.
-          % append: bool ~~ False
-            When true, add the new items to the current list, else overwrite.
+            % evalwhitelist: None | dict(dict(str, Callable), dict(str, Tuple()))
+                The new Dict of whitelisted eval AST items.
+                for example:
+                {
+                    "functions": {
+                        "float": "float",
+                        ....
+                    },
+                    "operators": (op1, op2, ...)
+                }
+            % append: bool ~~ False
+                When true, add the new items to the current list, else overwrite.
         """
-        if append:
-            evalwhitelist = EVALWHITELIST.update(evalwhitelist)
-        self.astvisitor = AstVisitor(evalwhitelist)
+        if append and evalwhitelist:
+            # Create a copy to prevent mutating constant value
+            whitelist_copy = EVALWHITELIST.copy()
+            # dict.update() does not update nested dictionaries as we want
+            # it overwrites all keys with the keys of the 2nd dict, in this
+            # case we want to append, using regular dict.update() results in
+            # the loss of all keys present in EVALWHITELIST.
+            if "operators" in evalwhitelist:
+                whitelist_copy["operators"] += evalwhitelist["operators"]
+
+            if "functions" in evalwhitelist:
+                whitelist_copy["functions"].update(evalwhitelist["functions"])
+            self.astvisitor = AstVisitor(whitelist_copy)
+        else:
+            self.astvisitor = AstVisitor(evalwhitelist)
 
     TemplateReadError = TemplateReadError
 
@@ -473,11 +568,11 @@ class Template(list):
 
         """
         super().__init__()
-        self.parser = parser
+        self.name = None
+        self.parser: Parser = parser
         self.dictoutput = dictoutput
         self.scopes = [self]
         self.AddString(raw_template)
-        self.name = None
 
     def __eq__(self, other):
         """Returns the equality to another Template.
@@ -510,10 +605,32 @@ class Template(list):
           TemplateReadError: The template file could not be read by the Parser.
           TypeError: There is no parser associated with the template.
         """
-        self.name = name
+        if self.parser.template_dir:
+            self.name = os.path.join(self.parser.template_dir, name)
+        else:
+            self.name = name
+
         if self.parser is None:
             raise TypeError("The template requires parser for adding template files.")
-        return self._AddToOpenScope(self.parser[name])
+
+        return self._AddToOpenScope(self.parser[self.name])
+
+    def AddExternal(self, name):
+        """Allows loading in external files from directories outside of the
+        current templateparser template_dir.
+
+        When using {{ externalinline }} allowed_paths must be provided to the
+        templateparser.
+
+        Arguments:
+            name (str): Relative path seen to the executing path of the project.
+        """
+        self.name = os.path.join(self.parser.executing_path, name)
+
+        if self.parser is None:
+            raise TypeError("The template requires parser for adding template files.")
+
+        return self._AddToOpenScope(self.parser.AddExternal(self.name))
 
     def AddString(self, raw_template, filename=None):
         """Extends the Template by adding a raw template string.
@@ -548,6 +665,7 @@ class Template(list):
         The template is parsed by parsing each of its members and combining that.
         """
         dictoutput = self.parser and self.parser.dictoutput or self.dictoutput
+
         if dictoutput:
             output = {"tags": {}}
             if self.name:
@@ -565,6 +683,7 @@ class Template(list):
                 if isinstance(tag, TemplateTag):
                     output["tags"][str(tag)] = tag.Parse(**kwds)
             return output
+
         return HTMLsafestring("").join(
             HTMLsafestring(tag.Parse(**kwds)) for tag in self
         )
@@ -616,6 +735,10 @@ class Template(list):
     def _TemplateConstructInline(self, name):
         """Processing for {{ inline }} template syntax."""
         self.AddFile(name)
+
+    def _TemplateConstructExternalinline(self, name):
+        """Processing for {{ externalinline }} template syntax."""
+        self.AddExternal(name)
 
     def _TemplateConstructFor(self, *nodes):
         """Processing for {{ for }} template syntax."""
@@ -740,6 +863,8 @@ class FileTemplate(Template):
                 raw_template = templatefile.read()
                 self._template_hash = HashContent(raw_template)
             super().__init__(raw_template, parser=parser)
+        except (ExternalInlineTemplateNotAllowedError, ExternalInlineUsedWithoutAllowedPathsError) as err:
+            raise err
         except (IOError, OSError) as error:
             raise TemplateReadError("Cannot open: %r %r" % (template_path, error))
 
@@ -1227,7 +1352,7 @@ class TemplateTag(object):
                 # KeyError, `haystack` has no key `needle` but may have matching attr.
                 # TypeError: `haystack` is no mapping but may have a matching attr.
                 return getattr(haystack, needle)
-        except (AttributeError, LookupError):
+        except (AttributeError, LookupError) as err:
             raise TemplateKeyError("Item has no index, key or attribute %r" % needle)
 
 

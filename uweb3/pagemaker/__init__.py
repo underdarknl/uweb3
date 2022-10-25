@@ -12,12 +12,21 @@ import sys
 import threading
 import time
 from base64 import b64encode
+from re import template
 
 import magic
 from pymysql import Error as pymysqlerr
 
 import uweb3
-from uweb3.request import IndexedFieldStorage
+from uweb3.logger import (
+    DebuggingDetails,
+    UwebDebuggingAdapter,
+    default_data_scrubber,
+    setup_debug_logger,
+    setup_debug_stream_logger,
+    setup_error_logger,
+)
+from uweb3.request import IndexedFieldStorage, Request
 
 from .. import response, templateparser
 from ..connections import ConnectionManager
@@ -197,16 +206,25 @@ class Base:
         """
         if "__parser" not in self.persistent:
             allowed_paths = self.options.get("templates", {}).get("allowed_paths", None)
+            # Make sure that the tuple does not contain an empty "", this
+            # would match all routes and allow for arbitrary template loading.
             if allowed_paths:
-                allowed_paths = allowed_paths.split(",")
+                allowed_paths_tuple = tuple(allowed_paths.replace(" ", "").split(","))
+                allowed_paths_tuple = tuple(
+                    path for path in allowed_paths_tuple if path
+                )
+            else:
+                allowed_paths_tuple = None
+
             self.persistent.Set(
                 "__parser",
                 templateparser.Parser(
                     self.options.get("templates", {}).get("path", self.TEMPLATE_DIR),
-                    allowed_paths=allowed_paths,
+                    allowed_paths=allowed_paths_tuple,
+                    executing_path=self.LOCAL_DIR,
                 ),
             )
-        parser = self.persistent.Get("__parser")
+        parser: templateparser.Parser = self.persistent.Get("__parser")
         parser.template_dir = self.TEMPLATE_DIR
         parser.dictoutput = self.req.noparse
         return parser
@@ -253,15 +271,16 @@ class BasePageMaker(Base):
         """
         super(BasePageMaker, self).__init__()
         self.__SetupPaths(executing_path)
-        self.req = req
+        self.req: Request = req
+
         self.cookies = req.vars["cookie"]
         self.get = req.vars["get"]
-        self.post = req.vars["post"] if "post" in req.vars else IndexedFieldStorage()
-        self.put = req.vars["put"] if "put" in req.vars else IndexedFieldStorage()
-        self.delete = (
-            req.vars["delete"] if "delete" in req.vars else IndexedFieldStorage()
-        )
-        self.files = req.vars["files"] if "files" in req.vars else {}
+        self.post = req.vars["post"]
+        self.put = req.vars["put"]
+        self.delete = req.vars["delete"]
+        self.json = req.vars["json"]
+        self.files = req.vars["files"]
+
         self.config = config
         self.options = config.options if config else {}
         self.debug = DebuggerMixin in self.__class__.__mro__
@@ -272,31 +291,38 @@ class BasePageMaker(Base):
                 "connection", ConnectionManager(self.config, self.options, self.debug)
             )
             self.connection = self.persistent.Get("connection")
+        self._logger = None
 
     def __str__(self):
         return str(type(self))
 
-    # @classmethod
-    # def LoadModules(cls, routes="routes/*.py"):
-    #     """Loops over all .py files apart from some exceptions in target directory
-    #     Looks for classes that contain pagemaker
+    def _debugging_remove_sensitive_data(self):
+        """This hook can be overwritten to write a custom data scrubber for a PageMaker
+        to prevent sensitive data being added to the logfile.
+        """
+        return default_data_scrubber(self.post, self.get)
 
-    #     Arguments:
-    #       % default_routes: str
-    #         Location to your route files. Defaults to routes/*.py
-    #         Supports glob style syntax, non recursive.
-    #     """
-    #     bases = []
-    #     for file in glob.glob(routes):
-    #         module = os.path.relpath(os.path.join(os.getcwd(), file[:-3])).replace(
-    #             "/", "."
-    #         )
-    #         classlist = pyclbr.readmodule_ex(module)
-    #         for name, data in classlist.items():
-    #             if hasattr(data, "super") and "PageMaker" in data.super[0]:
-    #                 module = __import__(file, fromlist=[name])
-    #                 bases.append(getattr(module, name))
-    #     return bases
+    @classmethod
+    def LoadModules(cls, routes="routes/*.py"):
+        """Loops over all .py files apart from some exceptions in target directory
+            Looks for classes that contain pagemaker
+
+        #     Arguments:
+        #       % default_routes: str
+        #         Location to your route files. Defaults to routes/*.py
+        #         Supports glob style syntax, non recursive.
+        #"""
+        bases = []
+        for file in glob.glob(routes):
+            module = os.path.relpath(os.path.join(os.getcwd(), file[:-3])).replace(
+                "/", "."
+            )
+            classlist = pyclbr.readmodule_ex(module)
+            for name, data in classlist.items():
+                if hasattr(data, "super") and "PageMaker" in data.super[0]:
+                    module = __import__(file, fromlist=[name])
+                    bases.append(getattr(module, name))
+        return bases
 
     def _PostInit(self):
         """Method that gets called for derived classes of BasePageMaker."""
@@ -397,6 +423,11 @@ class BasePageMaker(Base):
         )
         return response.Response(content=error, content_type="text/plain", httpcode=500)
 
+    def BadRequest(self, message):
+        return response.Response(
+            content=message, content_type="text/plain", httpcode=400
+        )
+
     @staticmethod
     def Reload():
         """Raises `ReloadModules`, telling the Handler() to reload its pageclass."""
@@ -406,6 +437,42 @@ class BasePageMaker(Base):
         """Method that gets called after each request to close 'request' based
         connections like signedcookieStores"""
         self.connection.PostRequest()
+
+    @property
+    def logger(self):
+        """Simple logger for an uweb3 application.
+
+        Only when the application is run in debug mode the debugging
+        stream and debug.log will be available.
+        """
+        if not self._logger:
+            logger = logging.getLogger("application_logger")
+
+            if not len(logger.handlers):
+                logger.setLevel(logging.DEBUG)
+                fh_error_logger = setup_error_logger(
+                    os.path.join(self.LOCAL_DIR, "application_log.log")
+                )
+                if self.debug:
+                    fh_debug_logger = setup_debug_logger(
+                        os.path.join(self.LOCAL_DIR, "application_debug.log")
+                    )
+                    logger.addHandler(fh_debug_logger)
+                    logger.addHandler(setup_debug_stream_logger())
+                logger.addHandler(fh_error_logger)
+
+            post, get = self._debugging_remove_sensitive_data()
+            extra_details = DebuggingDetails(
+                page_maker=self.__class__.__name__,
+                route=self.req.path,
+                method=self.req.method,
+                post=post,
+                get=get,
+            )
+
+            logger = UwebDebuggingAdapter(logger, extra_details)
+            self._logger = logger
+        return self._logger
 
 
 class XSRFMixin(BasePageMaker):

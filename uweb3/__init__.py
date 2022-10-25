@@ -17,6 +17,7 @@ from wsgiref.simple_server import make_server
 # Package modules
 from . import pagemaker, request
 from .libs.safestring import Basesafestring, HTMLsafestring, JsonEncoder, JSONsafestring
+from .libs import sqltalk
 from .model import SettingsManager
 from .pagemaker import (
     DebuggingPageMaker,
@@ -101,16 +102,66 @@ class uWeb:
         )
         self._logerror = self.logerror if errorlogging else lambda *args: None
 
+    def _create_request(self, env):
+        """Creates the request.Request object with all required parameters.
+
+        Args:
+            env (wsgi Environment): The WSGI environment dictionary
+        Returns:
+            request (request.Request): Uweb3 Request object.
+        """
+        max_request_body_size = None
+        remote_addr_config = None
+
+        # Attempt to load the max request size setting from the config
+        try:
+            max_request_body_size = self.config.options["general"][
+                "max_request_body_size"
+            ]
+        except Exception:
+            pass
+
+        try:
+            remote_addr_config = self.config.options["headers"]
+        except Exception:
+            pass
+
+        if max_request_body_size:
+            return request.Request(
+                env,
+                self.logger,
+                self.errorlogger,
+                max_request_body_size=max_request_body_size,
+                remote_addr_config=remote_addr_config,
+            )
+        return request.Request(
+            env,
+            self.logger,
+            self.errorlogger,
+            remote_addr_config=remote_addr_config,
+        )
+
     def __call__(self, env, start_response):  # noqa: C901
         """WSGI request handler.
         Accepts the WSGI `environment` dictionary and a function to start the
         response and returns a response iterator.
         """
-        req = request.Request(env, self.logger, self.errorlogger)
-        req.env["REAL_REMOTE_ADDR"] = request.return_real_remote_addr(req.env)
+        req = self._create_request(env)
+
+        try:
+            req.process_request()
+        except request.HeaderError as exc:
+            self.log_request_error(req)
+            pagemaker_instance = PageMaker(
+                req, config=self.config, executing_path=self.executing_path
+            )
+            response = pagemaker_instance.BadRequest(str(exc))
+            return self._finish_response(response, req, start_response)
+
         response = None
         method = "_NotFound"
         args = None
+
         try:
             method, args, hostargs, page_maker = self.router(
                 req.path, req.env["REQUEST_METHOD"], req.env["host"]
@@ -120,6 +171,7 @@ class uWeb:
             # If this happens we default to the initial pagemaker because we don't know what the target pagemaker should be.
             # Then we set an internalservererror and move on
             page_maker = self.initial_pagemaker
+
         try:
             # instantiate the pagemaker for this request
             pagemaker_instance = page_maker(
@@ -180,11 +232,15 @@ class uWeb:
             response = pagemaker_instance._PostRequest(response) or response
         pagemaker_instance.CloseRequestConnections()
 
+        return self._finish_response(response, req, start_response)
+
+    def _finish_response(self, response, req, start_response):
         # we should at least send out something to make sure we are wsgi compliant.
         if not response.text:
             response.text = ""
 
         self._logrequest(req, response)
+        # XXX: PEP 3333 says we should check for errors in headers
         start_response(response.status, response.headerlist)
         try:
             yield response.text.encode(response.charset)
@@ -248,11 +304,35 @@ class uWeb:
         protocol = req.env.get("SERVER_PROTOCOL")
         if not response.log:
             return self.logger.info(
-                f"""{host} - - [{date}] \"{method} {path} {get} {status} {protocol}\""""
+                """%s - - [%s] \"%s %s %s %s %s\"""",
+                host,
+                date,
+                method,
+                path,
+                get,
+                status,
+                protocol,
             )
         data = response.log
         return self.logger.info(
-            f"""{host} - - [{date}] \"{method} {path} {get} {status} {protocol} {data}\""""
+            """%s - - [%s] \"%s %s %s %s %s %s\"""",
+            host,
+            date,
+            method,
+            path,
+            get,
+            status,
+            protocol,
+            data,
+        )
+
+    def log_request_error(self, req):
+        host = req.env["HTTP_HOST"].split(":")[0]
+        date = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        path = req.path
+        protocol = req.env.get("SERVER_PROTOCOL")
+        return self.errorlogger.exception(
+            """%s - - [%s] \"%s %s\"""", host, date, path, protocol
         )
 
     def logerror(self, req, page_maker, pythonmethod, args):
@@ -264,7 +344,15 @@ class uWeb:
         protocol = req.env.get("SERVER_PROTOCOL")
         args = [str(arg) for arg in args]
         return self.errorlogger.exception(
-            f"""{host} - - [{date}] \"{method} {path} {protocol} {page_maker}.{pythonmethod}({args})\""""
+            """%s - - [%s] \"%s %s %s %s.%s(%s)\"""",
+            host,
+            date,
+            method,
+            path,
+            protocol,
+            page_maker,
+            pythonmethod,
+            args,
         )
 
     def get_response(self, req, page_maker, method, args):

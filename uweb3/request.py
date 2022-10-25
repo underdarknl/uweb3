@@ -6,22 +6,49 @@
 import cgi
 import http.cookies as cookie
 import io
-import io as stringIO
 import json
 import re
-import sys
-import urllib
+from typing import Union
 from urllib.parse import parse_qs, parse_qsl
 
 # uWeb modules
 from . import response
 
-MAX_COOKIE_LENGTH = 4096
-MAX_REQUEST_BODY_SIZE = 20000000  # 20MB
+
+def headers_from_env(env):
+    for key, value in env.items():
+        if key.startswith("HTTP_"):
+            yield key[5:].lower().replace("_", "-"), value
+
+
+class RequestError(Exception):
+    """Base class for request errors"""
+
+
+class HeaderError(RequestError):
+    """Base class for HTTP request header errors"""
+
+
+class MissingContentLengthError(HeaderError):
+    """Error that is raised when the CONTENT_LENGTH header is missing"""
+
+
+class IncorrectContentLengthError(HeaderError):
+    """Error that is raised when the supplied CONTENT_LENGTH does
+    not match the provided data length."""
+
+
+class InvalidContentLengthError(HeaderError):
+    """Error that is raised when the provided CONTENT_LENGTH header
+    is of an invalid format (non integer)."""
 
 
 class CookieTooBigError(Exception):
     """Error class for cookie when size is bigger than 4096 bytes"""
+
+
+class ClientDisconnected(Exception):
+    """"""
 
 
 class Cookie(cookie.SimpleCookie):
@@ -53,128 +80,509 @@ class Cookie(cookie.SimpleCookie):
             dict.__setitem__(self, key, morsel)
 
 
-class Request:
-    def __init__(self, env, logger, errorlogger):  # noqa: C901
+# This code is copied from the Werkzeug repository.
+# https://github.com/pallets/werkzeug/blob/main/LICENSE.rst
+# https://github.com/pallets/werkzeug/blob/d36aaf12b5d12634844e4c7f5dab4a8282688e12/src/werkzeug/wsgi.py#L828
+class LimitedStream(io.IOBase):
+    """Wraps a stream so that it doesn't read more than n bytes.  If the
+    stream is exhausted and the caller tries to get more bytes from it
+    :func:`on_exhausted` is called which by default returns an empty
+    string.  The return value of that function is forwarded
+    to the reader function.  So if it returns an empty string
+    :meth:`read` will return an empty string as well.
+
+    The limit however must never be higher than what the stream can
+    output.  Otherwise :meth:`readlines` will try to read past the
+    limit.
+
+    .. admonition:: Note on WSGI compliance
+
+       calls to :meth:`readline` and :meth:`readlines` are not
+       WSGI compliant because it passes a size argument to the
+       readline methods.  Unfortunately the WSGI PEP is not safely
+       implementable without a size argument to :meth:`readline`
+       because there is no EOF marker in the stream.  As a result
+       of that the use of :meth:`readline` is discouraged.
+
+       For the same reason iterating over the :class:`LimitedStream`
+       is not portable.  It internally calls :meth:`readline`.
+
+       We strongly suggest using :meth:`read` only or using the
+       :func:`make_line_iter` which safely iterates line-based
+       over a WSGI input stream.
+
+    :param stream: the stream to wrap.
+    :param limit: the limit for the stream, must not be longer than
+                  what the string can provide if the stream does not
+                  end with `EOF` (like `wsgi.input`)
+    """
+
+    def __init__(self, stream, limit: int) -> None:
+        self._read = stream.read
+        self._readline = stream.readline
+        self._pos = 0
+        self.limit = limit
+
+    def __iter__(self) -> "LimitedStream":
+        return self
+
+    @property
+    def is_exhausted(self) -> bool:
+        """If the stream is exhausted this attribute is `True`."""
+        return self._pos >= self.limit
+
+    def on_exhausted(self) -> bytes:
+        """This is called when the stream tries to read past the limit.
+        The return value of this function is returned from the reading
+        function.
+        """
+        # Read null bytes from the stream so that we get the
+        # correct end of stream marker.
+        return self._read(0)
+
+    def on_disconnect(self):
+        """What should happen if a disconnect is detected?  The return
+        value of this function is returned from read functions in case
+        the client went away.  By default a
+        :exc:`~werkzeug.exceptions.ClientDisconnected` exception is raised.
+        """
+        raise ClientDisconnected()
+
+    def exhaust(self, chunk_size: int = 1024 * 64) -> None:
+        """Exhaust the stream.  This consumes all the data left until the
+        limit is reached.
+
+        :param chunk_size: the size for a chunk.  It will read the chunk
+                           until the stream is exhausted and throw away
+                           the results.
+        """
+        to_read = self.limit - self._pos
+        chunk = chunk_size
+        while to_read > 0:
+            chunk = min(to_read, chunk)
+            self.read(chunk)
+            to_read -= chunk
+
+    def read(self, size=None) -> bytes:
+        """Read `size` bytes or if size is not provided everything is read.
+
+        :param size: the number of bytes read.
+        """
+        if self._pos >= self.limit:
+            return self.on_exhausted()
+        if size is None or size == -1:  # -1 is for consistence with file
+            size = self.limit
+        to_read = min(self.limit - self._pos, size)
+        try:
+            read = self._read(to_read)
+        except (OSError, ValueError):
+            return self.on_disconnect()
+        if to_read and len(read) != to_read:
+            return self.on_disconnect()
+        self._pos += len(read)
+        return read
+
+    def readline(self, size=None) -> bytes:
+        """Reads one line from the stream."""
+        if self._pos >= self.limit:
+            return self.on_exhausted()
+        if size is None:
+            size = self.limit - self._pos
+        else:
+            size = min(size, self.limit - self._pos)
+        try:
+            line = self._readline(size)
+        except (ValueError, OSError):
+            return self.on_disconnect()
+        if size and not line:
+            return self.on_disconnect()
+        self._pos += len(line)
+        return line
+
+    def readlines(self, size=None):
+        """Reads a file into a list of strings.  It calls :meth:`readline`
+        until the file is read to the end.  It does support the optional
+        `size` argument if the underlying stream supports it for
+        `readline`.
+        """
+        last_pos = self._pos
+        result = []
+        if size is not None:
+            end = min(self.limit, last_pos + size)
+        else:
+            end = self.limit
+        while True:
+            if size is not None:
+                size -= last_pos - self._pos
+            if self._pos >= end:
+                break
+            result.append(self.readline(size))
+            if size is not None:
+                last_pos = self._pos
+        return result
+
+    def tell(self) -> int:
+        """Returns the position of the stream.
+
+        .. versionadded:: 0.9
+        """
+        return self._pos
+
+    def __next__(self) -> bytes:
+        line = self.readline()
+        if not line:
+            raise StopIteration()
+        return line
+
+    def readable(self) -> bool:
+        return True
+
+
+class IndexedFieldStorage(cgi.FieldStorage):
+    """Adaption of cgi.FieldStorage with a few specific changes.
+
+    Notable differences with cgi.FieldStorage:
+      1) Field names in the form 'foo[bar]=baz' will generate a dictionary:
+           foo = {'bar': 'baz'}
+         Multiple statements of the form 'foo[%s]' will expand this dictionary.
+         Multiple occurrances of 'foo[bar]' will result in unspecified behavior.
+      2) Automatically attempts to parse all input as UTF8. This is the proposed
+         standard as of 2005: http://tools.ietf.org/html/rfc3986.
+    """
+
+    FIELD_AS_ARRAY = re.compile(r"(.*)\[(.*)\]")
+
+    def iteritems(self):
+        try:
+            return ((key, self.getlist(key)) for key in self)
+        except Exception:
+            return ()
+
+    def items(self):
+        return list(self.iteritems())
+
+    def read_urlencoded(self):
+        indexed = {}
+        self.list = []
+        qs = self.fp.read(self.length)
+
+        if isinstance(qs, bytes):
+            qs = qs.decode(self.encoding, self.errors)
+
+        for field, value in parse_qsl(qs, self.keep_blank_values, self.strict_parsing):
+            if self.FIELD_AS_ARRAY.match(str(field)):
+                field_group, field_key = self.FIELD_AS_ARRAY.match(field).groups()
+                indexed.setdefault(field_group, cgi.MiniFieldStorage(field_group, {}))
+                indexed[field_group].value[field_key] = value
+            else:
+                self.list.append(cgi.MiniFieldStorage(field, value))
+        self.list = list(indexed.values()) + self.list
+        self.skip_lines()
+
+    def __repr__(self):
+        if self.filename:
+            return "%s({filename: %s, value: %s, file: %s})" % (
+                self.__class__.__name__,
+                self.filename,
+                self.value,
+                self.file,
+            )
+        return "{%s}" % ",".join(
+            "'%s': '%s'" % (k, v if len(v) > 1 else v[0]) for k, v in self.iteritems()
+        )
+
+    @property
+    def __dict__(self):
+        return {
+            key: value if len(value) > 1 else value[0]
+            for key, value in self.iteritems()
+        }
+
+    def getfirst(self, key, default=None):
+        """Return the first value received.
+
+        If the first value has a filename return the whole object
+        this allows access to value.file, value.filename, etc.
+        """
+        if key in self:
+            value = self[key]
+            if isinstance(value, list):
+                if len(value) >= 1 and value[0].filename:
+                    return value[0]
+                elif len(value) >= 1:
+                    return value[0].value
+                return None
+            elif value.filename:
+                return value
+            else:
+                return value.value
+        else:
+            return default
+
+    def get(self, key, default=None):
+        return self.getfirst(key, default)
+
+    def getlist(self, key):
+        """Return list of received values."""
+        if key in self:
+            value = self[key]
+            if isinstance(value, list):
+                return [x.value if not x.filename else x for x in value]
+            if value.filename:
+                return [value]
+            else:
+                return [value.value]
+        else:
+            return []
+
+    def __bool__(self):
+        if self.list is None:
+            if self.filename and self.value:
+                return True
+            raise TypeError("Cannot be converted to bool.")
+        return bool(self.list)
+
+
+class DataParser:
+    def __init__(
+        self,
+        env,
+        max_size: int,
+        content_length: int,
+        charset: str,
+    ):
         self.env = env
-        self.headers = dict(self.headers_from_env(env))
-        self._out_headers = []
-        self._out_status = 200
-        self._response = None
+        self.charset = charset
+        self.mimetype = env["mimetype"]
+
+        self.max_size = max_size
+        self.content_length = content_length
+        self.request_payload = LimitedStream(env["wsgi.input"], self.content_length)
+        self._parse_functions = {
+            "application/json": self._parse_json,
+            "multipart/form-data": self._parse_multipart,
+            "application/x-www-form-urlencoded": self._parse_multipart,
+        }
+
+    def parse(self) -> IndexedFieldStorage:
+        # TODO: Handle streams
+        handler = self._parse_functions.get(self.mimetype, self._parse_multipart)
+        return handler()
+
+    def _parse_multipart(self) -> IndexedFieldStorage:
+        return IndexedFieldStorage(
+            io.BytesIO(self.request_payload.read(size=self.max_size)),
+            environ=self.env,
+            keep_blank_values=True,
+            limit=self.max_size,
+        )
+
+    def _parse_json(self) -> IndexedFieldStorage:
+        storage = IndexedFieldStorage()
+        storage.list = []
+        try:
+            json_data = json.loads(self.request_payload.read(size=self.max_size))
+            storage.list = [
+                cgi.MiniFieldStorage(key, value) for key, value in json_data.items()
+            ]
+            return storage
+        except (json.JSONDecodeError, ValueError):
+            return storage
+
+
+class BaseRequest:
+    MAX_COOKIE_LENGTH: int = 4 * 1024  # 4KB
+
+    def __init__(
+        self,
+        env,
+        max_request_body_size: int = 20 * 1024 * 1024,
+        remote_addr_config: Union[dict, None] = None,
+    ):
+        self.env = env
         self.charset = "utf-8"
+        self.max_request_body_size = max_request_body_size
+        self.headers = dict(headers_from_env(env))
+        self.noparse = self.headers.get("accept", "").lower() == "application/json"
+
+        self.env["host"] = self.headers.get("Host", "").strip().lower()
+        self.env["REAL_REMOTE_ADDR"] = self._return_real_remote_addr(remote_addr_config)
+        self.env["mimetype"] = self._get_mimetype()
+
         self.method = self.env["REQUEST_METHOD"]
+        self.path = self.env["PATH_INFO"]
+
         self.vars = {
             "cookie": {
                 name: value.value
                 for name, value in Cookie(self.env.get("HTTP_COOKIE")).items()
             },
             "get": QueryArgsDict(parse_qs(self.env["QUERY_STRING"])),
+            "post": IndexedFieldStorage(),
+            "put": IndexedFieldStorage(),
+            "json": IndexedFieldStorage(),
+            "delete": IndexedFieldStorage(),
+            "files": IndexedFieldStorage(),
         }
-        self.env["host"] = self.headers.get("Host", "").strip().lower()
+
+    def _get_mimetype(self):
+        return self.env.get("CONTENT_TYPE", "").split(";")[0]
+
+    def _return_real_remote_addr(self, remote_addr_config: Union[dict, None]):
+        """Returns the remote ip-address based on the supplied config.
+
+        The config to determine which header to use should look like this:
+            {
+                "use_http_x_forwarded_for": bool,
+                "address_header": the_header,
+                "return_header_at_index": int
+            }
+        When use_http_x_forwarded_for is set to true it will default and use
+        the HTTP_X_FORWARDED_FOR header, unless the address_header key is supplied.
+        If the config is missing, or use_http_x_forwarded_for is false use the
+        default REMOTE_ADDR header.
+
+        When an address_header is supplied it will attempt to use this header, however
+        if this header is not present it will fallback to the following headers in order:
+        - HTTP_X_FORWARDED_FOR
+        - REMOTE_ADDR
+
+        If the targeted header returns a list of values returns the last value by default,
+        except for when the return_header_at_index key is set to a value.
+        """
+        if not remote_addr_config:
+            return self.env["REMOTE_ADDR"]
+
+        use_http_x_forwarded_for = bool(
+            remote_addr_config.get("use_http_x_forwarded_for", False)
+        )
+
+        if not use_http_x_forwarded_for:
+            return self.env["REMOTE_ADDR"]
+
+        target_header = remote_addr_config.get("address_header", "HTTP_X_FORWARDED_FOR")
+
+        try:
+            header_at_index = int(remote_addr_config.get("return_header_at_index", -1))
+        except Exception:
+            header_at_index = -1
+
+        # XXX: What if REMOTE_ADDR is also missing? Is this even possible, if so
+        # raise an error?
+        for header in (target_header, "HTTP_X_FORWARDED_FOR", "REMOTE_ADDR"):
+            try:
+                result = self.env[header]
+                splitted_result = result.split(",")
+
+                if len(splitted_result):
+                    return splitted_result[header_at_index]
+
+                return result
+            except KeyError:
+                continue
+
+
+class Request(BaseRequest):
+    def __init__(
+        self,
+        env,
+        logger,
+        errorlogger,
+        **kwargs,
+        # max_request_body_size: int = 20 * 1024 * 1024,
+    ):  # noqa: C901
+        super().__init__(env=env, **kwargs)
+        self._out_headers = []
+        self._out_status = 200
+        self._response = None
         self.logger = logger
         self.errorlogger = errorlogger
-        self.noparse = self.headers.get("accept", "").lower() == "application/json"
 
-        if self.method in ("POST", "PUT", "DELETE"):
-            request_body_size = 0
-            try:
-                request_body_size = int(self.env.get("CONTENT_LENGTH", 0))
-            except Exception:
-                pass
-            request_payload = self.env["wsgi.input"].read(
-                min(request_body_size, MAX_REQUEST_BODY_SIZE)
+    def process_request(self):
+        """Handler for POST/PUT/DELETE requests.
+
+        Checks if the CONTENT_LENGTH header is present and if its a valid
+        integer. If this is not the case an error will be raised.
+        According to WSGI a missing CONTENT_LENGTH header is allowed to be
+        passed from the WSGI handler, but the server may decide if this
+        request should be processed or not. It is adviced to discard requests
+        with an invalid or missing CONTENT_LENGHT header, so we abandon the request
+        when this is the case.
+
+        Raises:
+            MissingContentLengthError: When the CONTENT_LENGTH header is missing
+            InvalidContentLengthError: When the CONTENT_LENGTH header is of an
+                invalid format.
+
+        """
+        if self.method not in ("POST", "PUT", "DELETE"):
+            return
+
+        content_length = self.get_and_check_content_length()
+        self._process(content_length)
+
+    def get_and_check_content_length(self):
+        """Check for presence of the CONTENT_LENGTH header and also
+        check if this header is a valid integer.
+
+        Raises:
+            MissingContentLengthError: When the CONTENT_LENGTH header is missing
+            InvalidContentLengthError: When the CONTENT_LENGTH header is of an
+                invalid format.
+        """
+        if "CONTENT_LENGTH" not in self.env:
+            # We should not allowed requests where CONTENT_LENGTH is not specified
+            # https://peps.python.org/pep-3333#specification-details
+            raise MissingContentLengthError(
+                "No CONTENT_LENGTH header present in the request."
             )
-            self.input = request_payload
-            self.env["mimetype"] = self.env.get("CONTENT_TYPE", "").split(";")[0]
 
-            if self.env["mimetype"] == "application/json":
-                try:
-                    self.vars[self.method.lower()] = json.loads(request_payload)
-                except (json.JSONDecodeError, ValueError):
-                    pass
-            elif self.env["mimetype"] == "multipart/form-data":
-                boundary = (
-                    self.env.get("CONTENT_TYPE", "").split(";")[1].strip().split("=")[1]
-                )
-                request_payload = request_payload.split(
-                    b"--%s" % boundary.encode(self.charset)
-                )
-                self.vars["files"] = {}
-                fields = []
-                for item in request_payload:
-                    item = item.lstrip()
-                    if item.startswith(b"Content-Disposition: form-data"):
-                        nl = 0
-                        prevnl = 0
-                        itemlength = len(item)
-                        name = filename = ContentType = charset = None
-                        while nl < itemlength:
-                            nl = item.index(b"\n", prevnl + len(b"\n"))
-                            header = item[prevnl:nl]
-                            prevnl = nl
-                            if not header.strip():
-                                content = item[nl:].strip()
-                                break
-                            directives = header.strip().split(b";")
-                            for directive in directives:
-                                directive = directive.lstrip()
-                                if directive.startswith(b"name="):
-                                    name = directive.split(b"=", 1)[1][1:-1].decode(
-                                        self.charset
-                                    )
-                                    if (
-                                        name == "_charset_"
-                                    ):  # default charset default case
-                                        self.charset = item[nl:].strip()
-                                        break
-                                if directive.startswith(b"filename="):
-                                    filename = directive.split(b"=", 1)[1][1:-1].decode(
-                                        self.charset
-                                    )
-                                if directive.startswith(b"Content-Type="):
-                                    ContentType = (
-                                        directive.split(b"=", 1)[1]
-                                        .decode(self.charset)
-                                        .split(";")
-                                    )
-                                    if len(ContentType) > 1:
-                                        if ContentType[1].startswith("charset"):
-                                            charset = ContentType[1].split("=")[1]
-                                        # if ContentType[0].startswith("content-type"):
-                                        #     contenttype = (
-                                        #         ContentType[0].split(":")[1].strip()
-                                        #     )
-                        if charset:
-                            content = content.decode(charset)
-                        elif not ContentType:
-                            try:
-                                content = content.decode(charset or self.charset)
-                            except Exception:
-                                pass
-                        if filename:
-                            file_obj = {
-                                "filename": filename,
-                                "ContentType": ContentType,
-                                "content": content,
-                            }
-                            if self.vars["files"].get(name):
-                                self.vars["files"][name].append(file_obj)
-                            else:
-                                self.vars["files"][name] = [file_obj]
-                        else:
-                            fields.append("%s=%s" % (name, content))
-                self.vars[self.method.lower()] = IndexedFieldStorage(
-                    stringIO.StringIO("&".join(fields)),
-                    environ={"REQUEST_METHOD": "POST"},
-                )
-            else:
-                self.vars[self.method.lower()] = IndexedFieldStorage(
-                    stringIO.StringIO(request_payload.decode(self.charset)),
-                    environ={"REQUEST_METHOD": "POST"},
-                )
+        content_length = self.env["CONTENT_LENGTH"]
 
-    @property
-    def path(self):
-        return self.env["PATH_INFO"]
+        try:
+            content_length = int(content_length)
+        except Exception as exc:
+            raise InvalidContentLengthError(
+                "The CONTENT_LENGTH header has an invalid "
+                + f"format: {content_length!r}"
+            ) from exc
+
+        return content_length
+
+    def _process(self, content_length: int):
+        """Parse the incoming WSGI.input and set the parsed result to the
+        correct request method variable for storage.
+
+        Files are removed from vars['post'] and stored in vars['files'].
+        JSON data is now stored in vars['post'] and vars['json'] to
+        be backwards compatible.
+        """
+        parser = DataParser(
+            env=self.env,
+            max_size=self.max_request_body_size,
+            content_length=content_length,
+            charset=self.charset,
+        )
+        result = parser.parse()
+
+        # Iterate over the IndexedFieldStorage.list object to find
+        # all file-like objects and store them seperatly from the
+        # regular post data.
+        if result.list:
+            files = [item for item in result.list if item.filename]
+            result.list = [item for item in result.list if not item.filename]
+        else:
+            files = []
+            result.list = []
+
+        if files:
+            self.vars["files"].list = files
+
+        method = self.method.lower()
+        self.vars[method] = result
+
+        if parser.mimetype == "application/json":
+            self.vars["json"] = self.vars[method]
 
     @property
     def response(self):
@@ -185,9 +593,9 @@ class Request:
     def Redirect(self, location, httpcode=307):
         REDIRECT_PAGE = (
             "<!DOCTYPE html><html><head><title>Page moved</title></head>"
-            '<body>Page moved, please follow <a href="{}">this link</a>'
+            f'<body>Page moved, please follow <a href="{location}">this link</a>'
             "</body></html>"
-        ).format(location)
+        )
 
         headers = {"Location": location}
         if self.response.headers.get("Set-Cookie"):
@@ -198,11 +606,6 @@ class Request:
             httpcode=httpcode,
             headers=headers,
         )
-
-    def headers_from_env(self, env):
-        for key, value in env.items():
-            if key.startswith("HTTP_"):
-                yield key[5:].lower().replace("_", "-"), value
 
     def AddCookie(self, key, value, **attrs):
         """Adds a new cookie header to the response.
@@ -234,9 +637,13 @@ class Request:
             When True, the cookie is only used for http(s) requests, and is not
             accessible through Javascript (DOM).
         """
-        if isinstance(value, (str)) and len(value.encode("utf-8")) >= MAX_COOKIE_LENGTH:
+        if (
+            isinstance(value, (str))
+            and len(value.encode("utf-8")) >= self.MAX_COOKIE_LENGTH
+        ):
             raise CookieTooBigError(
-                "Cookie is larger than %d bytes and wont be set" % MAX_COOKIE_LENGTH
+                "Cookie is larger than %d bytes and wont be set"
+                % self.MAX_COOKIE_LENGTH
             )
 
         new_cookie = Cookie({key: value})
@@ -273,56 +680,6 @@ class Request:
         )
 
 
-class IndexedFieldStorage(cgi.FieldStorage):
-    """Adaption of cgi.FieldStorage with a few specific changes.
-
-    Notable differences with cgi.FieldStorage:
-      1) `environ.QUERY_STRING` does not add to the returned FieldStorage
-         This way we maintain a strict separation between POST and GET variables.
-      2) Field names in the form 'foo[bar]=baz' will generate a dictionary:
-           foo = {'bar': 'baz'}
-         Multiple statements of the form 'foo[%s]' will expand this dictionary.
-         Multiple occurrances of 'foo[bar]' will result in unspecified behavior.
-      3) Automatically attempts to parse all input as UTF8. This is the proposed
-         standard as of 2005: http://tools.ietf.org/html/rfc3986.
-    """
-
-    FIELD_AS_ARRAY = re.compile(r"(.*)\[(.*)\]")
-
-    def iteritems(self):
-        return ((key, self.getlist(key)) for key in self)
-
-    def items(self):
-        return list(self.iteritems())
-
-    def read_urlencoded(self):
-        indexed = {}
-        self.list = []
-        for field, value in parse_qsl(
-            self.fp.read(self.length), self.keep_blank_values, self.strict_parsing
-        ):
-            if self.FIELD_AS_ARRAY.match(str(field)):
-                field_group, field_key = self.FIELD_AS_ARRAY.match(field).groups()
-                indexed.setdefault(field_group, cgi.MiniFieldStorage(field_group, {}))
-                indexed[field_group].value[field_key] = value
-            else:
-                self.list.append(cgi.MiniFieldStorage(field, value))
-        self.list = list(indexed.values()) + self.list
-        self.skip_lines()
-
-    def __repr__(self):
-        return "{%s}" % ",".join(
-            "'%s': '%s'" % (k, v if len(v) > 1 else v[0]) for k, v in self.iteritems()
-        )
-
-    @property
-    def __dict__(self):
-        return {
-            key: value if len(value) > 1 else value[0]
-            for key, value in self.iteritems()
-        }
-
-
 class QueryArgsDict(dict):
     def getfirst(self, key, default=None):
         """Returns the first value for the requested key, or a fallback value."""
@@ -340,13 +697,3 @@ class QueryArgsDict(dict):
             return self[key]
         except KeyError:
             return []
-
-
-def return_real_remote_addr(env):
-    """Returns the remote ip-address,
-    if there is a proxy involved it will take the last IP addres from the HTTP_X_FORWARDED_FOR list
-    """
-    try:
-        return env["HTTP_X_FORWARDED_FOR"].split(",")[-1].strip()
-    except KeyError:
-        return env["REMOTE_ADDR"]
