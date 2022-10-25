@@ -19,6 +19,7 @@ from wsgiref.simple_server import make_server
 # Package modules
 from . import pagemaker, request
 from .libs.safestring import Basesafestring, HTMLsafestring, JsonEncoder, JSONsafestring
+from .libs import sqltalk
 from .model import SettingsManager
 from .pagemaker import (
     DebuggingPageMaker,

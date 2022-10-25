@@ -26,7 +26,7 @@ from uweb3.logger import (
     setup_debug_stream_logger,
     setup_error_logger,
 )
-from uweb3.request import IndexedFieldStorage
+from uweb3.request import IndexedFieldStorage, Request
 
 from .. import response, templateparser
 from ..connections import ConnectionManager
@@ -286,7 +286,7 @@ class BasePageMaker(Base):
         """
         super(BasePageMaker, self).__init__()
         self.__SetupPaths(executing_path)
-        self.req = req
+        self.req: Request = req
 
         self.cookies = req.vars["cookie"]
         self.get = req.vars["get"]
