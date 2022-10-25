@@ -25,6 +25,27 @@ class RouteData(NamedTuple):
     page_maker: PageMaker
 
 
+def register_pagemaker(cls):
+    cls._routes = []
+    for methodname in dir(cls):
+        method = getattr(cls, methodname)
+        if hasattr(method, "_route_args"):
+            cls._routes.append((method._route_args[0][0], (cls, methodname)))
+    return cls
+
+
+def route(*args, **kwargs):
+    def wrapper(func):
+        func._route_args = (args, kwargs)
+        return func
+
+    def get_req(func):
+        func.route_args = (args, {**kwargs, "method": "GET"})
+
+    wrapper.get = get_req
+    return wrapper
+
+
 def route_method_allowed(routemethod, method):
     if routemethod != "ALL":
         if isinstance(routemethod, tuple) and method not in routemethod:
