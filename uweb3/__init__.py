@@ -29,7 +29,15 @@ from .pagemaker import (
 
 # Package classes
 from .response import Redirect, Response
-from .router import Router, App, RouteData, NoRouteError, RequestedRouteNotAllowed
+from .router import (
+    Router,
+    App,
+    RouteData,
+    NoRouteError,
+    RequestedRouteNotAllowed,
+    register_pagemaker,
+    route,
+)
 
 
 class Error(Exception):

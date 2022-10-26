@@ -1,5 +1,5 @@
 import re
-from typing import NamedTuple
+from typing import NamedTuple, Optional, Tuple, Union
 from .pagemaker import PageMaker
 
 
@@ -25,24 +25,46 @@ class RouteData(NamedTuple):
     page_maker: PageMaker
 
 
+class RouteArgs(NamedTuple):
+    url: str
+    methods: Union[str, Tuple[str, ...]]
+    hostmatch: Optional[Tuple[str, ...]]
+
+
 def register_pagemaker(cls):
     cls._routes = []
     for methodname in dir(cls):
         method = getattr(cls, methodname)
         if hasattr(method, "_route_args"):
-            cls._routes.append((method._route_args[0][0], (cls, methodname)))
+            if method._route_args.hostmatch:
+                cls._routes.append(
+                    (
+                        method._route_args.url,
+                        (cls, methodname),
+                        method._route_args.methods,
+                        method._route_args.hostmatch,
+                    )
+                )
+            else:
+                cls._routes.append(
+                    (
+                        method._route_args.url,
+                        (cls, methodname),
+                        method._route_args.methods,
+                    )
+                )
     return cls
 
 
-def route(*args, **kwargs):
+def route(
+    url: str,
+    methods: Union[str, Tuple[str, ...]],
+    hostmatch: Optional[Tuple[str, ...]] = None,
+):
     def wrapper(func):
-        func._route_args = (args, kwargs)
+        func._route_args = RouteArgs(url=url, methods=methods, hostmatch=hostmatch)
         return func
 
-    def get_req(func):
-        func.route_args = (args, {**kwargs, "method": "GET"})
-
-    wrapper.get = get_req
     return wrapper
 
 
