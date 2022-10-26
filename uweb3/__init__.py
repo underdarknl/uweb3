@@ -172,7 +172,7 @@ class uWeb:
 
         try:
             method, args, hostargs, page_maker = self.router(
-                req.path, req.env["REQUEST_METHOD"], req.env["host"]
+                req.path, req.env["REQUEST_METHOD"], req.env["REAL_REMOTE_ADDR"]
             )
         except NoRouteError:
             # When we catch this error this means there is no method for the route in the currently selected pagemaker.
