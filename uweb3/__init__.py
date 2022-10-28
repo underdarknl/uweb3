@@ -5,32 +5,39 @@
 __version__ = "3.0.7"
 
 # Standard modules
-import configparser
 import datetime
-import importlib
 import logging
 import os
-import re
 import sys
 import time
 from importlib import reload
 from wsgiref.simple_server import make_server
 
+
 # Package modules
 from . import pagemaker, request
 from .libs.safestring import Basesafestring, HTMLsafestring, JsonEncoder, JSONsafestring
+from .libs import sqltalk
 from .model import SettingsManager
 from .pagemaker import (
     DebuggingPageMaker,
     LoginMixin,
     PageMaker,
     SparseAsyncPages,
-    WebsocketPageMaker,
     decorators,
 )
 
 # Package classes
 from .response import Redirect, Response
+from .router import (
+    Router,
+    App,
+    RouteData,
+    NoRouteError,
+    RequestedRouteNotAllowed,
+    register_pagemaker,
+    route,
+)
 
 
 class Error(Exception):
@@ -47,122 +54,6 @@ class HTTPException(Error):
 
 class HTTPRequestException(HTTPException):
     """Exception for http request errors."""
-
-
-class NoRouteError(Error):
-    """The server does not know how to route this request"""
-
-
-class Router:
-    def __init__(self, page_class):
-        self.pagemakers = page_class.LoadModules()
-        self.pagemakers.append(page_class)
-
-    def router(self, routes):
-        """Returns the first request handler that matches the request URL.
-
-        The `routes` argument is an iterable of 2-tuples, each of which contain a
-        pattern (regex) and the name of the handler to use for matching requests.
-
-        Before returning the closure, all regexp are compiled, and handler methods
-        are retrieved from the provided `page_class`.
-
-        Arguments:
-          @ routes: iterable of 2-tuples.
-            Each tuple is a pair of `pattern` and `handler`, both are strings.
-
-        Returns:
-          request_router: Configured closure that processes urls.
-        """
-        req_routes = []
-        # Variable used to store websocket pagemakers,
-        # these pagemakers are only created at startup but can have multiple routes.
-        # To prevent creating the same instance for each route we store them in a dict
-        websocket_pagemaker = {}
-        for pattern, *details in routes:
-            page_maker = None
-            handler = details[0]
-            for pm in self.pagemakers:
-                if isinstance(details[0], tuple):
-                    handler = details[0][1]
-                    page_maker = details[0][0]
-                    break
-                # Check if the page_maker has the method/handler we are looking for
-                if hasattr(pm, details[0]):
-                    page_maker = pm
-                    break
-            if callable(pattern):
-                # Check if the page_maker is already in the dict, if not instantiate
-                # if so just use that one. This prevents creating multiple instances for one route.
-                if not websocket_pagemaker.get(page_maker.__name__):
-                    websocket_pagemaker[page_maker.__name__] = page_maker()
-                pattern(getattr(websocket_pagemaker[page_maker.__name__], handler))
-                continue
-            if not page_maker:
-                raise NoRouteError(
-                    f"µWeb3 could not find a route handler called '{handler}' in any of the PageMakers, your application will not start."
-                )
-            req_routes.append(
-                (
-                    re.compile(pattern + "$", re.UNICODE),
-                    handler,  # handler,
-                    details[1].upper() if len(details) > 1 else "ALL",  # request types
-                    details[2].lower() if len(details) > 2 else "*",  # host
-                    page_maker,  # pagemaker class
-                )
-            )
-
-        def request_router(url, method, host):
-            """Returns the appropriate handler and arguments for the given `url`.
-
-            The`url` is matched against the compiled patterns in the `req_routes`
-            provided by the outer scope. Upon finding a pattern that matches, the
-            match groups from the regex and the unbound handler method are returned.
-
-            N.B. The rules are such that the first matching route will be used. There
-            is no further concept of specificity. Routes should be written with this in
-            mind.
-
-            Arguments:
-              @ url: str
-                The URL requested by the client.
-              @ method: str
-                The http method requested by the client.
-              @ host: str
-                The http host header value requested by the client.
-
-            Raises:
-              NoRouteError: None of the patterns match the requested `url`.
-
-            Returns:
-              2-tuple: handler method (unbound), and tuple of pattern matches.
-            """
-
-            for pattern, handler, routemethod, hostpattern, page_maker in req_routes:
-                if routemethod != "ALL":
-                    # clearly not the route we where looking for
-                    if isinstance(routemethod, tuple) and method not in routemethod:
-                        continue
-                    if method != routemethod:
-                        continue
-
-                hostmatch = None
-                if hostpattern != "*":
-                    # see if we can match this host and extact any info from it.
-                    hostmatch = re.compile(f"^{host}$").match(hostpattern)
-                    if not hostmatch:
-                        # clearly not the host we where looking for
-                        continue
-                    hostmatch = hostmatch.groups()
-                match = pattern.match(url)
-                if match:
-                    # strip out optional groups, as they return '', which would override
-                    # the handlers default argument values later on in the page_maker
-                    groups = (group for group in match.groups() if group)
-                    return handler, groups, hostmatch, page_maker
-            raise NoRouteError(url + " cannot be handled")
-
-        return request_router
 
 
 class uWeb:
@@ -195,8 +86,8 @@ class uWeb:
         self._accesslogger = None
         self._errorlogger = None
         self.initial_pagemaker = page_class
-        self.router = Router(page_class).router(routes)
-        self.setup_routing()
+        self.router = Router(page_class)
+        self.router.router(routes)
         self.encoders = {
             "text/html": lambda x: HTMLsafestring(x, unsafe=True),
             "text/plain": str,
@@ -219,25 +110,76 @@ class uWeb:
         )
         self._logerror = self.logerror if errorlogging else lambda *args: None
 
+    def _create_request(self, env):
+        """Creates the request.Request object with all required parameters.
+
+        Args:
+            env (wsgi Environment): The WSGI environment dictionary
+        Returns:
+            request (request.Request): Uweb3 Request object.
+        """
+        max_request_body_size = None
+        remote_addr_config = None
+
+        # Attempt to load the max request size setting from the config
+        try:
+            max_request_body_size = self.config.options["general"][
+                "max_request_body_size"
+            ]
+        except Exception:
+            pass
+
+        try:
+            remote_addr_config = self.config.options["headers"]
+        except Exception:
+            pass
+
+        if max_request_body_size:
+            return request.Request(
+                env,
+                self.logger,
+                self.errorlogger,
+                max_request_body_size=max_request_body_size,
+                remote_addr_config=remote_addr_config,
+            )
+        return request.Request(
+            env,
+            self.logger,
+            self.errorlogger,
+            remote_addr_config=remote_addr_config,
+        )
+
     def __call__(self, env, start_response):  # noqa: C901
         """WSGI request handler.
         Accepts the WSGI `environment` dictionary and a function to start the
         response and returns a response iterator.
         """
-        req = request.Request(env, self.logger, self.errorlogger)
-        req.env["REAL_REMOTE_ADDR"] = request.return_real_remote_addr(req.env)
+        req = self._create_request(env)
+
+        try:
+            req.process_request()
+        except request.HeaderError as exc:
+            self.log_request_error(req)
+            pagemaker_instance = PageMaker(
+                req, config=self.config, executing_path=self.executing_path
+            )
+            response = pagemaker_instance.BadRequest(str(exc))
+            return self._finish_response(response, req, start_response)
+
         response = None
         method = "_NotFound"
         args = None
+
         try:
             method, args, hostargs, page_maker = self.router(
-                req.path, req.env["REQUEST_METHOD"], req.env["host"]
+                req.path, req.env["REQUEST_METHOD"], req.env["REAL_REMOTE_ADDR"]
             )
         except NoRouteError:
             # When we catch this error this means there is no method for the route in the currently selected pagemaker.
             # If this happens we default to the initial pagemaker because we don't know what the target pagemaker should be.
             # Then we set an internalservererror and move on
             page_maker = self.initial_pagemaker
+
         try:
             # instantiate the pagemaker for this request
             pagemaker_instance = page_maker(
@@ -298,11 +240,15 @@ class uWeb:
             response = pagemaker_instance._PostRequest(response) or response
         pagemaker_instance.CloseRequestConnections()
 
+        return self._finish_response(response, req, start_response)
+
+    def _finish_response(self, response, req, start_response):
         # we should at least send out something to make sure we are wsgi compliant.
         if not response.text:
             response.text = ""
 
         self._logrequest(req, response)
+        # XXX: PEP 3333 says we should check for errors in headers
         start_response(response.status, response.headerlist)
         try:
             yield response.text.encode(response.charset)
@@ -366,11 +312,35 @@ class uWeb:
         protocol = req.env.get("SERVER_PROTOCOL")
         if not response.log:
             return self.logger.info(
-                f"""{host} - - [{date}] \"{method} {path} {get} {status} {protocol}\""""
+                """%s - - [%s] \"%s %s %s %s %s\"""",
+                host,
+                date,
+                method,
+                path,
+                get,
+                status,
+                protocol,
             )
         data = response.log
         return self.logger.info(
-            f"""{host} - - [{date}] \"{method} {path} {get} {status} {protocol} {data}\""""
+            """%s - - [%s] \"%s %s %s %s %s %s\"""",
+            host,
+            date,
+            method,
+            path,
+            get,
+            status,
+            protocol,
+            data,
+        )
+
+    def log_request_error(self, req):
+        host = req.env["HTTP_HOST"].split(":")[0]
+        date = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        path = req.path
+        protocol = req.env.get("SERVER_PROTOCOL")
+        return self.errorlogger.exception(
+            """%s - - [%s] \"%s %s\"""", host, date, path, protocol
         )
 
     def logerror(self, req, page_maker, pythonmethod, args):
@@ -382,7 +352,15 @@ class uWeb:
         protocol = req.env.get("SERVER_PROTOCOL")
         args = [str(arg) for arg in args]
         return self.errorlogger.exception(
-            f"""{host} - - [{date}] \"{method} {path} {protocol} {page_maker}.{pythonmethod}({args})\""""
+            """%s - - [%s] \"%s %s %s %s.%s(%s)\"""",
+            host,
+            date,
+            method,
+            path,
+            protocol,
+            page_maker,
+            pythonmethod,
+            args,
         )
 
     def get_response(self, req, page_maker, method, args):
@@ -452,27 +430,8 @@ class uWeb:
             print(error)
             server.shutdown()
 
-    def setup_routing(self):
-        if isinstance(self.initial_pagemaker, list):
-            routes = [route for route in self.initial_pagemaker[1:]]
-            self.initial_pagemaker[0].AddRoutes(tuple(routes))
-            self.initial_pagemaker = self.initial_pagemaker[0]
-
-        default_route = "routes"
-        automatic_detection = True
-        if self.config.options.get("routing"):
-            default_route = self.config.options["routing"].get(
-                "default_routing", default_route
-            )
-            automatic_detection = (
-                self.config.options["routing"].get(
-                    "disable_automatic_route_detection", "False"
-                )
-                != "True"
-            )
-
-        if automatic_detection:
-            self.initial_pagemaker.LoadModules(routes=default_route)
+    def register_app(self, app: App):
+        self.router.register_app(app)
 
 
 class HotReload:

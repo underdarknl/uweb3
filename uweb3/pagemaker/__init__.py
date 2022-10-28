@@ -12,20 +12,21 @@ import sys
 import threading
 import time
 from base64 import b64encode
+from re import template
 
 import magic
 from pymysql import Error as pymysqlerr
 
 import uweb3
 from uweb3.logger import (
+    DebuggingDetails,
+    UwebDebuggingAdapter,
+    default_data_scrubber,
     setup_debug_logger,
     setup_debug_stream_logger,
     setup_error_logger,
-    UwebDebuggingAdapter,
-    DebuggingDetails,
-    default_data_scrubber,
 )
-from uweb3.request import IndexedFieldStorage
+from uweb3.request import IndexedFieldStorage, Request
 
 from .. import response, templateparser
 from ..connections import ConnectionManager
@@ -204,32 +205,29 @@ class Base:
         Otherwise, the `TEMPLATE_DIR` will be used to load templates from.
         """
         if "__parser" not in self.persistent:
+            allowed_paths = self.options.get("templates", {}).get("allowed_paths", None)
+            # Make sure that the tuple does not contain an empty "", this
+            # would match all routes and allow for arbitrary template loading.
+            if allowed_paths:
+                allowed_paths_tuple = tuple(allowed_paths.replace(" ", "").split(","))
+                allowed_paths_tuple = tuple(
+                    path for path in allowed_paths_tuple if path
+                )
+            else:
+                allowed_paths_tuple = None
+
             self.persistent.Set(
                 "__parser",
                 templateparser.Parser(
-                    self.options.get("templates", {}).get("path", self.TEMPLATE_DIR)
+                    self.options.get("templates", {}).get("path", self.TEMPLATE_DIR),
+                    allowed_paths=allowed_paths_tuple,
+                    executing_path=self.LOCAL_DIR,
                 ),
             )
-        parser = self.persistent.Get("__parser")
+        parser: templateparser.Parser = self.persistent.Get("__parser")
+        parser.template_dir = self.TEMPLATE_DIR
         parser.dictoutput = self.req.noparse
         return parser
-
-
-class WebsocketPageMaker(Base):
-    """Pagemaker for the websocket routes.
-    This is different from the BasePageMaker as we choose to not have a database connection
-    in our WebSocketPageMaker.
-
-    This class lacks pretty much all functionality that the BasePageMaker has.
-    """
-
-    # TODO: Add request to pagemaker?
-    def Connect(self, sid, env):
-        """This is the connect event,
-        sets the req variable that contains the request headers.
-        """
-        print(f"User connected with SocketID {sid}: ")
-        self.req = env
 
 
 class LoginMixin:
@@ -237,7 +235,7 @@ class LoginMixin:
     and related database/cookie interaction"""
 
     def _ReadSession(self):
-        return NotImplemented
+        raise NotImplementedError("Login is not implemented")
 
     @property
     def user(self):
@@ -273,15 +271,16 @@ class BasePageMaker(Base):
         """
         super(BasePageMaker, self).__init__()
         self.__SetupPaths(executing_path)
-        self.req = req
+        self.req: Request = req
+
         self.cookies = req.vars["cookie"]
         self.get = req.vars["get"]
-        self.post = req.vars["post"] if "post" in req.vars else IndexedFieldStorage()
-        self.put = req.vars["put"] if "put" in req.vars else IndexedFieldStorage()
-        self.delete = (
-            req.vars["delete"] if "delete" in req.vars else IndexedFieldStorage()
-        )
-        self.files = req.vars["files"] if "files" in req.vars else {}
+        self.post = req.vars["post"]
+        self.put = req.vars["put"]
+        self.delete = req.vars["delete"]
+        self.json = req.vars["json"]
+        self.files = req.vars["files"]
+
         self.config = config
         self.options = config.options if config else {}
         self.debug = DebuggerMixin in self.__class__.__mro__
@@ -306,13 +305,13 @@ class BasePageMaker(Base):
     @classmethod
     def LoadModules(cls, routes="routes/*.py"):
         """Loops over all .py files apart from some exceptions in target directory
-        Looks for classes that contain pagemaker
+            Looks for classes that contain pagemaker
 
-        Arguments:
-          % default_routes: str
-            Location to your route files. Defaults to routes/*.py
-            Supports glob style syntax, non recursive.
-        """
+        #     Arguments:
+        #       % default_routes: str
+        #         Location to your route files. Defaults to routes/*.py
+        #         Supports glob style syntax, non recursive.
+        #"""
         bases = []
         for file in glob.glob(routes):
             module = os.path.relpath(os.path.join(os.getcwd(), file[:-3])).replace(
@@ -423,6 +422,11 @@ class BasePageMaker(Base):
             self.req.path
         )
         return response.Response(content=error, content_type="text/plain", httpcode=500)
+
+    def BadRequest(self, message):
+        return response.Response(
+            content=message, content_type="text/plain", httpcode=400
+        )
 
     @staticmethod
     def Reload():

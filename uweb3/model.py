@@ -7,6 +7,10 @@ import hashlib
 import json
 import os
 import sys
+from typing import Generator, TypeVar, Type
+
+T = TypeVar("T", bound="BaseRecord")
+R = TypeVar("R", bound="Record")
 
 
 class Error(Exception):
@@ -467,7 +471,7 @@ class BaseRecord(TransactionMixin, dict):
         if run_init_hook:
             self._PostInit()
 
-    def __eq__(self, other):
+    def __eq__(self, other: Type[T]):
         """Simple equality comparison for database objects.
 
         To compare equal, two objects must:
@@ -542,7 +546,7 @@ class BaseRecord(TransactionMixin, dict):
     # ############################################################################
     # Rich comparators
     #
-    def __gt__(self, other):
+    def __gt__(self, other: Type[T]):
         """Index of this record is greater than the other record's.
 
         This requires both records to be of the same record class."""
@@ -550,7 +554,7 @@ class BaseRecord(TransactionMixin, dict):
             return self.key > other.key
         return NotImplemented
 
-    def __ge__(self, other):
+    def __ge__(self, other: Type[T]):
         """Index of this record is greater than, or equal to, the other record's.
 
         This requires both records to be of the same record class."""
@@ -558,7 +562,7 @@ class BaseRecord(TransactionMixin, dict):
             return self.key >= other.key
         return NotImplemented
 
-    def __lt__(self, other):
+    def __lt__(self, other: Type[T]):
         """Index of this record is smaller than the other record's.
 
         This requires both records to be of the same record class."""
@@ -566,7 +570,7 @@ class BaseRecord(TransactionMixin, dict):
             return self.key < other.key
         return NotImplemented
 
-    def __le__(self, other):
+    def __le__(self, other: Type[T]):
         """Index of this record is smaller than, or equal to, the other record's.
 
         This requires both records to be of the same record class."""
@@ -635,7 +639,7 @@ class BaseRecord(TransactionMixin, dict):
     # Some methods have a generic implementation, but may need customization,
     #
     @classmethod
-    def Create(cls, connection, record):
+    def Create(cls: Type[T], connection, record) -> T:
         """Creates a proper record object and stores it to the database.
 
         After storing it to the database, the live object is returned
@@ -652,7 +656,7 @@ class BaseRecord(TransactionMixin, dict):
         raise NotImplementedError
 
     @classmethod
-    def DeletePrimary(cls, connection, key):
+    def DeletePrimary(cls: Type[T], connection, key) -> T:
         """Deletes a database record based on the primary key value.
 
         Arguments:
@@ -676,7 +680,7 @@ class BaseRecord(TransactionMixin, dict):
         self._PostDelete()
 
     @classmethod
-    def FromPrimary(cls, connection, pkey_value):
+    def FromPrimary(cls: Type[T], connection, pkey_value) -> T:
         """Returns the Record object that belongs to the given primary key value.
 
         Arguments:
@@ -695,9 +699,10 @@ class BaseRecord(TransactionMixin, dict):
         raise NotImplementedError
 
     @classmethod
-    def List(cls, connection, conditions=None):
+    def List(
+        cls: Type[T], connection, conditions=None
+    ) -> Generator[T, None, None]:
         """Yields a Record object for every table entry.
-
         Arguments:
           @ connection: object
             Database connection to use.
@@ -723,7 +728,7 @@ class BaseRecord(TransactionMixin, dict):
         raise NotImplementedError
 
     @classmethod
-    def _LoadAsForeign(cls, connection, relation_value, method=None):
+    def _LoadAsForeign(cls: Type[T], connection, relation_value, method=None):
         """Loads a record as a foreign relation of another.
 
         Defaults to using the _LOAD_METHOD defined on the class, but when
@@ -736,7 +741,7 @@ class BaseRecord(TransactionMixin, dict):
     # ############################################################################
     # Functions for tracking table and primary key values
     #
-    def _Changes(self):
+    def _Changes(self) -> dict:
         """Returns the differences of the current state vs the last stored state."""
         sql_record = self._DataRecord()
         return {
@@ -745,7 +750,7 @@ class BaseRecord(TransactionMixin, dict):
             if self._record.get(key) != value
         }
 
-    def _DataRecord(self):
+    def _DataRecord(self) -> dict:
         """Returns a dictionary of the record's database values
         For any Record object present, its primary key value (`Record.key`) is used.
         """
@@ -762,7 +767,7 @@ class BaseRecord(TransactionMixin, dict):
         return value
 
     @classmethod
-    def TableName(cls):
+    def TableName(cls) -> str:
         """Returns the database table name for the Record class.
 
         If this is not explicitly defined by the class constant `_TABLE`, the return
@@ -1196,7 +1201,7 @@ class Record(BaseRecord):
                 value._SaveForeign(cursor)
                 value._SaveSelf(cursor)
 
-    def Refresh(self):
+    def Refresh(self: R) -> R:
         """Fetches the current object from the database by its primary key.
         This can be usefull to retrieve values that are generated by the database and are missing when a record is created.
         """
@@ -1222,7 +1227,7 @@ class Record(BaseRecord):
     # Public methods for creation, deletion and storing Record objects.
     #
     @classmethod
-    def Create(cls, connection, record):
+    def Create(cls: Type[R], connection, record) -> R:
         record = cls(connection, record, run_init_hook=False)
         with connection as cursor:
             # Accessing protected members of a foreign class.
@@ -1241,7 +1246,7 @@ class Record(BaseRecord):
             )
 
     @classmethod
-    def FromPrimary(cls, connection, pkey_value):
+    def FromPrimary(cls: Type[R], connection, pkey_value) -> R:
         with connection as cursor:
             record = cursor.Select(
                 table=cls.TableName(),
@@ -1255,7 +1260,7 @@ class Record(BaseRecord):
 
     @classmethod
     def List(
-        cls,
+        cls: Type[R],
         connection,
         conditions=None,
         limit=None,
@@ -1267,7 +1272,7 @@ class Record(BaseRecord):
         escape=True,
         fields=None,
         distinct=False,
-    ):
+    ) -> Generator[R, None, None]:
         """Yields a Record object for every table entry.
 
         Arguments:
@@ -1360,7 +1365,7 @@ class Record(BaseRecord):
 
     # SQL Records have foreign relations, saving needs an extra argument for this.
     # pylint: disable=W0221
-    def Save(self, save_foreign=False):
+    def Save(self: R, save_foreign=False) -> R:
         """Saves the changes made to the record.
 
         This expands on the base Save method, providing a save_foreign that will
