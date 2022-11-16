@@ -17,7 +17,12 @@ class Response(object):
     CONTENT_TYPE = "text/html"
 
     def __init__(
-        self, content: Union[str, dict]="", content_type=CONTENT_TYPE, httpcode=200, headers=None, **kwds
+        self,
+        content: Union[str, dict, bytes] = "",
+        content_type=CONTENT_TYPE,
+        httpcode=200,
+        headers=None,
+        **kwds
     ):
         """Initializes a Response object.
 
