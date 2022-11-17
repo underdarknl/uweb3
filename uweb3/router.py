@@ -207,6 +207,7 @@ class Router:
                 if isinstance(handler, tuple):
                     page_maker = handler[0]
                     handler = handler[1]
+
                 return handler, groups, hostmatch, page_maker
         raise NoRouteError(url + " cannot be handled")
 
@@ -253,13 +254,17 @@ class Router:
         for pattern, handler, *details in routes:
             self.register_route(pattern, self.page_class, handler, details)
 
-    def register_route(self, pattern, page_maker, handler, details):
+    def register_route(self, pattern: str, page_maker, handler: Union[str, tuple], details):
         """Used to register a route to the tail of the list.
 
         Args:
             pattern (re.Pattern): The regex pattern to match when a request is coming in.
             page_maker (PageMaker): The unitialized page maker class.
-            handler (str): The name of the handler (method) in the page_maker class.
+            handler (str | tuple): The name of the handler (method) in the page_maker 
+                class. If this is a tuple it is assumed that the first element is the
+                pagemaker class and the second element is the handler name.
+                For example:
+                    ("SomePageMaker", "handler_method")
             details (tuple): Containing the methods and hosts that are allowed for this route.
 
         Raises:
@@ -269,6 +274,11 @@ class Router:
             raise NoRouteError(
                 f"µWeb3 could not find a route handler called '{handler}' in any of the PageMakers, your application will not start."
             )
+            
+        if isinstance(handler, tuple):
+            page_maker = handler[0]
+            handler = handler[1]
+            
         pattern = self._parser.parse(pattern)
         method, host = extract_method_and_host(details)
         self._add_route(
@@ -284,9 +294,9 @@ class Router:
     def register_app(self, app: App):
         """Register a new app to the router.
 
-        This app is inserted at the start of the list to prevent its routes from never being found.
-        This is because the uweb3 class is initialized with the route handlers that are responsible
-        for matching routes that are not existing.
+        This app is inserted at the start of the list to prevent its routes from never
+        being found. This is because the uweb3 class is initialized with the route
+        handlers that are responsible for matching routes that are not existing.
 
         Args:
             app (uweb3.App): A uweb3 App object.
@@ -309,6 +319,13 @@ class Router:
             )
 
     def _add_route(self, route: RouteData, insert_at_start: bool = False):
+        pattern, handler, routemethod, hostpattern, page_maker = route
+        
+        if not hasattr(page_maker, handler):
+            raise NoRouteError(
+                f"Could not find handler '{handler}' in pagemaker '{page_maker}'"
+            )
+
         if not insert_at_start:
             return self._req_routes.append(route)
         return self._req_routes.insert(0, route)
