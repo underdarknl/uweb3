@@ -22,6 +22,9 @@ class DummyPageMaker:
     def route_args_int(self, *args):
         return args
 
+    def alternative_routing(self):
+        return "Hello from alternative_routing"
+
 
 class NewRoutingPageMaker:
     def index(self):
@@ -37,6 +40,7 @@ class RouterTest(unittest.TestCase):
                 ("/", "index", "GET"),
                 ("/post", "post_only", "POST"),
                 ("/route_args/(\d+)/(\d+)", "route_args"),
+                ("/alternative_routing", (DummyPageMaker, "alternative_routing")),
             ]
         )
 
@@ -55,11 +59,10 @@ class RouterTest(unittest.TestCase):
         custom_router = Router(self.page_maker)
         custom_router.router([("/", "index"), ("/post", "post_only", "POST")])
 
-        assert "Hello from index" == self.get_data(custom_router, ("/", "GET", "*"))
-        assert "Hello from index" == self.get_data(custom_router, ("/", "POST", "*"))
-        assert "Hello from index" == self.get_data(custom_router, ("/", "PUT", "*"))
-        assert "Hello from index" == self.get_data(custom_router, ("/", "DELETE", "*"))
-        assert "Hello from index" == self.get_data(custom_router, ("/", "OPTIONS", "*"))
+        for method in ["GET", "POST", "PUT", "DELETE", "OPTIONS"]:
+            assert "Hello from index" == self.get_data(
+                custom_router, ("/", method, "*")
+            )
 
     def test_post_only(self):
         assert "Hello from post_only" == self.get_data(
@@ -222,6 +225,17 @@ class RouterTest(unittest.TestCase):
 
         with self.assertRaises(NoRouteError):
             self.get_data(custom_router, ("/test/@", "GET", "*"))
+
+    def test_alternative_routing(self):
+        """Validate that routing  with the alternative syntax works.
+        
+        This tests the following:
+            ("/route", (PageMaker, "RouteHandler")),
+        """
+        result = self.get_data_new_routing(
+            self.router, ("/alternative_routing", "GET", "*")
+        )
+        assert result == "Hello from alternative_routing"
 
 
 if __name__ == "__main__":

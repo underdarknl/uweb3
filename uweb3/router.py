@@ -204,6 +204,9 @@ class Router:
                 # strip out optional groups, as they return '', which would override
                 # the handlers default argument values later on in the page_maker
                 groups = (group for group in match.groups() if group)
+                if isinstance(handler, tuple):
+                    page_maker = handler[0]
+                    handler = handler[1]
                 return handler, groups, hostmatch, page_maker
         raise NoRouteError(url + " cannot be handled")
 
