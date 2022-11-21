@@ -1,13 +1,13 @@
 #!/usr/bin/python3
 """uWeb3 model base classes."""
 # Standard modules
-
+import uweb3
 import configparser
 import hashlib
 import json
 import os
 import sys
-from typing import Generator, Tuple, Type, TypeVar, Union
+from typing import Dict, Generator, Tuple, Type, TypeVar, Union
 
 T = TypeVar("T", bound="BaseRecord")
 R = TypeVar("R", bound="Record")
@@ -216,10 +216,10 @@ class SecureCookie(TransactionMixin):
     def __init__(self, connection):
         """Create a new SecureCookie instance."""
         self.connection = connection
-        self.request = connection.request_object
-        self.cookies = connection.cookies
-        self.cookie_salt = connection.cookie_salt
-        self.debug = self.connection.debug
+        self.request: uweb3.request.Request = connection.request_object
+        self.cookies: Dict[str, str] = connection.cookies
+        self.cookie_salt: str = connection.cookie_salt
+        self.debug: bool = self.connection.debug
         self._rawcookie = None
         self.tampered = False
 
@@ -268,7 +268,7 @@ class SecureCookie(TransactionMixin):
                     'Secure cookie "%s" was tampered with and thus invalid. content was: %s '
                     % (name, self.cookies[name])
                 )
-                
+
             # Make sure to delete the cookie if it was tampered with.
             self.Delete()
             self.tampered = True
