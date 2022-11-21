@@ -331,17 +331,14 @@ class SecureCookie(TransactionMixin):
         Raises:
           ValueError: When cookie with name already exists
         """
-        cls.connection = connection
-        cls.request = connection.request_object
-        cls.cookies = connection.cookies
-        cls.cookie_salt = connection.cookie_salt
-        name = cls.TableName()
-        cls._rawcookie = data
+        cls_instance = cls(connection)
 
-        hashed = cls._CreateCookieHash(cls, data)
-        cls.cookies[name] = hashed
-        cls.connection.insert(name, hashed, **attrs)
-        return cls
+        name = cls.TableName()
+        cls_instance.rawcookie = data
+
+        hashed = cls._CreateCookieHash(cls_instance, data)
+        cls_instance.cookies[name] = hashed
+        cls_instance.connection.insert(name, hashed, **attrs)
 
     def Update(self, data, **attrs) -> None:
         """ "Updates a secure cookie
