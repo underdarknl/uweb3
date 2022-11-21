@@ -221,6 +221,8 @@ class SecureCookie(TransactionMixin):
         self.cookie_salt = connection.cookie_salt
         self.debug = self.connection.debug
         self._rawcookie = None
+        self.tampered = False
+
         if self.debug:
             print("current cookies (unvalidated) for request:", self.cookies)
 
@@ -239,6 +241,7 @@ class SecureCookie(TransactionMixin):
         """
         if cls._TABLE:
             return cls._TABLE
+
         name = cls.__name__
         return name[0].lower() + name[1:]
 
@@ -246,27 +249,52 @@ class SecureCookie(TransactionMixin):
     def rawcookie(self):
         """Reads the request cookie, checks if it was signed correctly and return
         the value, or returns False"""
+        if self.tampered:
+            return None
+
         if self._rawcookie is not None:
             return self._rawcookie
 
         name = self.TableName()
         if name in self.cookies and self.cookies[name]:
             isValid, value = self._ValidateCookieHash(self.cookies[name])
+
             if isValid:
                 self._rawcookie = value
-                return value
+                return self._rawcookie
+
             if self.debug:
                 print(
                     'Secure cookie "%s" was tampered with and thus invalid. content was: %s '
                     % (name, self.cookies[name])
                 )
+                
+            # Make sure to delete the cookie if it was tampered with.
+            self.Delete()
+            self.tampered = True
+
         if self.debug:
             print('Secure cookie "%s" was not present.' % name)
-        self._rawcookie = ""
+
         return self._rawcookie
 
+    @rawcookie.setter
+    def rawcookie(self, new_value):
+        if self.tampered:
+            if self.debug:
+                print(
+                    "Secure cookie was tampered with and thus invalid."
+                    "Ignoring new value."
+                )
+            return
+
+        if self.debug:
+            print("Setting new cookie value:", new_value)
+
+        self._rawcookie = new_value
+
     @classmethod
-    def Create(cls: Type[C], connection, data, **attrs) -> Type[C]:
+    def Create(cls: Type[C], connection, data, **attrs) -> None:
         """Creates a secure cookie
 
         Arguments:
@@ -356,9 +384,11 @@ class SecureCookie(TransactionMixin):
           ValueError: When no cookie with given name found
         """
         name = self.TableName()
+
         if not self.rawcookie:
             raise ValueError("No valid cookie with name `{}` found".format(name))
-        self._rawcookie = data
+
+        self.rawcookie = data
         hashed = self._CreateCookieHash(data)
         self.cookies[name] = hashed
         self.connection.update(name, hashed, **attrs)
@@ -369,7 +399,7 @@ class SecureCookie(TransactionMixin):
         """
         name = self.TableName()
         self.connection.delete(name)
-        self._rawcookie = None
+        self.rawcookie = None
 
     def _CreateCookieHash(self, data) -> str:
         data = str(json.dumps(data))
@@ -385,7 +415,7 @@ class SecureCookie(TransactionMixin):
         """
         if not cookie:
             return (False, None)
-        
+
         try:
             data = json.loads(self._decode(cookie.rsplit("+", 1)[1]))
         except Exception:
