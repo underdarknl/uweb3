@@ -31,26 +31,26 @@ class TestPageMaker:
     """Test class for page maker"""
 
 
-# class NewRoutingPageMaker:
-#     def index(self):
-#         return "Hello from new routing index"
+class NewRoutingPageMaker:
+    def index(self):
+        return "Hello from new routing index"
 
-#     def route_args(self, *args):
-#         return args
+    def route_args(self, *args):
+        return args
 
-#     def route_args_int(self, *args):
-#         return args
+    def route_args_int(self, *args):
+        return args
 
-#     def new_route(self):
-#         return "Hello from new_route"
+    def new_route(self):
+        return "Hello from new_route"
 
-#     def new_post_only_route(self):
-#         return "Hello from new_post_only_route"
+    def new_post_only_route(self):
+        return "Hello from new_post_only_route"
 
 
 class DefaultRoutingTest(unittest.TestCase):
     def setUp(self):
-        self.page_maker = DummyPageMaker()
+        self.page_maker = DummyPageMaker
         self.router = Router(self.page_maker)
         self.router.router(
             [
@@ -72,7 +72,7 @@ class DefaultRoutingTest(unittest.TestCase):
 
     def get_data(self, router, args, host="127.0.0.1"):
         handler, groups, hostmatch, page_maker = router(*args, host)
-        return getattr(page_maker, handler)(*groups)
+        return getattr(page_maker, handler)(page_maker, *groups)
 
     def test_specified_method_on_route(self, handler="index"):
         """Validate that a route is only accessible by the specified method(s).
@@ -200,10 +200,6 @@ class AlternativeRoutingTest(DefaultRoutingTest):
             ]
         )
 
-    def get_data(self, router, args, host="127.0.0.1"):
-        handler, groups, hostmatch, page_maker = router(*args, host)
-        return getattr(page_maker, handler)(page_maker, *groups)
-
     def test_specified_method_on_route(self, handler=(DummyPageMaker, "index")):
         """Overwrite the test to use a tuple for the handler.
         This test validates that specific method only routes also work in this way
@@ -212,85 +208,94 @@ class AlternativeRoutingTest(DefaultRoutingTest):
         super().test_specified_method_on_route(handler)
 
 
-# class RegisterAppRoutingTest(DefaultRoutingTest):
-#     def setUp(self):
-#         self.page_maker = DummyPageMaker()
-#         self.router = Router(self.page_maker)
-#         self.router.router(
-#             [
-#                 ("/", (DummyPageMaker, "index"), "GET"),
-#                 ("/all", (DummyPageMaker, "all_methods")),
-#                 ("/post", (DummyPageMaker, "post_only"), "POST"),
-#                 ("/only_digits/(\d+)/(\d+)", (DummyPageMaker, "route_args")),
-#                 ("/any_route_args/(.*)/(.*)", (DummyPageMaker, "any_route_args")),
-#             ]
-#         )
+class RegisterAppRoutingTest(DefaultRoutingTest):
+    def setUp(self):
+        self.page_maker = DummyPageMaker()
+        self.router = Router(self.page_maker)
+        self.router.router(
+            [
+                ("/", (DummyPageMaker, "index"), "GET"),
+                ("/all", (DummyPageMaker, "all_methods")),
+                ("/post", (DummyPageMaker, "post_only"), "POST"),
+                ("/only_digits/(\d+)/(\d+)", (DummyPageMaker, "route_args")),
+                ("/any_route_args/(.*)/(.*)", (DummyPageMaker, "any_route_args")),
+                ("/test_tuple_methods", (DummyPageMaker, "index"), ("POST", "GET")),
+                (
+                    "/test_hostmatch",
+                    (DummyPageMaker, "index"),
+                    ("POST", "GET"),
+                    "127.0.0.1",
+                ),
+                (
+                    "/test_tuple_hostmatch",
+                    (DummyPageMaker, "index"),
+                    ("POST", "GET"),
+                    ("127.0.0.1", "127.0.0.2"),
+                ),
+            ]
+        )
 
-#     def get_data(self, router, args):
-#         handler, groups, hostmatch, page_maker = router(*args)
-#         return getattr(page_maker, handler)(page_maker, *groups)
+    def test_register_route(self):
+        with self.assertRaises(NoRouteError):
+            self.get_data(self.router, ("/new_route", "GET"))
 
-# def test_register_route(self):
-#     with self.assertRaises(NoRouteError):
-#         self.get_data(self.router, ("/new_route", "GET", "*"))
+        with self.assertRaises(NoRouteError):
+            self.get_data(self.router, ("/new_post_only_route", "POST"))
 
-#     with self.assertRaises(NoRouteError):
-#         self.get_data(self.router, ("/new_post_only_route", "POST", "*"))
+        self.router.register_route(
+            "/new_route", NewRoutingPageMaker, "new_route", ("GET",)
+        )
+        self.router.register_route(
+            "/new_post_only_route",
+            NewRoutingPageMaker,
+            "new_post_only_route",
+            ("POST",),
+        )
 
-#     self.router.register_route(
-#         "/new_route", NewRoutingPageMaker, "new_route", ("GET",)
-#     )
-#     self.router.register_route(
-#         "/new_post_only_route",
-#         NewRoutingPageMaker,
-#         "new_post_only_route",
-#         ("POST",),
-#     )
+        assert "Hello from new_route" == self.get_data(
+            self.router, ("/new_route", "GET")
+        )
+        assert "Hello from new_post_only_route" == self.get_data(
+            self.router, ("/new_post_only_route", "POST")
+        )
 
-#     assert "Hello from new_route" == self.get_data(
-#         self.router, ("/new_route", "GET", "*")
-#     )
-#     assert "Hello from new_post_only_route" == self.get_data(
-#         self.router, ("/new_post_only_route", "POST", "*")
-#     )
+        with self.assertRaises(NoRouteError):
+            self.get_data(self.router, ("/new_post_only_route", "GET"))
 
-#     with self.assertRaises(NoRouteError):
-#         self.get_data(self.router, ("/new_post_only_route", "GET", "*"))
 
-# def test_register_app(self):
-#     with self.assertRaises(NoRouteError):
-#         self.get_data(self.router, ("/new_route", "GET", "*"))
+    def test_register_app(self):
+        with self.assertRaises(NoRouteError):
+            self.get_data(self.router, ("/new_route", "GET"))
 
-#     app = App(
-#         name="some app",
-#         routes=[("/new_route", (NewRoutingPageMaker, "index"), "GET", "*")],
-#     )
-#     self.router.register_app(app)
-#     assert "Hello from new routing index" == self.get_data(
-#         self.router, ("/new_route", "GET", "*")
-#     )
+        app = App(
+            name="some app",
+            routes=[("/new_route", (NewRoutingPageMaker, "index"), "GET")],
+        )
+        self.router.register_app(app)
+        assert "Hello from new routing index" == self.get_data(
+            self.router, ("/new_route", "GET")
+        )
 
-# def test_pattern_routing(self):
-#     custom_router = Router(self.page_maker)
-#     custom_router.router(
-#         [
-#             (
-#                 "/test/<str>",
-#                 (DummyPageMaker, "route_args"),
-#             ),
-#             (
-#                 "/test/<int>",
-#                 (DummyPageMaker, "route_args_int"),
-#             ),
-#         ]
-#     )
-#     assert ("stringarg",) == self.get_data(
-#         custom_router, ("/test/stringarg", "GET", "*")
-#     )
-#     assert ("123",) == self.get_data(custom_router, ("/test/123", "GET", "*"))
 
-#     with self.assertRaises(NoRouteError):
-#         self.get_data(custom_router, ("/test/@", "GET", "*"))
+    def test_pattern_routing(self):
+        custom_router = Router(self.page_maker)
+        custom_router.router(
+            [
+                (
+                    "/test/<str>",
+                    (DummyPageMaker, "route_args"),
+                ),
+                (
+                    "/test/<int>",
+                    (DummyPageMaker, "route_args_int"),
+                ),
+            ]
+        )
+        assert ("stringarg",) == self.get_data(custom_router, ("/test/stringarg", "GET"))
+        assert ("123",) == self.get_data(custom_router, ("/test/123", "GET"))
+
+        with self.assertRaises(NoRouteError):
+            self.get_data(custom_router, ("/test/@", "GET"))
 
 
 if __name__ == "__main__":
