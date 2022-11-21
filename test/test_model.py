@@ -14,7 +14,7 @@ from pathlib import Path
 
 # Unittest target
 from uweb3 import model, request
-from uweb3.model import CookieEncoder, SecureCookie, SupportedHashes
+from uweb3.model import CookieHasher, SecureCookie, SupportedHashes
 
 # Importing uWeb3 makes the SQLTalk library available as a side-effect
 from uweb3.libs.sqltalk import mysql, safe_cookie, sqlite
@@ -697,7 +697,7 @@ class SecureCookieTest(unittest.TestCase):
         data = {"key": "value"}
         secure_cookie = SecureCookie(
             self.connection,
-            encoder=CookieEncoder(cookie_hash=SupportedHashes.BLAKE2S),
+            encoder=CookieHasher(cookie_hash=SupportedHashes.BLAKE2S),
         )
         
         # The Create method is a class method, so it doesnt know if we supplied a
@@ -706,7 +706,7 @@ class SecureCookieTest(unittest.TestCase):
         SecureCookie.Create(
             self.connection,
             data,
-            encoder=CookieEncoder(cookie_hash=SupportedHashes.BLAKE2S),
+            encoder=CookieHasher(cookie_hash=SupportedHashes.BLAKE2S),
         )
         self.assertEqual(secure_cookie.rawcookie, data)
 

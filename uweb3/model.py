@@ -214,7 +214,7 @@ class SettingsManager(TransactionMixin):
         return True
 
 
-class IEncoder(ABC):
+class ICookieHash(ABC):
     def __init__(self, cookie_hash: SupportedHashes, encoding: str = "utf-8"):
         self.name = cookie_hash.value.name
         self.prefix = cookie_hash.value.prefix
@@ -229,7 +229,7 @@ class IEncoder(ABC):
         ...
 
 
-class CookieEncoder(IEncoder):
+class CookieHasher(ICookieHash):
     def __init__(self, cookie_hash: SupportedHashes, encoding: str = "utf-8"):
         super().__init__(cookie_hash, encoding)
         self._replacements = {
@@ -285,11 +285,11 @@ class SecureCookie(TransactionMixin):
     def __init__(
         self,
         connection,
-        encoder: IEncoder = CookieEncoder(cookie_hash=SupportedHashes.RIPEMD160),
+        encoder: ICookieHash = CookieHasher(cookie_hash=SupportedHashes.RIPEMD160),
     ):
         """Create a new SecureCookie instance."""
         self.connection = connection
-        self.encoder: IEncoder = encoder
+        self.encoder: ICookieHash = encoder
         self.request: uweb3.request.Request = connection.request_object
         self.cookies: Dict[str, str] = connection.cookies
         self.cookie_salt: str = connection.cookie_salt
@@ -372,7 +372,7 @@ class SecureCookie(TransactionMixin):
         cls: Type[C],
         connection,
         data,
-        encoder: IEncoder = CookieEncoder(cookie_hash=SupportedHashes.RIPEMD160),
+        encoder: ICookieHash = CookieHasher(cookie_hash=SupportedHashes.RIPEMD160),
         **attrs,
     ) -> None:
         """Creates a secure cookie
