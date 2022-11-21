@@ -1,7 +1,7 @@
 #!/usr/bin/python3
-"""uWeb3 model base classes."""
-# Standard modules
 from dataclasses import dataclass
+import random
+
 import uweb3
 import configparser
 import hashlib
@@ -21,10 +21,11 @@ C = TypeVar("C", bound="SecureCookie")
 class CookieHash:
     name: str
     prefix: str
+    deprecated: bool = False
 
 
 class SupportedHashes(Enum):
-    RIPEMD160 = CookieHash(name="RIPEMD160", prefix="rip")
+    RIPEMD160 = CookieHash(name="RIPEMD160", prefix="rip", deprecated=True)
     BLAKE2S = CookieHash(name="blake2s", prefix="bl2s")
 
 
@@ -216,17 +217,16 @@ class SettingsManager(TransactionMixin):
 
 class ICookieHash(ABC):
     def __init__(self, cookie_hash: SupportedHashes, encoding: str = "utf-8"):
-        self.name = cookie_hash.value.name
-        self.prefix = cookie_hash.value.prefix
+        self.cookie_hash = cookie_hash.value
         self.encoding = encoding
 
     @abstractmethod
     def encode(self, data: str, cookie_salt: str) -> str:
-        ...
+        pass
 
     @abstractmethod
-    def decode(self, data: str):
-        ...
+    def decode(self, data: str) -> Tuple[bool, Union[str, None]]:
+        pass
 
 
 class CookieHasher(ICookieHash):
@@ -241,27 +241,52 @@ class CookieHasher(ICookieHash):
         }
 
     def encode(self, data, cookie_salt):
+        if self.cookie_hash.deprecated:
+            cookie_hash = random.choice(
+                [e for e in list(SupportedHashes) if e.value.deprecated == False]
+            )
+            return CookieHasher(cookie_hash=cookie_hash, encoding=self.encoding).encode(
+                data, cookie_salt
+            )
+
         cookie_data = str(json.dumps(data))
 
-        h = hashlib.new(self.name)
+        h = hashlib.new(self.cookie_hash.name)
         h.update((cookie_data + cookie_salt).encode(self.encoding))
 
-        return "{}+{}+{}".format(self.prefix, h.hexdigest(), self._encode(cookie_data))
+        return "{}+{}+{}".format(
+            self.cookie_hash.prefix, h.hexdigest(), self._encode(cookie_data)
+        )
 
     def _encode(self, data):
         for target, replacement in self._replacements:
             data = data.replace(target, replacement)
         return data
 
-    def decode(self, cookie):
+    def decode(self, cookie, cookie_salt: str) -> Tuple[bool, Union[str, None], bool]:
         hash_prefix, cookie_hash, raw_cookie_data = cookie.split("+")
 
-        if hash_prefix != self.prefix:
+        if hash_prefix != self.cookie_hash.prefix:
             # TODO: Load with different encoder?
-            ...
+            cookie_hash = next(
+                (e for e in list(SupportedHashes) if e.value.prefix == hash_prefix),
+                None,
+            )
+            if not cookie_hash:
+                # TODO Return error
+                return NotImplemented
+
+            return CookieHasher(cookie_hash=cookie_hash, encoding=self.encoding).decode(
+                cookie, cookie_salt
+            )
 
         cookie_data = json.loads(self._decode(raw_cookie_data))
-        return cookie_data
+        re_calculated_hash = self.encode(cookie_data, cookie_salt)
+
+        if cookie == re_calculated_hash:
+            return (True, cookie_data, self.cookie_hash.deprecated)
+
+        return (False, None, self.cookie_hash.deprecated)
 
     def _decode(self, data):
         # Reverse the replacements done in the encoding process.
@@ -331,8 +356,8 @@ class SecureCookie(TransactionMixin):
 
         name = self.TableName()
         if name in self.cookies and self.cookies[name]:
-            isValid, value = self._ValidateCookieHash(self.cookies[name])
-
+            isValid, value, deprecated = self._ValidateCookieHash(self.cookies[name])
+            
             if isValid:
                 self._rawcookie = value
                 return self._rawcookie
@@ -482,26 +507,20 @@ class SecureCookie(TransactionMixin):
         """Creates a hash of the cookie value"""
         return self.encoder.encode(value, self.cookie_salt)
 
-    def _ValidateCookieHash(self, cookie) -> Tuple[bool, Union[str, None]]:
+    def _ValidateCookieHash(self, cookie) -> Tuple[bool, Union[str, None], bool]:
         """Takes a cookie and validates it
 
         Arguments:
           @ str: A hashed cookie from the `__CreateCookieHash` method
         """
         if not cookie:
-            return (False, None)
+            return (False, None, False)
 
         try:
-            data = self.encoder.decode(cookie)
+            return self.encoder.decode(cookie, self.cookie_salt)
         except Exception:
             print("Cookie contents could not be loaded as Json")
-            return (False, None)
-
-        hash = self._CreateCookieHash(data)
-        if cookie == hash:
-            return (True, data)
-        print("Cookie contents could not be verified as hash is different")
-        return (False, None)
+            return (False, None, False)
 
 
 # Record classes have many methods, this is not an actual problem.

@@ -699,9 +699,9 @@ class SecureCookieTest(unittest.TestCase):
             self.connection,
             encoder=CookieHasher(cookie_hash=SupportedHashes.BLAKE2S),
         )
-        
+
         # The Create method is a class method, so it doesnt know if we supplied a
-        # different encoder. Pass the custom one we use to the method to decode the 
+        # different encoder. Pass the custom one we use to the method to decode the
         # cookie correctly.
         SecureCookie.Create(
             self.connection,
@@ -739,7 +739,7 @@ class SecureCookieTest(unittest.TestCase):
         """Validate that the created cookie can be validated and decoded correctly."""
         data = {"key": "value"}
         hash = self.secure_cookie._CreateCookieHash(data)
-        is_valid, cookie_data = self.secure_cookie._ValidateCookieHash(hash)
+        is_valid, cookie_data, deprecated = self.secure_cookie._ValidateCookieHash(hash)
 
         self.assertTrue(is_valid)
         self.assertEqual(data, cookie_data)
@@ -748,14 +748,14 @@ class SecureCookieTest(unittest.TestCase):
         """Ensure that an invalid cookie hash does not pass the validation process."""
         data = {"key": "value"}
         self.secure_cookie._CreateCookieHash(data)
-        is_valid, cookie_data = self.secure_cookie._ValidateCookieHash("someotherhash")
+        is_valid, cookie_data, deprecated = self.secure_cookie._ValidateCookieHash("someotherhash")
 
         self.assertFalse(is_valid)
         self.assertEqual(cookie_data, None)
 
     def testMissingCookie(self):
         """Validate that a missing cookie can not pass the validation process."""
-        is_valid, cookie_data = self.secure_cookie._ValidateCookieHash("someotherhash")
+        is_valid, cookie_data, deprecated = self.secure_cookie._ValidateCookieHash("someotherhash")
 
         self.assertFalse(is_valid)
         self.assertEqual(cookie_data, None)
@@ -768,6 +768,21 @@ class SecureCookieTest(unittest.TestCase):
 
         self.assertEqual(self.secure_cookie.rawcookie, None)
         self.assertTrue(self.secure_cookie.tampered)
+
+    def testDeprecatedHasher(self):
+        """Validate that a deprecated hasher is not used and instead a non depricated
+        hasher is used."""
+        secure_cookie = SecureCookie(
+            self.connection,
+            encoder=CookieHasher(cookie_hash=SupportedHashes.RIPEMD160),
+        )
+        SecureCookie.Create(
+            self.connection,
+            "test_deprecated_cookie",
+            encoder=CookieHasher(cookie_hash=SupportedHashes.RIPEMD160),
+        )
+        
+        self.assertNotIn(SupportedHashes.RIPEMD160.value.prefix, secure_cookie.cookies['secureCookie'])
 
 
 def DatabaseConnection():
