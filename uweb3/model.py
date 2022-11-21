@@ -269,6 +269,7 @@ class CookieEncoder(IEncoder):
             data = data.replace(target, replacement)
         return data
 
+
 class SecureCookie(TransactionMixin):
     """The secureCookie class works just like other data abstraction classes,
     except that it stores its data in client side cookies that are signed with a
