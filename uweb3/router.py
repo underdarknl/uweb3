@@ -59,7 +59,7 @@ def register_pagemaker(cls):
 
 def route(
     url: str,
-    methods: Union[str, Tuple[str, ...]],
+    methods: Optional[Union[str, Tuple[str, ...]]] = "ALL",
     hostmatch: Optional[Tuple[str, ...]] = None,
 ):
     def wrapper(func):
@@ -305,7 +305,6 @@ class Router:
             app (uweb3.App): A uweb3 App object.
         """
         self._registered_apps.append(app)
-
         for route in app.routes:
             pattern, (page_maker, handler), *details = route
             pattern = self._parser.parse(pattern)
