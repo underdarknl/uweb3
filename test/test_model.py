@@ -4,6 +4,8 @@
 # Too many public methods
 # pylint: disable=R0904
 
+import hashlib
+import json
 import os
 
 # Standard modules
@@ -12,6 +14,7 @@ from pathlib import Path
 
 # Unittest target
 from uweb3 import model, request
+from uweb3.model import SecureCookie
 
 # Importing uWeb3 makes the SQLTalk library available as a side-effect
 from uweb3.libs.sqltalk import mysql, safe_cookie, sqlite
@@ -666,6 +669,87 @@ class CookieTests(unittest.TestCase):
 
         self.assertEqual(0, len(self.connection.uncommitted_cookies))
         self.assertEqual(5, len(self.get_response_cookie_header()))
+
+
+class SecureCookieTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.connection = CookieConnection()
+        self.secure_cookie = SecureCookie(self.connection)
+
+    def testTableName(self):
+        """Validate that the SecureCookie class uses the correct name for the cookie."""
+
+        class TestClass(SecureCookie):
+            ...
+
+        self.assertEqual("secureCookie", self.secure_cookie.TableName())
+        self.assertEqual("testClass", TestClass(self.connection).TableName())
+
+    def testCreateCookie(self):
+        """Validate that the cookie is created and the values are the same."""
+        data = {"key": "value"}
+
+        self.secure_cookie.Create(self.connection, data)
+        self.assertEqual(self.secure_cookie.rawcookie, data)
+
+    def testUpdateCookie(self):
+        """Validate that the values in the cookie are updated."""
+        data = {"key": "value"}
+        updated_data = {"key": "updated_value"}
+
+        self.secure_cookie.Create(self.connection, data)
+        self.assertEqual(self.secure_cookie.rawcookie, data)
+
+        self.secure_cookie.Update(updated_data)
+        self.assertEqual(self.secure_cookie.rawcookie, updated_data)
+
+    def testDeleteCookie(self):
+        """Ensure that the cookie is deleted and the header for deletion is passed
+        to the response object."""
+        data = {"key": "value"}
+
+        self.secure_cookie.Create(self.connection, data)
+        self.assertEqual(self.secure_cookie.rawcookie, data)
+
+        self.secure_cookie.Delete()
+        headers = self.connection.request_object.response.headers["Set-Cookie"]
+        self.assertEqual(
+            any("secureCookie=deleted;" in header for header in headers), True
+        )
+
+    def testCreateCookieHash(self):
+        """Validate that the correct cookie hash is created and can be decoded.."""
+        data = {"key": "value"}
+        hash = self.secure_cookie._CreateCookieHash(data)
+        hex, value = hash.rsplit("+", 1)
+
+        result = json.loads(self.secure_cookie._decode(value))
+        self.assertEqual(data, result)
+
+    def testValidateCookieHash(self):
+        """Validate that the created cookie can be validated and decoded correctly."""
+        data = {"key": "value"}
+        hash = self.secure_cookie._CreateCookieHash(data)
+        is_valid, cookie_data = self.secure_cookie._ValidateCookieHash(hash)
+
+        self.assertTrue(is_valid)
+        self.assertEqual(data, cookie_data)
+
+    def testInvalidCookieHash(self):
+        """Ensure that an invalid cookie hash does not pass the validation process."""
+        data = {"key": "value"}
+        self.secure_cookie._CreateCookieHash(data)
+        is_valid, cookie_data = self.secure_cookie._ValidateCookieHash("someotherhash")
+
+        self.assertFalse(is_valid)
+        self.assertEqual(cookie_data, None)
+
+    def testMissingCookie(self):
+        """Validate that a missing cookie can not pass the validation process."""
+        is_valid, cookie_data = self.secure_cookie._ValidateCookieHash("someotherhash")
+
+        self.assertFalse(is_valid)
+        self.assertEqual(cookie_data, None)
 
 
 def DatabaseConnection():
