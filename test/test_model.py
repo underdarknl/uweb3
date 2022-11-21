@@ -751,6 +751,15 @@ class SecureCookieTest(unittest.TestCase):
         self.assertFalse(is_valid)
         self.assertEqual(cookie_data, None)
 
+    def testTamperedCookie(self):
+        """Validate that a tampered cookie can not pass the validation process."""
+        data = {"key": "value"}
+        self.secure_cookie.Create(self.connection, data)
+        self.secure_cookie.cookies["secureCookie"] += "edited_hash"
+        
+        self.assertEqual(self.secure_cookie.rawcookie, None)
+        self.assertTrue(self.secure_cookie.tampered)
+
 
 def DatabaseConnection():
     """Returns an SQLTalk database connection to 'uWeb3_model_test'."""
