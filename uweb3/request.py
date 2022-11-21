@@ -659,14 +659,14 @@ class Request(BaseRequest):
                 pass
         self.AddHeader("Set-Cookie", new_cookie[key].OutputString())
 
-    def AddHeader(self, name, value):
-        if name == "Set-Cookie":
-            if not self.response.headers.get("Set-Cookie"):
-                self.response.headers["Set-Cookie"] = [value]
-                return
+    def AddHeader(self, name, value) -> None:
+        if name != "Set-Cookie":
+            return self.response.AddHeader(name, value)
+
+        if not self.response.headers.get("Set-Cookie"):
+            self.response.headers["Set-Cookie"] = [value]
+        else:
             self.response.headers["Set-Cookie"].append(value)
-            return
-        self.response.AddHeader(name, value)
 
     def DeleteCookie(self, name):
         """Deletes cookie by name
