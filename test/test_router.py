@@ -262,7 +262,6 @@ class RegisterAppRoutingTest(DefaultRoutingTest):
         with self.assertRaises(NoRouteError):
             self.get_data(self.router, ("/new_post_only_route", "GET"))
 
-
     def test_register_app(self):
         with self.assertRaises(NoRouteError):
             self.get_data(self.router, ("/new_route", "GET"))
@@ -275,7 +274,6 @@ class RegisterAppRoutingTest(DefaultRoutingTest):
         assert "Hello from new routing index" == self.get_data(
             self.router, ("/new_route", "GET")
         )
-
 
     def test_pattern_routing(self):
         custom_router = Router(self.page_maker)
@@ -291,7 +289,9 @@ class RegisterAppRoutingTest(DefaultRoutingTest):
                 ),
             ]
         )
-        assert ("stringarg",) == self.get_data(custom_router, ("/test/stringarg", "GET"))
+        assert ("stringarg",) == self.get_data(
+            custom_router, ("/test/stringarg", "GET")
+        )
         assert ("123",) == self.get_data(custom_router, ("/test/123", "GET"))
 
         with self.assertRaises(NoRouteError):
