@@ -57,8 +57,8 @@ load-plugins=
 #   W0403: Relative import %r -- Underdark tree structure demands this.
 #   E1103: %s %r has no %r member (but some types could not be inferred)
 #          This is generally not an actual problem, and causes false positives
-disable-msg=W0403, W0142, E1103
-disable=W0403, W0142, E1103
+disable-msg=E1103
+disable=E1103
 
 
 [REPORTS]
