@@ -1,6 +1,6 @@
 import unittest
 
-from uweb3 import App, Router
+from uweb3 import App, Router, register_pagemaker, route
 from uweb3.router import NoRouteError
 
 
@@ -46,6 +46,45 @@ class NewRoutingPageMaker:
 
     def new_post_only_route(self):
         return "Hello from new_post_only_route"
+
+
+@register_pagemaker
+class DecoratedPageMaker:
+    @route("/", methods="GET")
+    def index(self):
+        return "Hello from index"
+
+    @route("/all")
+    def all_methods(self):
+        return "Hello from all methods"
+
+    @route("/post", methods="POST")
+    def post_only(self):
+        return "Hello from post_only"
+
+    @route("/route_args/(\d+)/(\d+)")
+    def route_args(self, *args):
+        return args
+
+    @route("/any_route_args/(.*)/(.*)")
+    def any_route_args(self, *args):
+        return args
+
+    @route("/test_tuple_methods", methods=("POST", "GET"))
+    def tuple_host_match(self):
+        return "Hello from index"
+
+    @route("/test_hostmatch", methods=("POST", "GET"), hostmatch="127.0.0.1")
+    def hostmatch(self):
+        return "Hello from index"
+
+    @route(
+        "/test_tuple_hostmatch",
+        methods=("POST", "GET"),
+        hostmatch=("127.0.0.1", "127.0.0.2"),
+    )
+    def tuple_hostmatch(self):
+        return "Hello from index"
 
 
 class DefaultRoutingTest(unittest.TestCase):
@@ -238,7 +277,6 @@ class RegisterAppRoutingTest(DefaultRoutingTest):
     def test_register_route(self):
         with self.assertRaises(NoRouteError):
             self.get_data(self.router, ("/new_route", "GET"))
-
         with self.assertRaises(NoRouteError):
             self.get_data(self.router, ("/new_post_only_route", "POST"))
 
@@ -296,6 +334,32 @@ class RegisterAppRoutingTest(DefaultRoutingTest):
 
         with self.assertRaises(NoRouteError):
             self.get_data(custom_router, ("/test/@", "GET"))
+
+
+class DecoratedRoutingTest(DefaultRoutingTest):
+    """Test the routing decorator."""
+
+    def setUp(self):
+        self.page_maker = DecoratedPageMaker
+        self.router = Router(self.page_maker)
+        app = App(name="test_app", routes=DecoratedPageMaker._routes)
+        self.router.register_app(app)
+
+    def test_router_return_correct_variables(self):
+        """Validate that the router returns the correct variables for each pattern."""
+
+        for rgx, handler, method, hostmatch, page_maker, *_ in self.router._req_routes:
+            assert handler in (
+                "index",
+                "all_methods",
+                "post_only",
+                "route_args",
+                "any_route_args",
+                "tuple_host_match",
+                "hostmatch",
+                "tuple_hostmatch",
+            )
+            assert method in ("GET", "POST", "ALL", ("POST", "GET"))
 
 
 if __name__ == "__main__":
