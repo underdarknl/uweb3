@@ -8,12 +8,12 @@
 # Too many public methods
 # pylint: disable-msg=R0904
 
-from collections import namedtuple
 import io as stringIO
 
 # Standard modules
 import unittest
 import urllib
+from collections import namedtuple
 from functools import wraps
 from itertools import zip_longest
 from typing import Union

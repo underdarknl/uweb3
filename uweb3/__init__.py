@@ -13,11 +13,10 @@ import time
 from importlib import reload
 from wsgiref.simple_server import make_server
 
-
 # Package modules
 from . import pagemaker, request
-from .libs.safestring import Basesafestring, HTMLsafestring, JsonEncoder, JSONsafestring
 from .libs import sqltalk
+from .libs.safestring import Basesafestring, HTMLsafestring, JsonEncoder, JSONsafestring
 from .model import SettingsManager
 from .pagemaker import (
     DebuggingPageMaker,
@@ -30,11 +29,11 @@ from .pagemaker import (
 # Package classes
 from .response import Redirect, Response
 from .router import (
-    Router,
     App,
-    RouteData,
     NoRouteError,
     RequestedRouteNotAllowed,
+    RouteData,
+    Router,
     register_pagemaker,
     route,
 )
@@ -264,10 +263,11 @@ class uWeb:
                 self.executing_path,
                 self.config.options.get("log", {}).get("acces_log", "access_log.log"),
             )
-            delay = (
+
+            delay = bool(
                 self.config.options.get("log", {}).get("acces_log_delay", False)
-                != False
             )
+
             encoding = self.config.options.get("log", {}).get(
                 "acces_log_encoding", None
             )
@@ -288,9 +288,8 @@ class uWeb:
                     "exception_log", "uweb3_exceptions.log"
                 ),
             )
-            delay = (
+            delay = bool(
                 self.config.options.get("log", {}).get("exception_log_delay", False)
-                != False
             )
             encoding = self.config.options.get("log", {}).get(
                 "exception_log_encoding", None

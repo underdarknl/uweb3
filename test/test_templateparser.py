@@ -1411,7 +1411,10 @@ class TestExternalInline(unittest.TestCase):
         allowed directories works correctly."""
         self.parser = templateparser.Parser(
             path=str(self.app_one),
-            allowed_paths=(str(self.app_two), str(self.app_one),),
+            allowed_paths=(
+                str(self.app_two),
+                str(self.app_one),
+            ),
             executing_path=str(self.base_folder),
         )
         app_one_template_1 = {

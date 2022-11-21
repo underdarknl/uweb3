@@ -1,6 +1,6 @@
 import unittest
 
-from uweb3 import Router, App
+from uweb3 import App, Router
 from uweb3.router import NoRouteError
 
 

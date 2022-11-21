@@ -1,5 +1,6 @@
 import re
 from typing import NamedTuple, Optional, Tuple, Union
+
 from .pagemaker import PageMaker
 
 
@@ -254,13 +255,15 @@ class Router:
         for pattern, handler, *details in routes:
             self.register_route(pattern, self.page_class, handler, details)
 
-    def register_route(self, pattern: str, page_maker, handler: Union[str, tuple], details):
+    def register_route(
+        self, pattern: str, page_maker, handler: Union[str, tuple], details
+    ):
         """Used to register a route to the tail of the list.
 
         Args:
             pattern (re.Pattern): The regex pattern to match when a request is coming in.
             page_maker (PageMaker): The unitialized page maker class.
-            handler (str | tuple): The name of the handler (method) in the page_maker 
+            handler (str | tuple): The name of the handler (method) in the page_maker
                 class. If this is a tuple it is assumed that the first element is the
                 pagemaker class and the second element is the handler name.
                 For example:
@@ -274,11 +277,11 @@ class Router:
             raise NoRouteError(
                 f"µWeb3 could not find a route handler called '{handler}' in any of the PageMakers, your application will not start."
             )
-            
+
         if isinstance(handler, tuple):
             page_maker = handler[0]
             handler = handler[1]
-            
+
         pattern = self._parser.parse(pattern)
         method, host = extract_method_and_host(details)
         self._add_route(
@@ -320,7 +323,7 @@ class Router:
 
     def _add_route(self, route: RouteData, insert_at_start: bool = False):
         pattern, handler, routemethod, hostpattern, page_maker = route
-        
+
         if not hasattr(page_maker, handler):
             raise NoRouteError(
                 f"Could not find handler '{handler}' in pagemaker '{page_maker}'"

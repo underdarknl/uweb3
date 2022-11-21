@@ -1,8 +1,8 @@
 """This file holds all the decorators we use in this project."""
 
 import codecs
-import os
 import json
+import os
 import pickle
 import time
 from datetime import datetime

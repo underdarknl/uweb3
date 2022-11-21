@@ -7,7 +7,7 @@ import hashlib
 import json
 import os
 import sys
-from typing import Generator, TypeVar, Type
+from typing import Generator, Type, TypeVar
 
 T = TypeVar("T", bound="BaseRecord")
 R = TypeVar("R", bound="Record")
@@ -699,9 +699,7 @@ class BaseRecord(TransactionMixin, dict):
         raise NotImplementedError
 
     @classmethod
-    def List(
-        cls: Type[T], connection, conditions=None
-    ) -> Generator[T, None, None]:
+    def List(cls: Type[T], connection, conditions=None) -> Generator[T, None, None]:
         """Yields a Record object for every table entry.
         Arguments:
           @ connection: object
