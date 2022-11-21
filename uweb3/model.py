@@ -1,16 +1,17 @@
 #!/usr/bin/python3
 """uWeb3 model base classes."""
-
 # Standard modules
+
 import configparser
 import hashlib
 import json
 import os
 import sys
-from typing import Generator, Type, TypeVar
+from typing import Generator, Tuple, Type, TypeVar, Union
 
 T = TypeVar("T", bound="BaseRecord")
 R = TypeVar("R", bound="Record")
+C = TypeVar("C", bound="SecureCookie")
 
 
 class Error(Exception):
@@ -223,12 +224,12 @@ class SecureCookie(TransactionMixin):
         if self.debug:
             print("current cookies (unvalidated) for request:", self.cookies)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Returns the cookie's value if it was valid and untampered with."""
         return str(self.rawcookie)
 
     @classmethod
-    def TableName(cls):
+    def TableName(cls) -> str:
         """Returns the 'database' table name for the SecureCookie class.
 
         If this is not explicitly defined by the class constant `_TABLE`, the return
@@ -247,6 +248,7 @@ class SecureCookie(TransactionMixin):
         the value, or returns False"""
         if self._rawcookie is not None:
             return self._rawcookie
+
         name = self.TableName()
         if name in self.cookies and self.cookies[name]:
             isValid, value = self.__ValidateCookieHash(self.cookies[name])
@@ -264,7 +266,7 @@ class SecureCookie(TransactionMixin):
         return self._rawcookie
 
     @classmethod
-    def Create(cls, connection, data, **attrs):
+    def Create(cls: Type[C], connection, data, **attrs) -> Type[C]:
         """Creates a secure cookie
 
         Arguments:
@@ -308,12 +310,12 @@ class SecureCookie(TransactionMixin):
         name = cls.TableName()
         cls._rawcookie = data
 
-        hashed = cls.__CreateCookieHash(cls, data)
+        hashed = cls._CreateCookieHash(cls, data)
         cls.cookies[name] = hashed
         cls.connection.insert(name, hashed, **attrs)
         return cls
 
-    def Update(self, data, **attrs):
+    def Update(self, data, **attrs) -> None:
         """ "Updates a secure cookie
         Keep in mind that the actual cookie's value is avilable from the next
         request. After calling this method it will update the cookie attribute to
@@ -357,11 +359,11 @@ class SecureCookie(TransactionMixin):
         if not self.rawcookie:
             raise ValueError("No valid cookie with name `{}` found".format(name))
         self._rawcookie = data
-        hashed = self.__CreateCookieHash(data)
+        hashed = self._CreateCookieHash(data)
         self.cookies[name] = hashed
         self.connection.update(name, hashed, **attrs)
 
-    def Delete(self):
+    def Delete(self) -> None:
         """Deletes cookie based on name
         The cookie is no longer in the session after calling this method
         """
@@ -369,27 +371,28 @@ class SecureCookie(TransactionMixin):
         self.connection.delete(name)
         self._rawcookie = None
 
-    def __CreateCookieHash(self, data):
+    def _CreateCookieHash(self, data) -> str:
         data = str(json.dumps(data))
         h = hashlib.new(self.HASHTYPE)
         h.update((data + self.cookie_salt).encode("utf-8"))
         return "{}+{}".format(h.hexdigest(), self._encode(data))
 
-    def __ValidateCookieHash(self, cookie):
+    def __ValidateCookieHash(self, cookie) -> Tuple[bool, Union[str, None]]:
         """Takes a cookie and validates it
 
         Arguments:
           @ str: A hashed cookie from the `__CreateCookieHash` method
         """
         if not cookie:
-            return None
+            return (False, None)
+        
         try:
             data = json.loads(self._decode(cookie.rsplit("+", 1)[1]))
         except Exception:
             print("Cookie contents could not be loaded as Json")
             return (False, None)
 
-        if cookie == self.__CreateCookieHash(data):
+        if cookie == self._CreateCookieHash(data):
             return (True, data)
         print("Cookie contents could not be verified as hash is different")
         return (False, None)
