@@ -37,3 +37,6 @@ features
 *.log
 *.out
 scaffold/
+*.idea
+sqlite.db
+sqlite.db-journal
