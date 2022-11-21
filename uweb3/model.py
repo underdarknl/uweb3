@@ -251,7 +251,7 @@ class SecureCookie(TransactionMixin):
 
         name = self.TableName()
         if name in self.cookies and self.cookies[name]:
-            isValid, value = self.__ValidateCookieHash(self.cookies[name])
+            isValid, value = self._ValidateCookieHash(self.cookies[name])
             if isValid:
                 self._rawcookie = value
                 return value
@@ -377,7 +377,7 @@ class SecureCookie(TransactionMixin):
         h.update((data + self.cookie_salt).encode("utf-8"))
         return "{}+{}".format(h.hexdigest(), self._encode(data))
 
-    def __ValidateCookieHash(self, cookie) -> Tuple[bool, Union[str, None]]:
+    def _ValidateCookieHash(self, cookie) -> Tuple[bool, Union[str, None]]:
         """Takes a cookie and validates it
 
         Arguments:
