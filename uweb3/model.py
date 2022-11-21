@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """uWeb3 model base classes."""
 # Standard modules
+from dataclasses import dataclass
 import uweb3
 import configparser
 import hashlib
@@ -8,10 +9,23 @@ import json
 import os
 import sys
 from typing import Dict, Generator, Tuple, Type, TypeVar, Union
+from enum import Enum
+from abc import ABC, abstractmethod
 
 T = TypeVar("T", bound="BaseRecord")
 R = TypeVar("R", bound="Record")
 C = TypeVar("C", bound="SecureCookie")
+
+
+@dataclass
+class CookieHash:
+    name: str
+    prefix: str
+
+
+class SupportedHashes(Enum):
+    RIPEMD160 = CookieHash(name="RIPEMD160", prefix="rip")
+    BLAKE2S = CookieHash(name="blake2s", prefix="bl2s")
 
 
 class Error(Exception):
@@ -200,6 +214,61 @@ class SettingsManager(TransactionMixin):
         return True
 
 
+class IEncoder(ABC):
+    def __init__(self, cookie_hash: SupportedHashes, encoding: str = "utf-8"):
+        self.name = cookie_hash.value.name
+        self.prefix = cookie_hash.value.prefix
+        self.encoding = encoding
+
+    @abstractmethod
+    def encode(self, data: str, cookie_salt: str) -> str:
+        ...
+
+    @abstractmethod
+    def decode(self, data: str):
+        ...
+
+
+class CookieEncoder(IEncoder):
+    def __init__(self, cookie_hash: SupportedHashes, encoding: str = "utf-8"):
+        super().__init__(cookie_hash, encoding)
+        self._replacements = {
+            ('"', "%22"),
+            (",", "%27"),
+            ("{", "%7B"),
+            ("}", "%7D"),
+            ("=", "%3D"),
+        }
+
+    def encode(self, data, cookie_salt):
+        cookie_data = str(json.dumps(data))
+
+        h = hashlib.new(self.name)
+        h.update((cookie_data + cookie_salt).encode(self.encoding))
+
+        return "{}+{}+{}".format(self.prefix, h.hexdigest(), self._encode(cookie_data))
+
+    def _encode(self, data):
+        for target, replacement in self._replacements:
+            data = data.replace(target, replacement)
+        return data
+
+    def decode(self, cookie):
+        hash_prefix, cookie_hash, raw_cookie_data = cookie.split("+")
+
+        if hash_prefix != self.prefix:
+            # TODO: Load with different encoder?
+            ...
+
+        cookie_data = json.loads(self._decode(raw_cookie_data))
+        return cookie_data
+
+    def _decode(self, data):
+        # Reverse the replacements done in the encoding process.
+        for replacement, target in self._replacements:
+            data = data.replace(target, replacement)
+        return data
+
 class SecureCookie(TransactionMixin):
     """The secureCookie class works just like other data abstraction classes,
     except that it stores its data in client side cookies that are signed with a
@@ -209,13 +278,17 @@ class SecureCookie(TransactionMixin):
     name for your class will reflect the name for the cookie in the cookie.
     """
 
-    HASHTYPE = "ripemd160"
     _TABLE = None
     _CONNECTOR = "signedCookie"
 
-    def __init__(self, connection):
+    def __init__(
+        self,
+        connection,
+        encoder: IEncoder = CookieEncoder(cookie_hash=SupportedHashes.RIPEMD160),
+    ):
         """Create a new SecureCookie instance."""
         self.connection = connection
+        self.encoder: IEncoder = encoder
         self.request: uweb3.request.Request = connection.request_object
         self.cookies: Dict[str, str] = connection.cookies
         self.cookie_salt: str = connection.cookie_salt
@@ -294,7 +367,13 @@ class SecureCookie(TransactionMixin):
         self._rawcookie = new_value
 
     @classmethod
-    def Create(cls: Type[C], connection, data, **attrs) -> None:
+    def Create(
+        cls: Type[C],
+        connection,
+        data,
+        encoder: IEncoder = CookieEncoder(cookie_hash=SupportedHashes.RIPEMD160),
+        **attrs,
+    ) -> None:
         """Creates a secure cookie
 
         Arguments:
@@ -331,12 +410,12 @@ class SecureCookie(TransactionMixin):
         Raises:
           ValueError: When cookie with name already exists
         """
-        cls_instance = cls(connection)
+        cls_instance = cls(connection, encoder=encoder)
 
-        name = cls.TableName()
+        name = cls_instance.TableName()
         cls_instance.rawcookie = data
+        hashed = cls_instance._CreateCookieHash(cls_instance.rawcookie)
 
-        hashed = cls._CreateCookieHash(cls_instance, data)
         cls_instance.cookies[name] = hashed
         cls_instance.connection.insert(name, hashed, **attrs)
 
@@ -398,11 +477,9 @@ class SecureCookie(TransactionMixin):
         self.connection.delete(name)
         self.rawcookie = None
 
-    def _CreateCookieHash(self, data) -> str:
-        data = str(json.dumps(data))
-        h = hashlib.new(self.HASHTYPE)
-        h.update((data + self.cookie_salt).encode("utf-8"))
-        return "{}+{}".format(h.hexdigest(), self._encode(data))
+    def _CreateCookieHash(self, value):
+        """Creates a hash of the cookie value"""
+        return self.encoder.encode(value, self.cookie_salt)
 
     def _ValidateCookieHash(self, cookie) -> Tuple[bool, Union[str, None]]:
         """Takes a cookie and validates it
@@ -414,49 +491,16 @@ class SecureCookie(TransactionMixin):
             return (False, None)
 
         try:
-            data = json.loads(self._decode(cookie.rsplit("+", 1)[1]))
+            data = self.encoder.decode(cookie)
         except Exception:
             print("Cookie contents could not be loaded as Json")
             return (False, None)
 
-        if cookie == self._CreateCookieHash(data):
+        hash = self._CreateCookieHash(data)
+        if cookie == hash:
             return (True, data)
         print("Cookie contents could not be verified as hash is different")
         return (False, None)
-
-    @staticmethod
-    def _encode(data):
-        """Encode cookie values per RFC 6265
-        http://www.ietf.org/rfc/rfc6265.txt
-
-        We elect to only encode the control chars for the cookie spec, and not the
-        whole cookie content.
-        """
-        return (
-            data.replace("%", "%25")
-            .replace('"', "%22")
-            .replace(",", "%27")
-            .replace("{", "%7B")
-            .replace("}", "%7D")
-            .replace("=", "%3D")
-        )
-
-    @staticmethod
-    def _decode(data):
-        """decode cookie values per RFC 6265
-        http://www.ietf.org/rfc/rfc6265.txt
-
-        We elect to only decode the control chars for the cookie spec, and not the
-        whole cookie content.
-        """
-        return (
-            data.replace("%22", '"')
-            .replace("%27", ",")
-            .replace("%7B", "{")
-            .replace("%7D", "}")
-            .replace("%3D", "=")
-            .replace("%25", "%")
-        )
 
 
 # Record classes have many methods, this is not an actual problem.

@@ -14,7 +14,7 @@ from pathlib import Path
 
 # Unittest target
 from uweb3 import model, request
-from uweb3.model import SecureCookie
+from uweb3.model import CookieEncoder, SecureCookie, SupportedHashes
 
 # Importing uWeb3 makes the SQLTalk library available as a side-effect
 from uweb3.libs.sqltalk import mysql, safe_cookie, sqlite
@@ -692,6 +692,24 @@ class SecureCookieTest(unittest.TestCase):
         self.secure_cookie.Create(self.connection, data)
         self.assertEqual(self.secure_cookie.rawcookie, data)
 
+    def testCreateCookieAlternativeEncoder(self):
+        """Validate that the cookie is created and the values are the same."""
+        data = {"key": "value"}
+        secure_cookie = SecureCookie(
+            self.connection,
+            encoder=CookieEncoder(cookie_hash=SupportedHashes.BLAKE2S),
+        )
+        
+        # The Create method is a class method, so it doesnt know if we supplied a
+        # different encoder. Pass the custom one we use to the method to decode the 
+        # cookie correctly.
+        SecureCookie.Create(
+            self.connection,
+            data,
+            encoder=CookieEncoder(cookie_hash=SupportedHashes.BLAKE2S),
+        )
+        self.assertEqual(secure_cookie.rawcookie, data)
+
     def testUpdateCookie(self):
         """Validate that the values in the cookie are updated."""
         data = {"key": "value"}
@@ -716,15 +734,6 @@ class SecureCookieTest(unittest.TestCase):
         self.assertEqual(
             any("secureCookie=deleted;" in header for header in headers), True
         )
-
-    def testCreateCookieHash(self):
-        """Validate that the correct cookie hash is created and can be decoded.."""
-        data = {"key": "value"}
-        hash = self.secure_cookie._CreateCookieHash(data)
-        hex, value = hash.rsplit("+", 1)
-
-        result = json.loads(self.secure_cookie._decode(value))
-        self.assertEqual(data, result)
 
     def testValidateCookieHash(self):
         """Validate that the created cookie can be validated and decoded correctly."""
@@ -756,7 +765,7 @@ class SecureCookieTest(unittest.TestCase):
         data = {"key": "value"}
         self.secure_cookie.Create(self.connection, data)
         self.secure_cookie.cookies["secureCookie"] += "edited_hash"
-        
+
         self.assertEqual(self.secure_cookie.rawcookie, None)
         self.assertTrue(self.secure_cookie.tampered)
 
