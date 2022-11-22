@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 from dataclasses import dataclass
 import random
 
@@ -357,7 +356,7 @@ class SecureCookie(TransactionMixin):
         name = self.TableName()
         if name in self.cookies and self.cookies[name]:
             isValid, value, deprecated = self._ValidateCookieHash(self.cookies[name])
-            
+
             if isValid:
                 self._rawcookie = value
                 return self._rawcookie
@@ -403,38 +402,38 @@ class SecureCookie(TransactionMixin):
         """Creates a secure cookie
 
         Arguments:
-          @ data: dict
-            Needs to have a key called __name with value of how you want to name the 'table'
-          % only_return_hash: boolean
-            If this is set it will just return the hash of the cookie. This is used to
-            validate the cookies hash
-          % update: boolean
-            Used to update the cookie. Updating actually means deleting and setting a new
-            one. This attribute is used by the update method from this class
-          % expires: str ~~ None
-            The date + time when the cookie should expire. The format should be:
-            "Wdy, DD-Mon-YYYY HH:MM:SS GMT" and the time specified in UTC.
-            The default means the cookie never expires.
-            N.B. Specifying both this and `max_age` leads to undefined behavior.
-          % path: str ~~ '/'
-            The path for which this cookie is valid. This default ('/') is different
-            from the rule stated on Wikipedia: "If not specified, they default to
-            the domain and path of the object that was requested".
-          % domain: str ~~ None
-            The domain for which the cookie is valid. The default is that of the
-            requested domain.
-          % max_age: int
-            The number of seconds this cookie should be used for. After this period,
-            the cookie should be deleted by the client.
-            N.B. Specifying both this and `expires` leads to undefined behavior.
-          % secure: boolean
-            When True, the cookie is only used on https connections.
-          % httponly: boolean
-            When True, the cookie is only used for http(s) requests, and is not
-            accessible through Javascript (DOM).
+            @ data: dict
+                Needs to have a key called __name with value of how you want to name the 'table'
+            % only_return_hash: boolean
+                If this is set it will just return the hash of the cookie. This is used to
+                validate the cookies hash
+            % update: boolean
+                Used to update the cookie. Updating actually means deleting and setting a new
+                one. This attribute is used by the update method from this class
+            % expires: str ~~ None
+                The date + time when the cookie should expire. The format should be:
+                "Wdy, DD-Mon-YYYY HH:MM:SS GMT" and the time specified in UTC.
+                The default means the cookie never expires.
+                N.B. Specifying both this and `max_age` leads to undefined behavior.
+            % path: str ~~ '/'
+                The path for which this cookie is valid. This default ('/') is different
+                from the rule stated on Wikipedia: "If not specified, they default to
+                the domain and path of the object that was requested".
+            % domain: str ~~ None
+                The domain for which the cookie is valid. The default is that of the
+                requested domain.
+            % max_age: int
+                The number of seconds this cookie should be used for. After this period,
+                the cookie should be deleted by the client.
+                N.B. Specifying both this and `expires` leads to undefined behavior.
+            % secure: boolean
+                When True, the cookie is only used on https connections.
+            % httponly: boolean
+                When True, the cookie is only used for http(s) requests, and is not
+                accessible through Javascript (DOM).
 
         Raises:
-          ValueError: When cookie with name already exists
+            ValueError: When cookie with name already exists
         """
         cls_instance = cls(connection, encoder=encoder)
 
@@ -452,38 +451,38 @@ class SecureCookie(TransactionMixin):
         the new value however.
 
         Arguments:
-          @ data: dict
-            Needs to have a key called __name with value of how you want to name the 'table'
-          % only_return_hash: boolean
-            If this is set it will just return the hash of the cookie. This is used to
-            validate the cookies hash
-          % update: boolean
-            Used to update the cookie. Updating actually means deleting and setting a new
-            one. This attribute is used by the update method from this class
-          % expires: str ~~ None
-            The date + time when the cookie should expire. The format should be:
-            "Wdy, DD-Mon-YYYY HH:MM:SS GMT" and the time specified in UTC.
-            The default means the cookie never expires.
-            N.B. Specifying both this and `max_age` leads to undefined behavior.
-          % path: str ~~ '/'
-            The path for which this cookie is valid. This default ('/') is different
-            from the rule stated on Wikipedia: "If not specified, they default to
-            the domain and path of the object that was requested".
-          % domain: str ~~ None
-            The domain for which the cookie is valid. The default is that of the
-            requested domain.
-          % max_age: int
-            The number of seconds this cookie should be used for. After this period,
-            the cookie should be deleted by the client.
-            N.B. Specifying both this and `expires` leads to undefined behavior.
-          % secure: boolean
-            When True, the cookie is only used on https connections.
-          % httponly: boolean
-            When True, the cookie is only used for http(s) requests, and is not
-            accessible through Javascript (DOM).
+            @ data: dict
+                Needs to have a key called __name with value of how you want to name the 'table'
+            % only_return_hash: boolean
+                If this is set it will just return the hash of the cookie. This is used to
+                validate the cookies hash
+            % update: boolean
+                Used to update the cookie. Updating actually means deleting and setting a new
+                one. This attribute is used by the update method from this class
+            % expires: str ~~ None
+                The date + time when the cookie should expire. The format should be:
+                "Wdy, DD-Mon-YYYY HH:MM:SS GMT" and the time specified in UTC.
+                The default means the cookie never expires.
+                N.B. Specifying both this and `max_age` leads to undefined behavior.
+            % path: str ~~ '/'
+                The path for which this cookie is valid. This default ('/') is different
+                from the rule stated on Wikipedia: "If not specified, they default to
+                the domain and path of the object that was requested".
+            % domain: str ~~ None
+                The domain for which the cookie is valid. The default is that of the
+                requested domain.
+            % max_age: int
+                The number of seconds this cookie should be used for. After this period,
+                the cookie should be deleted by the client.
+                N.B. Specifying both this and `expires` leads to undefined behavior.
+            % secure: boolean
+                When True, the cookie is only used on https connections.
+            % httponly: boolean
+                When True, the cookie is only used for http(s) requests, and is not
+                accessible through Javascript (DOM).
 
         Raises:
-          ValueError: When no cookie with given name found
+            ValueError: When no cookie with given name found
         """
         name = self.TableName()
 
@@ -511,7 +510,7 @@ class SecureCookie(TransactionMixin):
         """Takes a cookie and validates it
 
         Arguments:
-          @ str: A hashed cookie from the `__CreateCookieHash` method
+            @ str: A hashed cookie from the `__CreateCookieHash` method
         """
         if not cookie:
             return (False, None, False)
