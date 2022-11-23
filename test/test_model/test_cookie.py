@@ -183,7 +183,7 @@ class SecureCookieTest(unittest.TestCase):
     def testUnsupportedHash(self):
         """Validate that a cookie is invalidated when an unsupported hash is used."""
         unsupported_cookie = "unsupported+hash+data"
-        self.secure_cookie.cookies['secureCookie'] = unsupported_cookie
+        self.secure_cookie.cookies["secureCookie"] = unsupported_cookie
         self.assertEqual(self.secure_cookie.rawcookie, None)
 
 

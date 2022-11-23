@@ -89,6 +89,7 @@ class BaseRecordTests(unittest.TestCase):
         self.assertNotEqual(record_one, record_three)
         self.assertNotEqual(record_one, record_four)
 
+
 @unittest.skip("Skipping SQLALCHEMY tests")
 class RecordTests(unittest.TestCase):
     """Online tests of methods and behavior of the Record class."""
