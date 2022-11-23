@@ -71,8 +71,8 @@ class TransactionMixin:
 
 
 class SettingsManager(TransactionMixin):
-    def __init__(self, filename=None, path=None):
-        """Creates a ini file with the child class name
+    def __init__(self, filename: str = None, path: str = None):
+        """Creates an ini file with the child class name
 
         Arguments:
           % filename: str, optional
@@ -128,7 +128,7 @@ class SettingsManager(TransactionMixin):
                 f"SettingsManager missing permissions to write to file: {self.file_location}"
             )
 
-    def Create(self, section, key, value):
+    def Create(self, section: str, key: str, value: Union[str, int]) -> None:
         """Creates a section or/and key = value
 
         Arguments:
@@ -151,7 +151,7 @@ class SettingsManager(TransactionMixin):
         self._Write(False)
         self.mtime = None
 
-    def Read(self):
+    def Read(self) -> bool:
         """Reads the config file and populates the options member
         It uses the mtime to see if any re-reading is required
 
@@ -165,7 +165,7 @@ class SettingsManager(TransactionMixin):
             self.mtime = curtime
         return True
 
-    def Update(self, section, key, value):
+    def Update(self, section: str, key: str, value: Union[str, int]) -> None:
         """Updates ini file
         After update reads file again and updates options attribute
 
@@ -183,7 +183,7 @@ class SettingsManager(TransactionMixin):
         self._Write()
         self.mtime = None
 
-    def Delete(self, section, key=None):
+    def Delete(self, section: str, key: Optional[str] = None):
         """Delete sections/keys from the INI file
         Be aware, deleting a section that is not empty will remove all keys from that
         given section
@@ -205,7 +205,7 @@ class SettingsManager(TransactionMixin):
         self.mtime = None
         return True
 
-    def _Write(self, reread=True):
+    def _Write(self, reread: Optional[bool] = True) -> bool:
         """Internal function to store the current config to file"""
         with open(self.file_location, "w") as configfile:
             self.config.write(configfile)
@@ -220,11 +220,15 @@ class ICookieHash(ABC):
         self.encoding = encoding
 
     @abstractmethod
-    def encode(self, data: str, cookie_salt: str) -> str:
+    def encode(self, data, cookie_salt: str) -> str:
+        """Encodes data with the given cookie hash"""
         pass
 
     @abstractmethod
-    def decode(self, data: str) -> Tuple[bool, Union[str, None]]:
+    def decode(
+            self, cookie: str, cookie_salt: str
+    ) -> Tuple[bool, Union[str, None], bool]:
+        """Decodes data with the given cookie hash."""
         pass
 
 
