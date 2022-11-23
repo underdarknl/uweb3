@@ -7,25 +7,13 @@ import hashlib
 import json
 import os
 import sys
-from typing import Dict, Generator, Tuple, Type, TypeVar, Union
+from typing import Dict, Generator, Tuple, Type, TypeVar, Union, Optional, NamedTuple, Any
 from enum import Enum
 from abc import ABC, abstractmethod
 
 T = TypeVar("T", bound="BaseRecord")
 R = TypeVar("R", bound="Record")
 C = TypeVar("C", bound="SecureCookie")
-
-
-@dataclass
-class CookieHash:
-    name: str
-    prefix: str
-    deprecated: bool = False
-
-
-class SupportedHashes(Enum):
-    RIPEMD160 = CookieHash(name="RIPEMD160", prefix="rip", deprecated=True)
-    BLAKE2S = CookieHash(name="blake2s", prefix="bl2s")
 
 
 class Error(Exception):
@@ -54,6 +42,41 @@ class NotExistError(Error):
 
 class PermissionError(Error):
     """The entity has insufficient rights to access the resource."""
+
+
+class CookieResult(NamedTuple):
+    is_valid: bool
+    data: Union[Any, None]
+    is_deprecated: bool
+
+
+@dataclass
+class CookieHash:
+    """Used to denote a supported hashing algorithm for cookies.
+    This algorithm should be available in the hashing library.
+
+    Attributes:
+        name: The name of the hashing algorithm.
+        prefix: The prefix used to denote the hashing algorithm in the cookie.
+        deprecated: Whether the algorithm is deprecated, this is used to determine
+            if a cookie needs to be re-hashed with another algorithm.
+    """
+
+    name: str
+    prefix: str
+    deprecated: bool = False
+
+
+class SupportedHashes(Enum):
+    """Supported hashing algorithms for cookies.
+
+    RIPEMD160 was used by default but this has been deprecated in OPENSSL and requires
+    additional config to be used. It is still supported for backwards compatibility,
+    but should not be used for new cookies.
+    """
+
+    RIPEMD160 = CookieHash(name="RIPEMD160", prefix="rip", deprecated=True)
+    BLAKE2S = CookieHash(name="blake2s", prefix="bl2s")
 
 
 class TransactionMixin:
@@ -266,7 +289,9 @@ class CookieHasher(ICookieHash):
             data = data.replace(target, replacement)
         return data
 
-    def decode(self, cookie, cookie_salt: str) -> Tuple[bool, Union[str, None], bool]:
+    def decode(
+            self, cookie: str, cookie_salt: str
+    ) -> CookieResult:
         hash_prefix, cookie_hash, raw_cookie_data = cookie.split("+")
 
         if hash_prefix != self.cookie_hash.prefix:
@@ -287,7 +312,7 @@ class CookieHasher(ICookieHash):
         re_calculated_hash = self.encode(cookie_data, cookie_salt)
 
         if cookie == re_calculated_hash:
-            return (True, cookie_data, self.cookie_hash.deprecated)
+            return CookieResult(is_valid=True, data=cookie_data, is_deprecated=False)
 
         return (False, None, self.cookie_hash.deprecated)
 
@@ -510,20 +535,20 @@ class SecureCookie(TransactionMixin):
         """Creates a hash of the cookie value"""
         return self.encoder.encode(value, self.cookie_salt)
 
-    def _ValidateCookieHash(self, cookie) -> Tuple[bool, Union[str, None], bool]:
+    def _ValidateCookieHash(self, cookie) -> CookieResult:
         """Takes a cookie and validates it
 
         Arguments:
             @ str: A hashed cookie from the `__CreateCookieHash` method
         """
         if not cookie:
-            return (False, None, False)
+            return CookieResult(is_valid=False, data=None, is_deprecated=False)
 
         try:
             return self.encoder.decode(cookie, self.cookie_salt)
         except Exception:
             print("Cookie contents could not be loaded as Json")
-            return (False, None, False)
+            return CookieResult(is_valid=False, data=None, is_deprecated=False)
 
 
 # Record classes have many methods, this is not an actual problem.
