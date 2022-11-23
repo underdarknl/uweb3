@@ -312,18 +312,7 @@ class CookieHasher(ICookieHash):
         hash_prefix, cookie_hash, raw_cookie_data = cookie.split("+")
 
         if hash_prefix != self.cookie_hash.prefix:
-            # TODO: Load with different encoder?
-            cookie_hash = next(
-                (e for e in list(SupportedHashes) if e.value.prefix == hash_prefix),
-                None,
-            )
-            if not cookie_hash:
-                # TODO Return error
-                return NotImplemented
-
-            return CookieHasher(cookie_hash=cookie_hash, encoding=self.encoding).decode(
-                cookie, cookie_salt
-            )
+            return self._load_correct_cookie_hasher(cookie, cookie_salt, hash_prefix)
 
         cookie_data = json.loads(self._decode(raw_cookie_data))
         re_calculated_hash = self.encode(cookie_data, cookie_salt)
@@ -331,7 +320,22 @@ class CookieHasher(ICookieHash):
         if cookie == re_calculated_hash:
             return CookieResult(is_valid=True, data=cookie_data, is_deprecated=False)
 
-        return (False, None, self.cookie_hash.deprecated)
+        return CookieResult(is_valid=False, data=None,
+                            is_deprecated=self.cookie_hash.deprecated)
+
+    def _load_correct_cookie_hasher(self, cookie: str, cookie_salt: str,
+                                    hash_prefix: str):
+        """Attempt to find a CookieHasher for the given hash."""
+        cookie_hash = next(
+            (e for e in list(SupportedHashes) if e.value.prefix == hash_prefix),
+            None,
+        )
+        if not cookie_hash:
+            return CookieResult(is_valid=False, data=None, is_deprecated=False)
+
+        return CookieHasher(cookie_hash=cookie_hash, encoding=self.encoding).decode(
+            cookie, cookie_salt
+        )
 
     def _decode(self, data):
         """decode cookie values per RFC 6265
