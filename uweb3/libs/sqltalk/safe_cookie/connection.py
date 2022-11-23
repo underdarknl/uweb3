@@ -6,7 +6,7 @@ class Connection:
         self.cookie_salt = cookie_salt
         self.uncommitted_cookies = []
 
-        if kwargs.pop("debug", False):
+        if kwargs.pop("debug", True):
             self.debug = True
         else:
             self.debug = False
