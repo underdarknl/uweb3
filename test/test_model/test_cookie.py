@@ -59,6 +59,8 @@ class CookieTests(unittest.TestCase):
 
 
 class SecureCookieTest(unittest.TestCase):
+    """This class is responsible for testing default CRUD behaviour on cookies."""
+
     def setUp(self) -> None:
         self.connection = CookieConnection()
         self.secure_cookie = SecureCookie(self.connection)
@@ -177,6 +179,12 @@ class SecureCookieTest(unittest.TestCase):
             SupportedHashes.RIPEMD160.value.prefix,
             secure_cookie.cookies["secureCookie"],
         )
+
+    def testUnsupportedHash(self):
+        """Validate that a cookie is invalidated when an unsupported hash is used."""
+        unsupported_cookie = "unsupported+hash+data"
+        self.secure_cookie.cookies['secureCookie'] = unsupported_cookie
+        self.assertEqual(self.secure_cookie.rawcookie, None)
 
 
 if __name__ == "__main__":
