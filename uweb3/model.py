@@ -1,15 +1,25 @@
-from dataclasses import dataclass
-import random
-
-import uweb3
 import configparser
 import hashlib
 import json
 import os
+import random
 import sys
-from typing import Dict, Generator, Tuple, Type, TypeVar, Union, Optional, NamedTuple, Any
-from enum import Enum
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from enum import Enum
+from typing import (
+    Any,
+    Dict,
+    Generator,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
+
+import uweb3
 
 T = TypeVar("T", bound="BaseRecord")
 R = TypeVar("R", bound="Record")
@@ -294,14 +304,12 @@ class CookieHasher(ICookieHash):
         http://www.ietf.org/rfc/rfc6265.txt
 
         We elect to only encode the control chars for the cookie spec, and not the
-        whole cookie content. """
+        whole cookie content."""
         for target, replacement in self._replacements:
             data = data.replace(target, replacement)
         return data
 
-    def decode(
-            self, cookie: str, cookie_salt: str
-    ) -> CookieResult:
+    def decode(self, cookie: str, cookie_salt: str) -> CookieResult:
         """Decodes the value stored in the cookie based on the prefix.
         If the prefix of the current CookieHasher does not match the prefix of the
         cookie it will try to decode the cookie with the correct CookieHasher.
@@ -320,11 +328,13 @@ class CookieHasher(ICookieHash):
         if cookie == re_calculated_hash:
             return CookieResult(is_valid=True, data=cookie_data, is_deprecated=False)
 
-        return CookieResult(is_valid=False, data=None,
-                            is_deprecated=self.cookie_hash.deprecated)
+        return CookieResult(
+            is_valid=False, data=None, is_deprecated=self.cookie_hash.deprecated
+        )
 
-    def _load_correct_cookie_hasher(self, cookie: str, cookie_salt: str,
-                                    hash_prefix: str):
+    def _load_correct_cookie_hasher(
+            self, cookie: str, cookie_salt: str, hash_prefix: str
+    ):
         """Attempt to find a CookieHasher for the given hash."""
         cookie_hash = next(
             (e for e in list(SupportedHashes) if e.value.prefix == hash_prefix),
