@@ -256,6 +256,11 @@ class ICookieHash(ABC):
 
 
 class CookieHasher(ICookieHash):
+    """Hasher class that can be used to encode/decode cookies with different
+    hashes. The class also checks if a given encoding is deprecated or not, if the
+    encoding is deprecated switch over to another encoding and.
+    """
+
     def __init__(self, cookie_hash: SupportedHashes, encoding: str = "utf-8"):
         super().__init__(cookie_hash, encoding)
         self._replacements = {
@@ -285,6 +290,11 @@ class CookieHasher(ICookieHash):
         )
 
     def _encode(self, data):
+        """Encode cookie values per RFC 6265
+        http://www.ietf.org/rfc/rfc6265.txt
+
+        We elect to only encode the control chars for the cookie spec, and not the
+        whole cookie content. """
         for target, replacement in self._replacements:
             data = data.replace(target, replacement)
         return data
@@ -292,6 +302,13 @@ class CookieHasher(ICookieHash):
     def decode(
             self, cookie: str, cookie_salt: str
     ) -> CookieResult:
+        """Decodes the value stored in the cookie based on the prefix.
+        If the prefix of the current CookieHasher does not match the prefix of the
+        cookie it will try to decode the cookie with the correct CookieHasher.
+
+        If no hasher for a given prefix can be found the cookie will be marked as invalid
+        and the data will be set to None.
+        """
         hash_prefix, cookie_hash, raw_cookie_data = cookie.split("+")
 
         if hash_prefix != self.cookie_hash.prefix:
@@ -317,6 +334,11 @@ class CookieHasher(ICookieHash):
         return (False, None, self.cookie_hash.deprecated)
 
     def _decode(self, data):
+        """decode cookie values per RFC 6265
+        http://www.ietf.org/rfc/rfc6265.txt
+
+        We elect to only decode the control chars for the cookie spec, and not the
+        whole cookie content."""
         # Reverse the replacements done in the encoding process.
         for replacement, target in self._replacements:
             data = data.replace(target, replacement)
@@ -336,9 +358,9 @@ class SecureCookie(TransactionMixin):
     _CONNECTOR = "signedCookie"
 
     def __init__(
-        self,
-        connection,
-        encoder: ICookieHash = CookieHasher(cookie_hash=SupportedHashes.RIPEMD160),
+            self,
+            connection,
+            encoder: ICookieHash = CookieHasher(cookie_hash=SupportedHashes.RIPEMD160),
     ):
         """Create a new SecureCookie instance."""
         self.connection = connection
@@ -422,11 +444,11 @@ class SecureCookie(TransactionMixin):
 
     @classmethod
     def Create(
-        cls: Type[C],
-        connection,
-        data,
-        encoder: ICookieHash = CookieHasher(cookie_hash=SupportedHashes.RIPEMD160),
-        **attrs,
+            cls: Type[C],
+            connection,
+            data,
+            encoder: ICookieHash = CookieHasher(cookie_hash=SupportedHashes.RIPEMD160),
+            **attrs,
     ) -> None:
         """Creates a secure cookie
 
@@ -617,10 +639,10 @@ class BaseRecord(TransactionMixin, dict):
             if isinstance(value, BaseRecord) != isinstance(other_value, BaseRecord):
                 # Only one of the two is a BaseRecord instance
                 if (
-                    isinstance(value, BaseRecord)
-                    and value.key != other_value
-                    or isinstance(other_value, BaseRecord)
-                    and other_value.key != value
+                        isinstance(value, BaseRecord)
+                        and value.key != other_value
+                        or isinstance(other_value, BaseRecord)
+                        and other_value.key != value
                 ):
                     return False
             elif value != other_value:
@@ -1112,14 +1134,14 @@ class Record(BaseRecord):
     #
     @classmethod
     def _FromParent(
-        cls,
-        parent,
-        relation_field=None,
-        conditions=None,
-        limit=None,
-        offset=None,
-        order=None,
-        yield_unlimited_total_first=False,
+            cls,
+            parent,
+            relation_field=None,
+            conditions=None,
+            limit=None,
+            offset=None,
+            order=None,
+            yield_unlimited_total_first=False,
     ):
         """Returns all `cls` objects that are a child of the given parent.
 
@@ -1164,12 +1186,12 @@ class Record(BaseRecord):
         # the first row to our parent, as that will be the full record cound instead
         # of a record
         for record in cls.List(
-            parent.connection,
-            conditions=qry_conditions,
-            limit=limit,
-            offset=offset,
-            order=order,
-            yield_unlimited_total_first=yield_unlimited_total_first,
+                parent.connection,
+                conditions=qry_conditions,
+                limit=limit,
+                offset=offset,
+                order=order,
+                yield_unlimited_total_first=yield_unlimited_total_first,
         ):
             if not firstrow:
                 record[relation_field] = parent.copy()
@@ -1177,14 +1199,14 @@ class Record(BaseRecord):
             yield record
 
     def _Children(
-        self,
-        child_class,
-        relation_field=None,
-        conditions=None,
-        limit=None,
-        offset=None,
-        order=None,
-        yield_unlimited_total_first=False,
+            self,
+            child_class,
+            relation_field=None,
+            conditions=None,
+            limit=None,
+            offset=None,
+            order=None,
+            yield_unlimited_total_first=False,
     ):
         """Returns all `child_class` objects related to this record.
 
@@ -1380,18 +1402,18 @@ class Record(BaseRecord):
 
     @classmethod
     def List(
-        cls: Type[R],
-        connection,
-        conditions=None,
-        limit=None,
-        offset=None,
-        order=None,
-        yield_unlimited_total_first=False,
-        search=None,
-        tables=None,
-        escape=True,
-        fields=None,
-        distinct=False,
+            cls: Type[R],
+            connection,
+            conditions=None,
+            limit=None,
+            offset=None,
+            order=None,
+            yield_unlimited_total_first=False,
+            search=None,
+            tables=None,
+            escape=True,
+            fields=None,
+            distinct=False,
     ) -> Generator[R, None, None]:
         """Yields a Record object for every table entry.
 
@@ -1625,17 +1647,17 @@ class VersionedRecord(Record):
 
     @classmethod
     def List(
-        cls,
-        connection,
-        conditions=None,
-        limit=None,
-        offset=None,
-        order=None,
-        yield_unlimited_total_first=False,
-        search=None,
-        tables=None,
-        escape=True,
-        fields=None,
+            cls,
+            connection,
+            conditions=None,
+            limit=None,
+            offset=None,
+            order=None,
+            yield_unlimited_total_first=False,
+            search=None,
+            tables=None,
+            escape=True,
+            fields=None,
     ):
         """Yields the latest Record for each versioned entry in the table.
 
