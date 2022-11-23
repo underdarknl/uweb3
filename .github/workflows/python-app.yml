@@ -44,6 +44,6 @@ jobs:
         flake8 . --count --exit-zero --max-line-length=79 --statistics
     - name: Run uweb3 unittests
       run: |
-        python3 -m unittest test.test_model
+        python3 -m unittest discover test/test_model
         python3 -m unittest test.test_request
         python3 -m unittest test.test_templateparser
