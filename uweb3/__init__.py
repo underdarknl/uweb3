@@ -122,15 +122,15 @@ class uWeb:
 
         # Attempt to load the max request size setting from the config
         try:
-            max_request_body_size = self.config.options["general"][
-                "max_request_body_size"
-            ]
-        except Exception:
+            max_request_body_size = int(
+                self.config.options["general"]["max_request_body_size"]
+            )
+        except KeyError:
             pass
 
         try:
             remote_addr_config = self.config.options["headers"]
-        except Exception:
+        except KeyError:
             pass
 
         if max_request_body_size:
