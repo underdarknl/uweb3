@@ -20,8 +20,8 @@ jobs:
         image: mysql:latest
         env:
             MYSQL_DATABASE: uweb_test
-            MYSQL_USER: stef
-            MYSQL_PASSWORD: password
+            MYSQL_USER: uweb3test
+            MYSQL_PASSWORD: uweb3test
             MYSQL_ALLOW_EMPTY_PASSWORD: yes
         ports:
           - 3306:3306
@@ -35,7 +35,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 pytest
+        pip install flake8 requests
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with flake8
       run: |
@@ -47,3 +47,4 @@ jobs:
         python3 -m unittest test.test_model
         python3 -m unittest test.test_request
         python3 -m unittest test.test_templateparser
+        python3 -m test.uweb3tests.serve & sleep 5 && python3 -m unittest test.test_uweb3tests
