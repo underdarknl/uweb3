@@ -6,6 +6,11 @@ class Connection:
         self.cookie_salt = cookie_salt
         self.uncommitted_cookies = []
 
+        if kwargs.pop("debug", True):
+            self.debug = True
+        else:
+            self.debug = False
+
     def insert(self, key, value, **kwds):
         if self.autocommit_mode:
             self.request_object.AddCookie(key, value, **kwds)

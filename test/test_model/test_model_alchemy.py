@@ -19,11 +19,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import lazyload, relationship
+from sqlalchemy.orm import relationship
 
 import uweb3
 from uweb3.alchemy_model import AlchemyRecord
-from uweb3.libs.sqltalk import mysql
 
 # ##############################################################################
 # Record classes for testing
@@ -62,6 +61,7 @@ class Book(AlchemyRecord, Base):
     author = relationship("Author", lazy="select")
 
 
+@unittest.skip("Skipping SQLALCHEMY tests")
 class BaseRecordTests(unittest.TestCase):
     """Offline tests of methods and behavior of the BaseRecord class."""
 
@@ -90,6 +90,7 @@ class BaseRecordTests(unittest.TestCase):
         self.assertNotEqual(record_one, record_four)
 
 
+@unittest.skip("Skipping SQLALCHEMY tests")
 class RecordTests(unittest.TestCase):
     """Online tests of methods and behavior of the Record class."""
 

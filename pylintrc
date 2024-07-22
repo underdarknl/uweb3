@@ -15,9 +15,6 @@
 # pygtk.require().
 #init-hook=
 
-# Profiled execution.
-profile=no
-
 # Add <file or directory> to the black list. It should be a base name, not a
 # path. You may set this option multiple times.
 ignore=CVS
@@ -25,8 +22,6 @@ ignore=CVS
 # Pickle collected data for later comparisons.
 persistent=yes
 
-# Set the cache size for astng objects.
-cache-size=500
 
 # List of plugins (as comma separated values of python modules names) to load,
 # usually to register additional checkers.
@@ -57,8 +52,7 @@ load-plugins=
 #   W0403: Relative import %r -- Underdark tree structure demands this.
 #   E1103: %s %r has no %r member (but some types could not be inferred)
 #          This is generally not an actual problem, and causes false positives
-disable-msg=W0403, W0142, E1103
-disable=W0403, W0142, E1103
+disable=E1103
 
 
 [REPORTS]
@@ -66,14 +60,6 @@ disable=W0403, W0142, E1103
 # set the output format. Available formats are text, parseable, colorized, msvs
 # (visual studio) and html
 output-format=colorized
-
-# Include message's id in output
-include-ids=yes
-
-# Put messages in a separate file for each module / package specified on the
-# command line instead of printing them on stdout. Reports (if any) will be
-# written in a file name "pylint_global.[txt|html]".
-files-output=no
 
 # Tells wether to display a full report or only the messages
 reports=yes
@@ -85,17 +71,8 @@ reports=yes
 # (R0004).
 evaluation=10.0 - (5.0 * error + warning + refactor + convention) / statement * 10
 
-# Add a comment according to your evaluation note. This is used by the global
-# evaluation report (R0004).
-comment=yes
-
 # Enable the report(s) with the given id(s).
 #enable-report=
-
-# Disable the report(s) with the given id(s).
-# R0801 is the "similar lines" report, which is not used.
-disable-report=R0801
-
 
 # checks for
 # * unused variables / imports
@@ -124,15 +101,6 @@ additional-builtins=
 # mixin class is detected if its name ends with "mixin" (case insensitive).
 ignore-mixin-members=yes
 
-# When zope mode is activated, consider the acquired-members option to ignore
-# access to some undefined attributes.
-zope=no
-
-# List of members which are usually get through zope's acquisition mecanism and
-# so shouldn't trigger E0201 when accessed (need zope=yes to be considered).
-acquired-members=REQUEST,acl_users,aq_parent
-
-
 # checks for :
 # * doc strings
 # * modules / classes / functions / methods / arguments / variables name
@@ -144,9 +112,6 @@ acquired-members=REQUEST,acl_users,aq_parent
 # * uses of the global statement
 #
 [BASIC]
-
-# Required attributes for module, separated by a comma
-required-attributes=__author__, __version__
 
 # Regular expression which should only match functions or classes name which do
 # not require a docstring
@@ -187,8 +152,6 @@ good-names=i,n
 bad-names=foo,bar
 
 # List of builtins function names that should not be used, separated by a comma
-bad-functions=filter,apply,input
-
 
 # checks for
 # * external modules dependencies
@@ -224,9 +187,6 @@ int-import-graph=
 #
 [CLASSES]
 
-# List of interface methods to ignore, separated by a comma. This is used for
-# instance to not check methods defines in Zope's Interface base class.
-ignore-iface-methods=
 
 # List of method names used to declare (i.e. assign) instance attributes.
 defining-attr-methods=__init__,__new__,setUp,run
@@ -246,9 +206,6 @@ max-locals=15
 
 # Maximum number of return / yield for function / method body
 max-returns=6
-
-# Maximum number of branch for function / method body
-max-branchs=20
 
 # Maximum number of statements in function / method body
 max-statements=40

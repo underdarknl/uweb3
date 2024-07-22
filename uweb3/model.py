@@ -1,16 +1,29 @@
-#!/usr/bin/python3
-"""uWeb3 model base classes."""
-
-# Standard modules
 import configparser
 import hashlib
 import json
 import os
+import random
 import sys
-from typing import Generator, Type, TypeVar
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from enum import Enum
+from typing import (
+    Any,
+    Dict,
+    Generator,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
+
+import uweb3
 
 T = TypeVar("T", bound="BaseRecord")
 R = TypeVar("R", bound="Record")
+C = TypeVar("C", bound="SecureCookie")
 
 
 class Error(Exception):
@@ -41,6 +54,41 @@ class PermissionError(Error):
     """The entity has insufficient rights to access the resource."""
 
 
+class CookieResult(NamedTuple):
+    is_valid: bool
+    data: Union[Any, None]
+    is_deprecated: bool
+
+
+@dataclass
+class CookieHash:
+    """Used to denote a supported hashing algorithm for cookies.
+    This algorithm should be available in the hashing library.
+
+    Attributes:
+        name: The name of the hashing algorithm.
+        prefix: The prefix used to denote the hashing algorithm in the cookie.
+        deprecated: Whether the algorithm is deprecated, this is used to determine
+            if a cookie needs to be re-hashed with another algorithm.
+    """
+
+    name: str
+    prefix: str
+    deprecated: bool = False
+
+
+class SupportedHashes(Enum):
+    """Supported hashing algorithms for cookies.
+
+    RIPEMD160 was used by default but this has been deprecated in OPENSSL and requires
+    additional config to be used. It is still supported for backwards compatibility,
+    but should not be used for new cookies.
+    """
+
+    RIPEMD160 = CookieHash(name="RIPEMD160", prefix="rip", deprecated=True)
+    BLAKE2S = CookieHash(name="blake2s", prefix="bl2s")
+
+
 class TransactionMixin:
     @classmethod
     def autocommit(cls, connection, value):
@@ -56,8 +104,8 @@ class TransactionMixin:
 
 
 class SettingsManager(TransactionMixin):
-    def __init__(self, filename=None, path=None):
-        """Creates a ini file with the child class name
+    def __init__(self, filename: str = None, path: str = None):
+        """Creates an ini file with the child class name
 
         Arguments:
           % filename: str, optional
@@ -113,7 +161,7 @@ class SettingsManager(TransactionMixin):
                 f"SettingsManager missing permissions to write to file: {self.file_location}"
             )
 
-    def Create(self, section, key, value):
+    def Create(self, section: str, key: str, value: Union[str, int]) -> None:
         """Creates a section or/and key = value
 
         Arguments:
@@ -136,7 +184,7 @@ class SettingsManager(TransactionMixin):
         self._Write(False)
         self.mtime = None
 
-    def Read(self):
+    def Read(self) -> bool:
         """Reads the config file and populates the options member
         It uses the mtime to see if any re-reading is required
 
@@ -150,7 +198,7 @@ class SettingsManager(TransactionMixin):
             self.mtime = curtime
         return True
 
-    def Update(self, section, key, value):
+    def Update(self, section: str, key: str, value: Union[str, int]) -> None:
         """Updates ini file
         After update reads file again and updates options attribute
 
@@ -168,7 +216,7 @@ class SettingsManager(TransactionMixin):
         self._Write()
         self.mtime = None
 
-    def Delete(self, section, key=None):
+    def Delete(self, section: str, key: Optional[str] = None):
         """Delete sections/keys from the INI file
         Be aware, deleting a section that is not empty will remove all keys from that
         given section
@@ -190,13 +238,125 @@ class SettingsManager(TransactionMixin):
         self.mtime = None
         return True
 
-    def _Write(self, reread=True):
+    def _Write(self, reread: Optional[bool] = True) -> bool:
         """Internal function to store the current config to file"""
         with open(self.file_location, "w") as configfile:
             self.config.write(configfile)
         if reread:
             return self.Read()
         return True
+
+
+class ICookieHash(ABC):
+    def __init__(self, cookie_hash: SupportedHashes, encoding: str = "utf-8"):
+        self.cookie_hash = cookie_hash.value
+        self.encoding = encoding
+
+    @abstractmethod
+    def encode(self, data, cookie_salt: str) -> str:
+        """Encodes data with the given cookie hash"""
+        pass
+
+    @abstractmethod
+    def decode(
+            self, cookie: str, cookie_salt: str
+    ) -> Tuple[bool, Union[str, None], bool]:
+        """Decodes data with the given cookie hash."""
+        pass
+
+
+class CookieHasher(ICookieHash):
+    """Hasher class that can be used to encode/decode cookies with different
+    hashes. The class also checks if a given encoding is deprecated or not, if the
+    encoding is deprecated switch over to another encoding and.
+    """
+
+    def __init__(self, cookie_hash: SupportedHashes, encoding: str = "utf-8"):
+        super().__init__(cookie_hash, encoding)
+        self._replacements = {
+            ('"', "%22"),
+            (",", "%27"),
+            ("{", "%7B"),
+            ("}", "%7D"),
+            ("=", "%3D"),
+        }
+
+    def encode(self, data, cookie_salt):
+        if self.cookie_hash.deprecated:
+            cookie_hash = random.choice(
+                [e for e in list(SupportedHashes) if e.value.deprecated == False]
+            )
+            return CookieHasher(cookie_hash=cookie_hash, encoding=self.encoding).encode(
+                data, cookie_salt
+            )
+
+        cookie_data = str(json.dumps(data))
+
+        h = hashlib.new(self.cookie_hash.name)
+        h.update((cookie_data + cookie_salt).encode(self.encoding))
+
+        return "{}+{}+{}".format(
+            self.cookie_hash.prefix, h.hexdigest(), self._encode(cookie_data)
+        )
+
+    def _encode(self, data):
+        """Encode cookie values per RFC 6265
+        http://www.ietf.org/rfc/rfc6265.txt
+
+        We elect to only encode the control chars for the cookie spec, and not the
+        whole cookie content."""
+        for target, replacement in self._replacements:
+            data = data.replace(target, replacement)
+        return data
+
+    def decode(self, cookie: str, cookie_salt: str) -> CookieResult:
+        """Decodes the value stored in the cookie based on the prefix.
+        If the prefix of the current CookieHasher does not match the prefix of the
+        cookie it will try to decode the cookie with the correct CookieHasher.
+
+        If no hasher for a given prefix can be found the cookie will be marked as invalid
+        and the data will be set to None.
+        """
+        hash_prefix, cookie_hash, raw_cookie_data = cookie.split("+")
+
+        if hash_prefix != self.cookie_hash.prefix:
+            return self._load_correct_cookie_hasher(cookie, cookie_salt, hash_prefix)
+
+        cookie_data = json.loads(self._decode(raw_cookie_data))
+        re_calculated_hash = self.encode(cookie_data, cookie_salt)
+
+        if cookie == re_calculated_hash:
+            return CookieResult(is_valid=True, data=cookie_data, is_deprecated=False)
+
+        return CookieResult(
+            is_valid=False, data=None, is_deprecated=self.cookie_hash.deprecated
+        )
+
+    def _load_correct_cookie_hasher(
+            self, cookie: str, cookie_salt: str, hash_prefix: str
+    ):
+        """Attempt to find a CookieHasher for the given hash."""
+        cookie_hash = next(
+            (e for e in list(SupportedHashes) if e.value.prefix == hash_prefix),
+            None,
+        )
+        if not cookie_hash:
+            return CookieResult(is_valid=False, data=None, is_deprecated=False)
+
+        return CookieHasher(cookie_hash=cookie_hash, encoding=self.encoding).decode(
+            cookie, cookie_salt
+        )
+
+    def _decode(self, data):
+        """decode cookie values per RFC 6265
+        http://www.ietf.org/rfc/rfc6265.txt
+
+        We elect to only decode the control chars for the cookie spec, and not the
+        whole cookie content."""
+        # Reverse the replacements done in the encoding process.
+        for replacement, target in self._replacements:
+            data = data.replace(target, replacement)
+        return data
 
 
 class SecureCookie(TransactionMixin):
@@ -208,27 +368,33 @@ class SecureCookie(TransactionMixin):
     name for your class will reflect the name for the cookie in the cookie.
     """
 
-    HASHTYPE = "ripemd160"
     _TABLE = None
     _CONNECTOR = "signedCookie"
 
-    def __init__(self, connection):
+    def __init__(
+            self,
+            connection,
+            encoder: ICookieHash = CookieHasher(cookie_hash=SupportedHashes.RIPEMD160),
+    ):
         """Create a new SecureCookie instance."""
         self.connection = connection
-        self.request = connection.request_object
-        self.cookies = connection.cookies
-        self.cookie_salt = connection.cookie_salt
-        self.debug = self.connection.debug
+        self.encoder: ICookieHash = encoder
+        self.request: uweb3.request.Request = connection.request_object
+        self.cookies: Dict[str, str] = connection.cookies
+        self.cookie_salt: str = connection.cookie_salt
+        self.debug: bool = self.connection.debug
         self._rawcookie = None
+        self.tampered = False
+
         if self.debug:
             print("current cookies (unvalidated) for request:", self.cookies)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Returns the cookie's value if it was valid and untampered with."""
         return str(self.rawcookie)
 
     @classmethod
-    def TableName(cls):
+    def TableName(cls) -> str:
         """Returns the 'database' table name for the SecureCookie class.
 
         If this is not explicitly defined by the class constant `_TABLE`, the return
@@ -238,6 +404,7 @@ class SecureCookie(TransactionMixin):
         """
         if cls._TABLE:
             return cls._TABLE
+
         name = cls.__name__
         return name[0].lower() + name[1:]
 
@@ -245,188 +412,179 @@ class SecureCookie(TransactionMixin):
     def rawcookie(self):
         """Reads the request cookie, checks if it was signed correctly and return
         the value, or returns False"""
+        if self.tampered:
+            return None
+
         if self._rawcookie is not None:
             return self._rawcookie
+
         name = self.TableName()
         if name in self.cookies and self.cookies[name]:
-            isValid, value = self.__ValidateCookieHash(self.cookies[name])
+            isValid, value, deprecated = self._ValidateCookieHash(self.cookies[name])
+
             if isValid:
                 self._rawcookie = value
-                return value
+                return self._rawcookie
+
             if self.debug:
                 print(
                     'Secure cookie "%s" was tampered with and thus invalid. content was: %s '
                     % (name, self.cookies[name])
                 )
+
+            # Make sure to delete the cookie if it was tampered with.
+            self.Delete()
+            self.tampered = True
+
         if self.debug:
             print('Secure cookie "%s" was not present.' % name)
-        self._rawcookie = ""
+
         return self._rawcookie
 
+    @rawcookie.setter
+    def rawcookie(self, new_value):
+        if self.tampered:
+            if self.debug:
+                print(
+                    "Secure cookie was tampered with and thus invalid."
+                    "Ignoring new value."
+                )
+            return
+
+        if self.debug:
+            print("Setting new cookie value:", new_value)
+
+        self._rawcookie = new_value
+
     @classmethod
-    def Create(cls, connection, data, **attrs):
+    def Create(
+            cls: Type[C],
+            connection,
+            data,
+            encoder: ICookieHash = CookieHasher(cookie_hash=SupportedHashes.RIPEMD160),
+            **attrs,
+    ) -> None:
         """Creates a secure cookie
 
         Arguments:
-          @ data: dict
-            Needs to have a key called __name with value of how you want to name the 'table'
-          % only_return_hash: boolean
-            If this is set it will just return the hash of the cookie. This is used to
-            validate the cookies hash
-          % update: boolean
-            Used to update the cookie. Updating actually means deleting and setting a new
-            one. This attribute is used by the update method from this class
-          % expires: str ~~ None
-            The date + time when the cookie should expire. The format should be:
-            "Wdy, DD-Mon-YYYY HH:MM:SS GMT" and the time specified in UTC.
-            The default means the cookie never expires.
-            N.B. Specifying both this and `max_age` leads to undefined behavior.
-          % path: str ~~ '/'
-            The path for which this cookie is valid. This default ('/') is different
-            from the rule stated on Wikipedia: "If not specified, they default to
-            the domain and path of the object that was requested".
-          % domain: str ~~ None
-            The domain for which the cookie is valid. The default is that of the
-            requested domain.
-          % max_age: int
-            The number of seconds this cookie should be used for. After this period,
-            the cookie should be deleted by the client.
-            N.B. Specifying both this and `expires` leads to undefined behavior.
-          % secure: boolean
-            When True, the cookie is only used on https connections.
-          % httponly: boolean
-            When True, the cookie is only used for http(s) requests, and is not
-            accessible through Javascript (DOM).
+            @ data: dict
+                Needs to have a key called __name with value of how you want to name the 'table'
+            % only_return_hash: boolean
+                If this is set it will just return the hash of the cookie. This is used to
+                validate the cookies hash
+            % update: boolean
+                Used to update the cookie. Updating actually means deleting and setting a new
+                one. This attribute is used by the update method from this class
+            % expires: str ~~ None
+                The date + time when the cookie should expire. The format should be:
+                "Wdy, DD-Mon-YYYY HH:MM:SS GMT" and the time specified in UTC.
+                The default means the cookie never expires.
+                N.B. Specifying both this and `max_age` leads to undefined behavior.
+            % path: str ~~ '/'
+                The path for which this cookie is valid. This default ('/') is different
+                from the rule stated on Wikipedia: "If not specified, they default to
+                the domain and path of the object that was requested".
+            % domain: str ~~ None
+                The domain for which the cookie is valid. The default is that of the
+                requested domain.
+            % max_age: int
+                The number of seconds this cookie should be used for. After this period,
+                the cookie should be deleted by the client.
+                N.B. Specifying both this and `expires` leads to undefined behavior.
+            % secure: boolean
+                When True, the cookie is only used on https connections.
+            % httponly: boolean
+                When True, the cookie is only used for http(s) requests, and is not
+                accessible through Javascript (DOM).
 
         Raises:
-          ValueError: When cookie with name already exists
+            ValueError: When cookie with name already exists
         """
-        cls.connection = connection
-        cls.request = connection.request_object
-        cls.cookies = connection.cookies
-        cls.cookie_salt = connection.cookie_salt
-        name = cls.TableName()
-        cls._rawcookie = data
+        cls_instance = cls(connection, encoder=encoder)
 
-        hashed = cls.__CreateCookieHash(cls, data)
-        cls.cookies[name] = hashed
-        cls.connection.insert(name, hashed, **attrs)
-        return cls
+        name = cls_instance.TableName()
+        cls_instance.rawcookie = data
+        hashed = cls_instance._CreateCookieHash(cls_instance.rawcookie)
 
-    def Update(self, data, **attrs):
+        cls_instance.cookies[name] = hashed
+        cls_instance.connection.insert(name, hashed, **attrs)
+
+    def Update(self, data, **attrs) -> None:
         """ "Updates a secure cookie
         Keep in mind that the actual cookie's value is avilable from the next
         request. After calling this method it will update the cookie attribute to
         the new value however.
 
         Arguments:
-          @ data: dict
-            Needs to have a key called __name with value of how you want to name the 'table'
-          % only_return_hash: boolean
-            If this is set it will just return the hash of the cookie. This is used to
-            validate the cookies hash
-          % update: boolean
-            Used to update the cookie. Updating actually means deleting and setting a new
-            one. This attribute is used by the update method from this class
-          % expires: str ~~ None
-            The date + time when the cookie should expire. The format should be:
-            "Wdy, DD-Mon-YYYY HH:MM:SS GMT" and the time specified in UTC.
-            The default means the cookie never expires.
-            N.B. Specifying both this and `max_age` leads to undefined behavior.
-          % path: str ~~ '/'
-            The path for which this cookie is valid. This default ('/') is different
-            from the rule stated on Wikipedia: "If not specified, they default to
-            the domain and path of the object that was requested".
-          % domain: str ~~ None
-            The domain for which the cookie is valid. The default is that of the
-            requested domain.
-          % max_age: int
-            The number of seconds this cookie should be used for. After this period,
-            the cookie should be deleted by the client.
-            N.B. Specifying both this and `expires` leads to undefined behavior.
-          % secure: boolean
-            When True, the cookie is only used on https connections.
-          % httponly: boolean
-            When True, the cookie is only used for http(s) requests, and is not
-            accessible through Javascript (DOM).
+            @ data: dict
+                Needs to have a key called __name with value of how you want to name the 'table'
+            % only_return_hash: boolean
+                If this is set it will just return the hash of the cookie. This is used to
+                validate the cookies hash
+            % update: boolean
+                Used to update the cookie. Updating actually means deleting and setting a new
+                one. This attribute is used by the update method from this class
+            % expires: str ~~ None
+                The date + time when the cookie should expire. The format should be:
+                "Wdy, DD-Mon-YYYY HH:MM:SS GMT" and the time specified in UTC.
+                The default means the cookie never expires.
+                N.B. Specifying both this and `max_age` leads to undefined behavior.
+            % path: str ~~ '/'
+                The path for which this cookie is valid. This default ('/') is different
+                from the rule stated on Wikipedia: "If not specified, they default to
+                the domain and path of the object that was requested".
+            % domain: str ~~ None
+                The domain for which the cookie is valid. The default is that of the
+                requested domain.
+            % max_age: int
+                The number of seconds this cookie should be used for. After this period,
+                the cookie should be deleted by the client.
+                N.B. Specifying both this and `expires` leads to undefined behavior.
+            % secure: boolean
+                When True, the cookie is only used on https connections.
+            % httponly: boolean
+                When True, the cookie is only used for http(s) requests, and is not
+                accessible through Javascript (DOM).
 
         Raises:
-          ValueError: When no cookie with given name found
+            ValueError: When no cookie with given name found
         """
         name = self.TableName()
+
         if not self.rawcookie:
             raise ValueError("No valid cookie with name `{}` found".format(name))
-        self._rawcookie = data
-        hashed = self.__CreateCookieHash(data)
+
+        self.rawcookie = data
+        hashed = self._CreateCookieHash(data)
         self.cookies[name] = hashed
         self.connection.update(name, hashed, **attrs)
 
-    def Delete(self):
+    def Delete(self) -> None:
         """Deletes cookie based on name
         The cookie is no longer in the session after calling this method
         """
         name = self.TableName()
         self.connection.delete(name)
-        self._rawcookie = None
+        self.rawcookie = None
 
-    def __CreateCookieHash(self, data):
-        data = str(json.dumps(data))
-        h = hashlib.new(self.HASHTYPE)
-        h.update((data + self.cookie_salt).encode("utf-8"))
-        return "{}+{}".format(h.hexdigest(), self._encode(data))
+    def _CreateCookieHash(self, value):
+        """Creates a hash of the cookie value"""
+        return self.encoder.encode(value, self.cookie_salt)
 
-    def __ValidateCookieHash(self, cookie):
+    def _ValidateCookieHash(self, cookie) -> CookieResult:
         """Takes a cookie and validates it
 
         Arguments:
-          @ str: A hashed cookie from the `__CreateCookieHash` method
+            @ str: A hashed cookie from the `__CreateCookieHash` method
         """
         if not cookie:
-            return None
+            return CookieResult(is_valid=False, data=None, is_deprecated=False)
+
         try:
-            data = json.loads(self._decode(cookie.rsplit("+", 1)[1]))
+            return self.encoder.decode(cookie, self.cookie_salt)
         except Exception:
             print("Cookie contents could not be loaded as Json")
-            return (False, None)
-
-        if cookie == self.__CreateCookieHash(data):
-            return (True, data)
-        print("Cookie contents could not be verified as hash is different")
-        return (False, None)
-
-    @staticmethod
-    def _encode(data):
-        """Encode cookie values per RFC 6265
-        http://www.ietf.org/rfc/rfc6265.txt
-
-        We elect to only encode the control chars for the cookie spec, and not the
-        whole cookie content.
-        """
-        return (
-            data.replace("%", "%25")
-            .replace('"', "%22")
-            .replace(",", "%27")
-            .replace("{", "%7B")
-            .replace("}", "%7D")
-            .replace("=", "%3D")
-        )
-
-    @staticmethod
-    def _decode(data):
-        """decode cookie values per RFC 6265
-        http://www.ietf.org/rfc/rfc6265.txt
-
-        We elect to only decode the control chars for the cookie spec, and not the
-        whole cookie content.
-        """
-        return (
-            data.replace("%22", '"')
-            .replace("%27", ",")
-            .replace("%7B", "{")
-            .replace("%7D", "}")
-            .replace("%3D", "=")
-            .replace("%25", "%")
-        )
+            return CookieResult(is_valid=False, data=None, is_deprecated=False)
 
 
 # Record classes have many methods, this is not an actual problem.
@@ -495,10 +653,10 @@ class BaseRecord(TransactionMixin, dict):
             if isinstance(value, BaseRecord) != isinstance(other_value, BaseRecord):
                 # Only one of the two is a BaseRecord instance
                 if (
-                    isinstance(value, BaseRecord)
-                    and value.key != other_value
-                    or isinstance(other_value, BaseRecord)
-                    and other_value.key != value
+                        isinstance(value, BaseRecord)
+                        and value.key != other_value
+                        or isinstance(other_value, BaseRecord)
+                        and other_value.key != value
                 ):
                     return False
             elif value != other_value:
@@ -990,14 +1148,14 @@ class Record(BaseRecord):
     #
     @classmethod
     def _FromParent(
-        cls,
-        parent,
-        relation_field=None,
-        conditions=None,
-        limit=None,
-        offset=None,
-        order=None,
-        yield_unlimited_total_first=False,
+            cls,
+            parent,
+            relation_field=None,
+            conditions=None,
+            limit=None,
+            offset=None,
+            order=None,
+            yield_unlimited_total_first=False,
     ):
         """Returns all `cls` objects that are a child of the given parent.
 
@@ -1042,12 +1200,12 @@ class Record(BaseRecord):
         # the first row to our parent, as that will be the full record cound instead
         # of a record
         for record in cls.List(
-            parent.connection,
-            conditions=qry_conditions,
-            limit=limit,
-            offset=offset,
-            order=order,
-            yield_unlimited_total_first=yield_unlimited_total_first,
+                parent.connection,
+                conditions=qry_conditions,
+                limit=limit,
+                offset=offset,
+                order=order,
+                yield_unlimited_total_first=yield_unlimited_total_first,
         ):
             if not firstrow:
                 record[relation_field] = parent.copy()
@@ -1055,14 +1213,14 @@ class Record(BaseRecord):
             yield record
 
     def _Children(
-        self,
-        child_class,
-        relation_field=None,
-        conditions=None,
-        limit=None,
-        offset=None,
-        order=None,
-        yield_unlimited_total_first=False,
+            self,
+            child_class,
+            relation_field=None,
+            conditions=None,
+            limit=None,
+            offset=None,
+            order=None,
+            yield_unlimited_total_first=False,
     ):
         """Returns all `child_class` objects related to this record.
 
@@ -1258,18 +1416,18 @@ class Record(BaseRecord):
 
     @classmethod
     def List(
-        cls: Type[R],
-        connection,
-        conditions=None,
-        limit=None,
-        offset=None,
-        order=None,
-        yield_unlimited_total_first=False,
-        search=None,
-        tables=None,
-        escape=True,
-        fields=None,
-        distinct=False,
+            cls: Type[R],
+            connection,
+            conditions=None,
+            limit=None,
+            offset=None,
+            order=None,
+            yield_unlimited_total_first=False,
+            search=None,
+            tables=None,
+            escape=True,
+            fields=None,
+            distinct=False,
     ) -> Generator[R, None, None]:
         """Yields a Record object for every table entry.
 
@@ -1503,17 +1661,17 @@ class VersionedRecord(Record):
 
     @classmethod
     def List(
-        cls,
-        connection,
-        conditions=None,
-        limit=None,
-        offset=None,
-        order=None,
-        yield_unlimited_total_first=False,
-        search=None,
-        tables=None,
-        escape=True,
-        fields=None,
+            cls,
+            connection,
+            conditions=None,
+            limit=None,
+            offset=None,
+            order=None,
+            yield_unlimited_total_first=False,
+            search=None,
+            tables=None,
+            escape=True,
+            fields=None,
     ):
         """Yields the latest Record for each versioned entry in the table.
 
