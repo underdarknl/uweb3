@@ -544,7 +544,7 @@ class Parser(dict):
 class Template(list):
     """Contained for template parts, allowing for rich content construction."""
 
-    FUNCTION = re.compile(r"\{\{\s*(.*?)\s*\}\}")
+    FUNCTION = re.compile(r"\{\{\s*([\s\S]*?)\s*\}\}")
     # For a full tag syntax explanation, refer to the TAG regex in TemplateTag.
     TAG = re.compile(
         """
